@@ -309,7 +309,7 @@ where whisper-ctranslate2  # Windows
 
 **Q: Processing is slow**
 - Change model to `small` or `medium` in `config.json`
-- If memory is insufficient, set `compute_type` to `int8`
+- Default is already optimized for maximum speed (`compute_type`: `int8`)
 
 **Q: Audio files not recognized**
 - Supported formats: MP3, WAV, M4A, FLAC, OGG, AAC, MP4, MOV, AVI

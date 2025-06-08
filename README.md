@@ -309,7 +309,7 @@ where whisper-ctranslate2  # Windows
 
 **Q: 処理が遅い**
 - `config.json`でモデルを`small`や`medium`に変更
-- メモリ不足の場合は`compute_type`を`int8`に設定
+- デフォルトで既に最高速設定（`compute_type`: `int8`）済み
 
 **Q: 音声ファイルが認識されない**
 - 対応形式: MP3, WAV, M4A, FLAC, OGG, AAC, MP4, MOV, AVI
