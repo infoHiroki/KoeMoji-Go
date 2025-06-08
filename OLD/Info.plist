@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>CFBundleExecutable</key>
+    <string>koemoji-go</string>
+    <key>CFBundleIconFile</key>
+    <string>icon</string>
+    <key>CFBundleIdentifier</key>
+    <string>com.koemoji-go.app</string>
+    <key>CFBundleName</key>
+    <string>KoeMoji-Go</string>
+    <key>CFBundleDisplayName</key>
+    <string>KoeMoji-Go</string>
+    <key>CFBundleVersion</key>
+    <string>1.0.0</string>
+    <key>CFBundleShortVersionString</key>
+    <string>1.0.0</string>
+    <key>CFBundlePackageType</key>
+    <string>APPL</string>
+    <key>CFBundleSignature</key>
+    <string>????</string>
+    <key>NSHighResolutionCapable</key>
+    <true/>
+    <key>LSMinimumSystemVersion</key>
+    <string>10.15</string>
+    <key>NSApplicationCategoryType</key>
+    <string>public.app-category.productivity</string>
+    <key>LSApplicationCategoryType</key>
+    <string>public.app-category.productivity</string>
+    <key>CFBundleDocumentTypes</key>
+    <array>
+        <dict>
+            <key>CFBundleTypeExtensions</key>
+            <array>
+                <string>mp3</string>
+                <string>wav</string>
+                <string>m4a</string>
+                <string>flac</string>
+                <string>ogg</string>
+                <string>aac</string>
+                <string>mp4</string>
+                <string>mov</string>
+                <string>avi</string>
+            </array>
+            <key>CFBundleTypeName</key>
+            <string>Audio/Video Files</string>
+            <key>CFBundleTypeRole</key>
+            <string>Viewer</string>
+            <key>LSHandlerRank</key>
+            <string>Alternate</string>
+        </dict>
+    </array>
+</dict>
+</plist>

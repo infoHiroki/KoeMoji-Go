@@ -1,0 +1,15 @@
+# ビルド成果物
+dist/
+*.syso
+
+# 実行時生成ファイル
+koemoji-go
+koemoji.log
+
+# 処理ディレクトリ
+input/
+output/
+archive/
+
+# 不要ファイル
+OLD/
