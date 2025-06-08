@@ -415,5 +415,4 @@ go build -o koemoji-go main.go
 ## 作者
 
 KoeMoji-Go開発チーム
-
 連絡先: dev@habitengineer.com
