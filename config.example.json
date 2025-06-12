@@ -1,0 +1,10 @@
+{
+    "whisper_model": "medium",
+    "language": "ja",
+    "output_format": "txt",
+    "scan_interval_minutes": 10,
+    "max_cpu_percent": 95,
+    "compute_type": "int8",
+    "use_colors": true,
+    "ui_mode": "enhanced"
+}

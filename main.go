@@ -38,6 +38,7 @@ type Config struct {
 	ComputeType         string `json:"compute_type"`
 	UseColors           bool   `json:"use_colors"`
 	UIMode              string `json:"ui_mode"`
+	OutputFormat        string `json:"output_format"`
 }
 
 type LogEntry struct {
@@ -142,6 +143,7 @@ func (app *App) loadConfig(configPath string) {
 		ComputeType:         "int8",
 		UseColors:           true,
 		UIMode:              "enhanced",
+		OutputFormat:        "txt",
 	}
 
 	file, err := os.Open(configPath)
@@ -367,7 +369,7 @@ func (app *App) transcribeAudio(inputFile string) error {
 		"--model", app.config.WhisperModel,
 		"--language", app.config.Language,
 		"--output_dir", "./output",
-		"--output_format", "txt",
+		"--output_format", app.config.OutputFormat,
 		"--compute_type", app.config.ComputeType,
 		"--verbose", "True", // Enable verbose for progress
 		inputFile,
@@ -651,6 +653,7 @@ func (app *App) displayConfig() {
 	fmt.Printf("Compute type: %s\n", app.config.ComputeType)
 	fmt.Printf("Use colors: %t\n", app.config.UseColors)
 	fmt.Printf("UI mode: %s\n", app.config.UIMode)
+	fmt.Printf("Output format: %s\n", app.config.OutputFormat)
 	fmt.Println("\nDirectories:")
 	fmt.Println("  Input: ./input/")
 	fmt.Println("  Output: ./output/")
