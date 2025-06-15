@@ -22,9 +22,9 @@ func (app *App) formatDuration(d time.Duration) string {
 }
 
 func (app *App) updateFileCounts() {
-	app.inputCount = app.countFiles("input")
-	app.outputCount = app.countFiles("output")
-	app.archiveCount = app.countFiles("archive")
+	app.inputCount = app.countFiles(app.config.InputDir)
+	app.outputCount = app.countFiles(app.config.OutputDir)
+	app.archiveCount = app.countFiles(app.config.ArchiveDir)
 }
 
 func (app *App) countFiles(dir string) int {

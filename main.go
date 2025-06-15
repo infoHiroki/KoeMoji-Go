@@ -57,7 +57,7 @@ type App struct {
 }
 
 func main() {
-	configPath, debugMode, showVersion, showHelp := parseFlags()
+	configPath, debugMode, showVersion, showHelp, configMode := parseFlags()
 
 	if showVersion {
 		fmt.Printf("KoeMoji-Go v%s\n", version)
@@ -79,18 +79,25 @@ func main() {
 
 	app.initLogger()
 	app.loadConfig(configPath)
+
+	if configMode {
+		app.configureSettings(configPath)
+		return
+	}
+
 	app.ensureDirectories()
 	app.ensureDependencies()
 	app.run()
 }
 
-func parseFlags() (string, bool, bool, bool) {
+func parseFlags() (string, bool, bool, bool, bool) {
 	configPath := flag.String("config", "config.json", "Path to config file")
 	debugMode := flag.Bool("debug", false, "Enable debug mode")
 	showVersion := flag.Bool("version", false, "Show version")
 	showHelp := flag.Bool("help", false, "Show help")
+	configMode := flag.Bool("configure", false, "Enter configuration mode")
 	flag.Parse()
-	return *configPath, *debugMode, *showVersion, *showHelp
+	return *configPath, *debugMode, *showVersion, *showHelp, *configMode
 }
 
 func showHelpText() {
@@ -126,7 +133,7 @@ func (app *App) run() {
 	go app.handleUserInput()
 
 	app.logInfo("KoeMoji-Go is running. Use commands below to interact.")
-	app.logInfo("Monitoring ./input/ directory every %d minutes", app.config.ScanIntervalMinutes)
+	app.logInfo("Monitoring %s directory every %d minutes", app.config.InputDir, app.config.ScanIntervalMinutes)
 
 	<-sigChan
 	app.logInfo("Shutting down KoeMoji-Go...")

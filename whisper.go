@@ -62,7 +62,7 @@ func (app *App) transcribeAudio(inputFile string) error {
 	if err != nil {
 		return fmt.Errorf("invalid file path: %w", err)
 	}
-	inputDir, _ := filepath.Abs("input")
+	inputDir, _ := filepath.Abs(app.config.InputDir)
 	if !strings.HasPrefix(absPath, inputDir+string(os.PathSeparator)) {
 		return fmt.Errorf("file must be in input directory: %s", inputFile)
 	}
@@ -72,7 +72,7 @@ func (app *App) transcribeAudio(inputFile string) error {
 	cmd := exec.Command(whisperCmd,
 		"--model", app.config.WhisperModel,
 		"--language", app.config.Language,
-		"--output_dir", "./output",
+		"--output_dir", app.config.OutputDir,
 		"--output_format", app.config.OutputFormat,
 		"--compute_type", app.config.ComputeType,
 		"--verbose", "True", // Enable verbose for progress

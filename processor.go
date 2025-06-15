@@ -25,7 +25,7 @@ func (app *App) scanAndProcess() {
 	app.lastScanTime = time.Now()
 	app.logInfo("Scanning for new files...")
 
-	files, err := filepath.Glob("input/*")
+	files, err := filepath.Glob(filepath.Join(app.config.InputDir, "*"))
 	if err != nil {
 		app.logError("Failed to scan input directory: %v", err)
 		return
@@ -116,14 +116,14 @@ func (app *App) processQueue() {
 
 func (app *App) moveToArchive(sourcePath string) error {
 	filename := filepath.Base(sourcePath)
-	destPath := filepath.Join("archive", filename)
+	destPath := filepath.Join(app.config.ArchiveDir, filename)
 
 	// Handle duplicate filenames
 	if _, err := os.Stat(destPath); err == nil {
 		timestamp := time.Now().Format("20060102_150405")
 		ext := filepath.Ext(filename)
 		name := strings.TrimSuffix(filename, ext)
-		destPath = filepath.Join("archive", fmt.Sprintf("%s_%s%s", name, timestamp, ext))
+		destPath = filepath.Join(app.config.ArchiveDir, fmt.Sprintf("%s_%s%s", name, timestamp, ext))
 	}
 
 	if err := os.Rename(sourcePath, destPath); err != nil {
@@ -133,7 +133,7 @@ func (app *App) moveToArchive(sourcePath string) error {
 }
 
 func (app *App) ensureDirectories() {
-	dirs := []string{"input", "output", "archive"}
+	dirs := []string{app.config.InputDir, app.config.OutputDir, app.config.ArchiveDir}
 	for _, dir := range dirs {
 		if err := os.MkdirAll(dir, 0755); err != nil {
 			app.logError("Failed to create directory %s: %v", dir, err)
