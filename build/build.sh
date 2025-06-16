@@ -61,15 +61,23 @@ cp ../../README.md koemoji-go-windows-$VERSION/
 zip -r koemoji-go-windows-$VERSION.zip koemoji-go-windows-$VERSION/
 rm -rf koemoji-go-windows-$VERSION
 
-# macOS package
-echo "📦 Creating macOS package..."
-mkdir -p koemoji-go-macos-$VERSION
-cp ${APP_NAME}-darwin-amd64 koemoji-go-macos-$VERSION/
-cp ${APP_NAME}-darwin-arm64 koemoji-go-macos-$VERSION/
-cp ../../config.example.json koemoji-go-macos-$VERSION/config.json
-cp ../../README.md koemoji-go-macos-$VERSION/
-tar -czf koemoji-go-macos-$VERSION.tar.gz koemoji-go-macos-$VERSION/
-rm -rf koemoji-go-macos-$VERSION
+# macOS Intel package
+echo "📦 Creating macOS Intel package..."
+mkdir -p koemoji-go-macos-intel-$VERSION
+cp ${APP_NAME}-darwin-amd64 koemoji-go-macos-intel-$VERSION/${APP_NAME}
+cp ../../config.example.json koemoji-go-macos-intel-$VERSION/config.json
+cp ../../README.md koemoji-go-macos-intel-$VERSION/
+tar -czf koemoji-go-macos-intel-$VERSION.tar.gz koemoji-go-macos-intel-$VERSION/
+rm -rf koemoji-go-macos-intel-$VERSION
+
+# macOS Apple Silicon package
+echo "📦 Creating macOS Apple Silicon package..."
+mkdir -p koemoji-go-macos-arm64-$VERSION
+cp ${APP_NAME}-darwin-arm64 koemoji-go-macos-arm64-$VERSION/${APP_NAME}
+cp ../../config.example.json koemoji-go-macos-arm64-$VERSION/config.json
+cp ../../README.md koemoji-go-macos-arm64-$VERSION/
+tar -czf koemoji-go-macos-arm64-$VERSION.tar.gz koemoji-go-macos-arm64-$VERSION/
+rm -rf koemoji-go-macos-arm64-$VERSION
 
 # Linux package
 echo "📦 Creating Linux package..."

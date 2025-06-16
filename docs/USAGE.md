@@ -2,19 +2,14 @@
 
 ## クイックスタート
 
-### 1. 初期設定
-```bash
-# 対話式設定（推奨）
-./koemoji-go --configure
-
-# または設定ファイルをコピー
-cp config.example.json config.json
-```
-
-### 2. 実行
+### 1. 実行
 ```bash
 ./koemoji-go
 ```
+初回実行時は自動的にデフォルト設定で起動
+
+### 2. 設定
+実行後に`c`キーで設定変更
 
 ### 3. ファイル処理
 1. `input/`に音声・動画ファイルを配置
@@ -30,10 +25,10 @@ cp config.example.json config.json
 
 ### 起動オプション
 ```bash
-./koemoji-go --version     # バージョン表示
-./koemoji-go --help        # ヘルプ表示
-./koemoji-go --configure   # 設定モード
-./koemoji-go --debug       # デバッグモード
+./koemoji-go -version     # バージョン表示
+./koemoji-go -help        # ヘルプ表示
+./koemoji-go -configure   # 設定モード
+./koemoji-go -debug       # デバッグモード
 ```
 
 ### 実行中コマンド
