@@ -111,6 +111,8 @@ func showHelpText() {
 	fmt.Println("  c - Configure settings")
 	fmt.Println("  l - Display all logs")
 	fmt.Println("  s - Scan now")
+	fmt.Println("  i - Open input directory")
+	fmt.Println("  o - Open output directory")
 	fmt.Println("  q - Quit")
 	fmt.Println("  Enter - Refresh display")
 }
@@ -135,12 +137,13 @@ func (app *App) run() {
 	go app.startProcessing()
 	go app.handleUserInput()
 
-	app.logInfo("KoeMoji-Go is running. Use commands below to interact.")
-	app.logInfo("Monitoring %s directory every %d minutes", app.config.InputDir, app.config.ScanIntervalMinutes)
+	msg := app.getMessages()
+	app.logInfo(msg.AppRunning)
+	app.logInfo(msg.MonitoringDir, app.config.InputDir, app.config.ScanIntervalMinutes)
 
 	<-sigChan
-	msg := app.getMessages()
-	app.logInfo(msg.ShuttingDown)
+	msg2 := app.getMessages()
+	app.logInfo(msg2.ShuttingDown)
 	app.wg.Wait()
 }
 
@@ -176,13 +179,21 @@ func (app *App) handleUserInput() {
 		case "s":
 			app.logInfo("Manual scan triggered")
 			go app.scanAndProcess()
+		case "i":
+			if err := app.openDirectory(app.config.InputDir); err != nil {
+				app.logError("Failed to open input directory: %v", err)
+			}
+		case "o":
+			if err := app.openDirectory(app.config.OutputDir); err != nil {
+				app.logError("Failed to open output directory: %v", err)
+			}
 		case "q":
 			msg := app.getMessages()
 			app.logInfo(msg.ShuttingDown)
 			os.Exit(0)
 		default:
 			if strings.TrimSpace(input) != "" {
-				fmt.Printf("Invalid command '%s' (use c/l/s/q or Enter to refresh)\n", strings.TrimSpace(input))
+				fmt.Printf("Invalid command '%s' (use c/l/s/i/o/q or Enter to refresh)\n", strings.TrimSpace(input))
 			}
 		}
 	}

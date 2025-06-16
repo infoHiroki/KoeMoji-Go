@@ -21,6 +21,8 @@ type Messages struct {
 	LogsCmd         string
 	ScanCmd         string
 	QuitCmd         string
+	InputDirCmd     string
+	OutputDirCmd    string
 	
 	// Config menu
 	ConfigTitle     string
@@ -89,6 +91,8 @@ type Messages struct {
 	
 	// Processing messages
 	AppStarted      string
+	AppRunning      string
+	MonitoringDir   string
 	ShuttingDown    string
 	ScanningDir     string
 	FoundFiles      string
@@ -129,6 +133,8 @@ var messagesEN = Messages{
 	LogsCmd:         "logs",
 	ScanCmd:         "scan",
 	QuitCmd:         "quit",
+	InputDirCmd:     "input",
+	OutputDirCmd:    "output",
 	
 	// Config menu
 	ConfigTitle:     "KoeMoji-Go Configuration",
@@ -197,6 +203,8 @@ var messagesEN = Messages{
 	
 	// Processing messages
 	AppStarted:      "KoeMoji-Go v%s started",
+	AppRunning:      "KoeMoji-Go is running. Use commands below to interact.",
+	MonitoringDir:   "Monitoring %s directory every %d minutes",
 	ShuttingDown:    "Shutting down KoeMoji-Go...",
 	ScanningDir:     "Scanning directory for audio files...",
 	FoundFiles:      "Found %d audio files to process",
@@ -237,6 +245,8 @@ var messagesJA = Messages{
 	LogsCmd:         "ログ",
 	ScanCmd:         "スキャン",
 	QuitCmd:         "終了",
+	InputDirCmd:     "入力",
+	OutputDirCmd:    "出力",
 	
 	// Config menu
 	ConfigTitle:     "KoeMoji-Go 設定",
@@ -305,6 +315,8 @@ var messagesJA = Messages{
 	
 	// Processing messages
 	AppStarted:      "KoeMoji-Go v%s を開始しました",
+	AppRunning:      "KoeMoji-Goが実行中です。以下のコマンドを使用してください。",
+	MonitoringDir:   "%sディレクトリを%d分ごとに監視しています",
 	ShuttingDown:    "KoeMoji-Goを終了しています...",
 	ScanningDir:     "音声ファイルをスキャンしています...",
 	FoundFiles:      "%d個の音声ファイルを検出しました",

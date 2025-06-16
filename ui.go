@@ -102,7 +102,7 @@ func (app *App) displayRealtimeLogs() {
 
 func (app *App) displayCommands() {
 	msg := app.getMessages()
-	fmt.Printf("c=%s l=%s s=%s q=%s\n", msg.ConfigCmd, msg.LogsCmd, msg.ScanCmd, msg.QuitCmd)
+	fmt.Printf("c=%s l=%s s=%s i=%s o=%s q=%s\n", msg.ConfigCmd, msg.LogsCmd, msg.ScanCmd, msg.InputDirCmd, msg.OutputDirCmd, msg.QuitCmd)
 	fmt.Print("> ")
 }
 
@@ -128,6 +128,20 @@ func (app *App) displayLogs() {
 	if err := cmd.Run(); err != nil {
 		fmt.Printf(msg.LogFileError, err)
 	}
+}
+
+func (app *App) openDirectory(dirPath string) error {
+	var cmd *exec.Cmd
+	switch runtime.GOOS {
+	case "windows":
+		cmd = exec.Command("explorer", dirPath)
+	case "darwin":
+		cmd = exec.Command("open", dirPath)
+	default:
+		return fmt.Errorf("opening directories not supported on this platform")
+	}
+
+	return cmd.Start()
 }
 
 // Utility functions
