@@ -22,3 +22,7 @@ archive/
 
 # 不要ファイル
 OLD/
+
+# 学習用ドキュメント（オプション）
+# docs/LYNCH_NARRATIVE.md
+# docs/GO_LANGUAGE_ESSAY.md
