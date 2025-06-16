@@ -1,9 +1,9 @@
 package main
 
 import (
-	"bufio"
 	"fmt"
 	"os"
+	"os/exec"
 	"runtime"
 	"time"
 )
@@ -87,25 +87,25 @@ func (app *App) displayCommands() {
 }
 
 func (app *App) displayLogs() {
-	file, err := os.Open("koemoji.log")
-	if err != nil {
-		fmt.Printf("Failed to open log file: %v\n", err)
+	if _, err := os.Stat("koemoji.log"); os.IsNotExist(err) {
+		fmt.Println("Log file not found")
 		return
 	}
-	defer file.Close()
 
-	fmt.Println("\n--- Log File Contents ---")
-	scanner := bufio.NewScanner(file)
-	lineCount := 0
-	for scanner.Scan() {
-		fmt.Println(scanner.Text())
-		lineCount++
-		if lineCount%20 == 0 {
-			fmt.Print("Press Enter to continue...")
-			bufio.NewReader(os.Stdin).ReadString('\n')
-		}
+	var cmd *exec.Cmd
+	switch runtime.GOOS {
+	case "windows":
+		cmd = exec.Command("cmd", "/c", "start", "koemoji.log")
+	case "darwin":
+		cmd = exec.Command("open", "koemoji.log")
+	default:
+		fmt.Println("Log viewing not supported on this platform")
+		return
 	}
-	fmt.Println("--- End of Log ---")
+
+	if err := cmd.Run(); err != nil {
+		fmt.Printf("Failed to open log file: %v\n", err)
+	}
 }
 
 // Utility functions
