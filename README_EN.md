@@ -74,9 +74,9 @@ python -m ensurepip --upgrade
 ## 2. Installation
 
 ### Download
-1. **Download the version for your OS from [GitHub Releases](https://github.com/[username]/koemoji-go/releases)**
+1. **Download the version for your OS from [GitHub Releases](https://github.com/hirokitakamura/koemoji-go/releases)**
 
-**Windows**: `koemoji-go-windows-1.0.0.zip`
+**Windows**: `koemoji-go-windows-1.1.0.zip`
 ```
 📁 koemoji-go-windows-1.0.0.zip
 ├── koemoji-go.exe     # Executable with icon
@@ -84,7 +84,7 @@ python -m ensurepip --upgrade
 └── README.md          # Documentation
 ```
 
-**macOS Intel**: `koemoji-go-macos-intel-1.0.0.tar.gz`
+**macOS Intel**: `koemoji-go-macos-intel-1.1.0.tar.gz`
 ```
 📁 koemoji-go-macos-intel-1.0.0.tar.gz  
 ├── koemoji-go         # Intel Mac executable
@@ -92,7 +92,7 @@ python -m ensurepip --upgrade
 └── README.md          # Documentation
 ```
 
-**macOS Apple Silicon**: `koemoji-go-macos-arm64-1.0.0.tar.gz`
+**macOS Apple Silicon**: `koemoji-go-macos-arm64-1.1.0.tar.gz`
 ```
 📁 koemoji-go-macos-arm64-1.0.0.tar.gz  
 ├── koemoji-go         # Apple Silicon executable
@@ -179,12 +179,12 @@ The following directories will be automatically created on first run:
 ## 5. Interactive Controls
 
 During execution, you can use the following keys:
-- `c` - Show configuration
-- `l` - Show all logs
+- `c` - Configure settings
+- `l` - Display logs
 - `s` - Manual scan
+- `i` - Open input directory
+- `o` - Open output directory
 - `q` - Quit
-- `Enter` - Refresh screen
-- `Ctrl+C` - Force quit
 
 ## 6. Supported File Formats
 
@@ -327,9 +327,9 @@ tail -f koemoji.log
 ```
 
 **Generated files:**
-- Windows: `koemoji-go-windows-1.0.0.zip` (executable with icon)
-- macOS Intel: `koemoji-go-macos-intel-1.0.0.tar.gz` (Intel Mac only)
-- macOS Apple Silicon: `koemoji-go-macos-arm64-1.0.0.tar.gz` (M1/M2 Mac only)
+- Windows: `koemoji-go-windows-1.1.0.zip` (executable with icon)
+- macOS Intel: `koemoji-go-macos-intel-1.1.0.tar.gz` (Intel Mac only)
+- macOS Apple Silicon: `koemoji-go-macos-arm64-1.1.0.tar.gz` (M1/M2 Mac only)
 
 #### Simple Development Build
 ```bash
@@ -358,7 +358,7 @@ GOOS=darwin GOARCH=arm64 go build -o koemoji-go-darwin-arm64 main.go
 
 #### Setup Steps
 ```bash
-git clone https://github.com/[username]/koemoji-go.git
+git clone https://github.com/hirokitakamura/koemoji-go.git
 cd koemoji-go
 go mod tidy
 go build -o koemoji-go main.go

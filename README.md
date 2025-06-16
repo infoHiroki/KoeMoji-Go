@@ -74,9 +74,9 @@ python -m ensurepip --upgrade
 ## 2. インストール
 
 ### ダウンロード
-1. **[GitHubリリースページ](https://github.com/[username]/koemoji-go/releases)から対応OS版をダウンロード**
+1. **[GitHubリリースページ](https://github.com/hirokitakamura/koemoji-go/releases)から対応OS版をダウンロード**
 
-**Windows版**: `koemoji-go-windows-1.0.0.zip`
+**Windows版**: `koemoji-go-windows-1.1.0.zip`
 ```
 📁 koemoji-go-windows-1.0.0.zip
 ├── koemoji-go.exe     # アイコン付き実行ファイル
@@ -84,7 +84,7 @@ python -m ensurepip --upgrade
 └── README.md          # 説明書
 ```
 
-**macOS Intel版**: `koemoji-go-macos-intel-1.0.0.tar.gz`
+**macOS Intel版**: `koemoji-go-macos-intel-1.1.0.tar.gz`
 ```
 📁 koemoji-go-macos-intel-1.0.0.tar.gz  
 ├── koemoji-go         # Intel Mac用実行ファイル
@@ -92,7 +92,7 @@ python -m ensurepip --upgrade
 └── README.md          # 説明書
 ```
 
-**macOS Apple Silicon版**: `koemoji-go-macos-arm64-1.0.0.tar.gz`
+**macOS Apple Silicon版**: `koemoji-go-macos-arm64-1.1.0.tar.gz`
 ```
 📁 koemoji-go-macos-arm64-1.0.0.tar.gz  
 ├── koemoji-go         # Apple Silicon用実行ファイル
@@ -465,9 +465,9 @@ tail -f koemoji.log
 ```
 
 **生成されるファイル:**
-- Windows: `koemoji-go-windows-1.0.0.zip` (アイコン付き.exe)
-- macOS Intel: `koemoji-go-macos-intel-1.0.0.tar.gz` (Intel Mac専用)
-- macOS Apple Silicon: `koemoji-go-macos-arm64-1.0.0.tar.gz` (M1/M2 Mac専用)
+- Windows: `koemoji-go-windows-1.1.0.zip` (アイコン付き.exe)
+- macOS Intel: `koemoji-go-macos-intel-1.1.0.tar.gz` (Intel Mac専用)
+- macOS Apple Silicon: `koemoji-go-macos-arm64-1.1.0.tar.gz` (M1/M2 Mac専用)
 
 #### 開発用シンプルビルド
 ```bash
@@ -495,7 +495,7 @@ GOOS=darwin GOARCH=arm64 go build -o koemoji-go-darwin-arm64 main.go
 
 #### セットアップ手順
 ```bash
-git clone https://github.com/[username]/koemoji-go.git
+git clone https://github.com/hirokitakamura/koemoji-go.git
 cd koemoji-go
 go mod tidy
 go build -o koemoji-go main.go
