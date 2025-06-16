@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"os/exec"
+	"runtime"
 	"strconv"
 	"strings"
 )
@@ -368,13 +370,19 @@ func (app *App) configureOutputFormat(reader *bufio.Reader) bool {
 
 func (app *App) configureInputDir(reader *bufio.Reader) bool {
 	fmt.Printf("Current input directory: %s\n", app.config.InputDir)
-	fmt.Print("Enter new input directory path or press Enter to keep current: ")
+	fmt.Print("Press Enter to select folder with dialog, or type path manually: ")
 
 	input, _ := reader.ReadString('\n')
 	newDir := strings.TrimSpace(input)
 
 	if newDir == "" {
-		return false
+		// Use folder selection dialog
+		selectedDir, err := app.selectFolder("Select Input Directory")
+		if err != nil {
+			fmt.Printf("Folder selection failed: %v\n", err)
+			return false
+		}
+		newDir = selectedDir
 	}
 
 	app.config.InputDir = newDir
@@ -384,13 +392,19 @@ func (app *App) configureInputDir(reader *bufio.Reader) bool {
 
 func (app *App) configureOutputDir(reader *bufio.Reader) bool {
 	fmt.Printf("Current output directory: %s\n", app.config.OutputDir)
-	fmt.Print("Enter new output directory path or press Enter to keep current: ")
+	fmt.Print("Press Enter to select folder with dialog, or type path manually: ")
 
 	input, _ := reader.ReadString('\n')
 	newDir := strings.TrimSpace(input)
 
 	if newDir == "" {
-		return false
+		// Use folder selection dialog
+		selectedDir, err := app.selectFolder("Select Output Directory")
+		if err != nil {
+			fmt.Printf("Folder selection failed: %v\n", err)
+			return false
+		}
+		newDir = selectedDir
 	}
 
 	app.config.OutputDir = newDir
@@ -400,13 +414,19 @@ func (app *App) configureOutputDir(reader *bufio.Reader) bool {
 
 func (app *App) configureArchiveDir(reader *bufio.Reader) bool {
 	fmt.Printf("Current archive directory: %s\n", app.config.ArchiveDir)
-	fmt.Print("Enter new archive directory path or press Enter to keep current: ")
+	fmt.Print("Press Enter to select folder with dialog, or type path manually: ")
 
 	input, _ := reader.ReadString('\n')
 	newDir := strings.TrimSpace(input)
 
 	if newDir == "" {
-		return false
+		// Use folder selection dialog
+		selectedDir, err := app.selectFolder("Select Archive Directory")
+		if err != nil {
+			fmt.Printf("Folder selection failed: %v\n", err)
+			return false
+		}
+		newDir = selectedDir
 	}
 
 	app.config.ArchiveDir = newDir
@@ -428,6 +448,36 @@ func (app *App) resetToDefaults(reader *bufio.Reader) bool {
 	}
 
 	return false
+}
+
+func (app *App) selectFolder(title string) (string, error) {
+	var cmd *exec.Cmd
+	
+	switch runtime.GOOS {
+	case "windows":
+		cmd = exec.Command("powershell", "-Command",
+			"Add-Type -AssemblyName System.Windows.Forms; "+
+				"$folder = New-Object System.Windows.Forms.FolderBrowserDialog; "+
+				"$folder.Description = '"+title+"'; "+
+				"if ($folder.ShowDialog() -eq 'OK') { $folder.SelectedPath }")
+	case "darwin":
+		cmd = exec.Command("osascript", "-e",
+			"POSIX path of (choose folder with prompt \""+title+"\")")
+	default:
+		return "", fmt.Errorf("folder selection not supported on this platform")
+	}
+	
+	output, err := cmd.Output()
+	if err != nil {
+		return "", err
+	}
+	
+	selectedPath := strings.TrimSpace(string(output))
+	if selectedPath == "" {
+		return "", fmt.Errorf("no folder selected")
+	}
+	
+	return selectedPath, nil
 }
 
 func (app *App) saveConfig(configPath string) error {
