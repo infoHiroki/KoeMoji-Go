@@ -24,10 +24,11 @@ func (app *App) refreshDisplay() {
 
 func (app *App) displayHeader() {
 	app.updateFileCounts()
+	msg := app.getMessages()
 
-	status := "🟢 Active"
+	status := "🟢 " + msg.Active
 	if app.isProcessing {
-		status = "🟡 Processing"
+		status = "🟡 " + msg.Processing
 	}
 
 	uptime := time.Since(app.startTime)
@@ -36,42 +37,58 @@ func (app *App) displayHeader() {
 
 	app.mu.Lock()
 	queueCount := len(app.queuedFiles)
-	processingDisplay := "None"
+	processingDisplay := msg.None
 	if app.processingFile != "" {
 		processingDisplay = app.processingFile
 	}
 	app.mu.Unlock()
 
-	fmt.Printf("%s | Queue: %d | Processing: %s\n",
-		status, queueCount, processingDisplay)
-	fmt.Printf("📁 Input: %d → Output: %d → Archive: %d\n",
-		app.inputCount, app.outputCount, app.archiveCount)
+	fmt.Printf("%s | %s: %d | %s: %s\n",
+		status, msg.Queue, queueCount, msg.Processing, processingDisplay)
+	fmt.Printf("📁 %s: %d → %s: %d → %s: %d\n",
+		msg.Input, app.inputCount, msg.Output, app.outputCount, msg.Archive, app.archiveCount)
 
-	lastScanStr := "Never"
-	nextScanStr := "Soon"
+	lastScanStr := msg.Never
+	nextScanStr := msg.Soon
 	if !app.lastScanTime.IsZero() {
 		lastScanStr = app.lastScanTime.Format("15:04:05")
 		nextScan := app.lastScanTime.Add(time.Duration(app.config.ScanIntervalMinutes) * time.Minute)
 		nextScanStr = nextScan.Format("15:04:05")
 	}
 
-	fmt.Printf("⏰ Last: %s | Next: %s | Uptime: %s\n",
-		lastScanStr, nextScanStr, app.formatDuration(uptime))
+	fmt.Printf("⏰ %s: %s | %s: %s | %s: %s\n",
+		msg.Last, lastScanStr, msg.Next, nextScanStr, msg.Uptime, app.formatDuration(uptime))
 	fmt.Println()
 }
 
 func (app *App) displayRealtimeLogs() {
 	app.logMutex.RLock()
 	defer app.logMutex.RUnlock()
+	msg := app.getMessages()
 
 	for _, entry := range app.logBuffer {
 		color := app.getLogColor(entry.Level)
 		timestamp := entry.Timestamp.Format("15:04:05")
+		
+		// Convert log level to localized version
+		localizedLevel := entry.Level
+		switch entry.Level {
+		case "INFO":
+			localizedLevel = msg.LogInfo
+		case "PROC":
+			localizedLevel = msg.LogProc
+		case "DONE":
+			localizedLevel = msg.LogDone
+		case "ERROR":
+			localizedLevel = msg.LogError
+		case "DEBUG":
+			localizedLevel = msg.LogDebug
+		}
 
 		if color != "" {
-			fmt.Printf("%s%-5s%s %s %s\n", color, entry.Level, ColorReset, timestamp, entry.Message)
+			fmt.Printf("%s%-5s%s %s %s\n", color, localizedLevel, ColorReset, timestamp, entry.Message)
 		} else {
-			fmt.Printf("[%-5s] %s %s\n", entry.Level, timestamp, entry.Message)
+			fmt.Printf("[%-5s] %s %s\n", localizedLevel, timestamp, entry.Message)
 		}
 	}
 
@@ -82,13 +99,16 @@ func (app *App) displayRealtimeLogs() {
 }
 
 func (app *App) displayCommands() {
-	fmt.Println("c=config l=logs s=scan q=quit")
+	msg := app.getMessages()
+	fmt.Printf("c=%s l=%s s=%s q=%s\n", msg.ConfigCmd, msg.LogsCmd, msg.ScanCmd, msg.QuitCmd)
 	fmt.Print("> ")
 }
 
 func (app *App) displayLogs() {
+	msg := app.getMessages()
+	
 	if _, err := os.Stat("koemoji.log"); os.IsNotExist(err) {
-		fmt.Println("Log file not found")
+		fmt.Println(msg.FileNotFound)
 		return
 	}
 
@@ -99,12 +119,12 @@ func (app *App) displayLogs() {
 	case "darwin":
 		cmd = exec.Command("open", "koemoji.log")
 	default:
-		fmt.Println("Log viewing not supported on this platform")
+		fmt.Println(msg.UnsupportedOS)
 		return
 	}
 
 	if err := cmd.Run(); err != nil {
-		fmt.Printf("Failed to open log file: %v\n", err)
+		fmt.Printf(msg.LogFileError, err)
 	}
 }
 

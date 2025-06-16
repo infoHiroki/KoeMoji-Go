@@ -23,7 +23,8 @@ func (app *App) startProcessing() {
 
 func (app *App) scanAndProcess() {
 	app.lastScanTime = time.Now()
-	app.logInfo("Scanning for new files...")
+	msg := app.getMessages()
+	app.logInfo(msg.ScanningDir)
 
 	files, err := filepath.Glob(filepath.Join(app.config.InputDir, "*"))
 	if err != nil {
@@ -37,7 +38,7 @@ func (app *App) scanAndProcess() {
 		return
 	}
 
-	app.logInfo("Found %d new file(s) to process", len(newFiles))
+	app.logInfo(msg.FoundFiles, len(newFiles))
 
 	// Add files to queue
 	app.mu.Lock()
@@ -96,18 +97,19 @@ func (app *App) processQueue() {
 		app.mu.Unlock()
 
 		// Process the file
-		app.logProc("Processing: %s", app.processingFile)
+		msg := app.getMessages()
+		app.logProc(msg.ProcessingFile, app.processingFile)
 		startTime := time.Now()
 
 		if err := app.transcribeAudio(filePath); err != nil {
-			app.logError("Failed to process %s: %v", app.processingFile, err)
+			app.logError(msg.ProcessFailed, app.processingFile, err)
 		} else {
 			duration := time.Since(startTime)
-			app.logDone("Completed: %s (%s)", app.processingFile, app.formatDuration(duration))
+			app.logDone(msg.ProcessComplete, app.processingFile, app.formatDuration(duration))
 
 			// Move to archive
 			if err := app.moveToArchive(filePath); err != nil {
-				app.logError("Failed to archive %s: %v", app.processingFile, err)
+				app.logError(msg.ProcessFailed, app.processingFile, err)
 			}
 		}
 	}

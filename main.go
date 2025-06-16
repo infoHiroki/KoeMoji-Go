@@ -123,7 +123,8 @@ func (app *App) initLogger() {
 
 	// Only timestamps for file logging, no prefix for console
 	app.logger = log.New(io.MultiWriter(logFile), "", log.LstdFlags)
-	app.logInfo("Starting KoeMoji-Go v%s", version)
+	msg := app.getMessages()
+	app.logInfo(msg.AppStarted, version)
 }
 
 func (app *App) run() {
@@ -137,7 +138,8 @@ func (app *App) run() {
 	app.logInfo("Monitoring %s directory every %d minutes", app.config.InputDir, app.config.ScanIntervalMinutes)
 
 	<-sigChan
-	app.logInfo("Shutting down KoeMoji-Go...")
+	msg := app.getMessages()
+	app.logInfo(msg.ShuttingDown)
 	app.wg.Wait()
 }
 

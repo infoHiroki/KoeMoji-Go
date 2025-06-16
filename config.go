@@ -14,6 +14,7 @@ import (
 type Config struct {
 	WhisperModel        string `json:"whisper_model"`
 	Language            string `json:"language"`
+	UILanguage          string `json:"ui_language"`
 	ScanIntervalMinutes int    `json:"scan_interval_minutes"`
 	MaxCpuPercent       int    `json:"max_cpu_percent"`
 	ComputeType         string `json:"compute_type"`
@@ -29,6 +30,7 @@ func getDefaultConfig() *Config {
 	return &Config{
 		WhisperModel:        "medium",
 		Language:            "ja",
+		UILanguage:          "en",
 		ScanIntervalMinutes: 10,
 		MaxCpuPercent:       95,
 		ComputeType:         "int8",
@@ -70,19 +72,20 @@ func (app *App) configureSettings(configPath string) {
 		fmt.Println("\n=== KoeMoji-Go Configuration ===")
 		fmt.Printf("1. Whisper Model: %s\n", app.config.WhisperModel)
 		fmt.Printf("2. Language: %s\n", app.config.Language)
-		fmt.Printf("3. Scan Interval: %d minutes\n", app.config.ScanIntervalMinutes)
-		fmt.Printf("4. Max CPU Percent: %d%%\n", app.config.MaxCpuPercent)
-		fmt.Printf("5. Compute Type: %s\n", app.config.ComputeType)
-		fmt.Printf("6. Use Colors: %t\n", app.config.UseColors)
-		fmt.Printf("7. UI Mode: %s\n", app.config.UIMode)
-		fmt.Printf("8. Output Format: %s\n", app.config.OutputFormat)
-		fmt.Printf("9. Input Directory: %s\n", app.config.InputDir)
-		fmt.Printf("10. Output Directory: %s\n", app.config.OutputDir)
-		fmt.Printf("11. Archive Directory: %s\n", app.config.ArchiveDir)
+		fmt.Printf("3. UI Language: %s\n", app.config.UILanguage)
+		fmt.Printf("4. Scan Interval: %d minutes\n", app.config.ScanIntervalMinutes)
+		fmt.Printf("5. Max CPU Percent: %d%%\n", app.config.MaxCpuPercent)
+		fmt.Printf("6. Compute Type: %s\n", app.config.ComputeType)
+		fmt.Printf("7. Use Colors: %t\n", app.config.UseColors)
+		fmt.Printf("8. UI Mode: %s\n", app.config.UIMode)
+		fmt.Printf("9. Output Format: %s\n", app.config.OutputFormat)
+		fmt.Printf("10. Input Directory: %s\n", app.config.InputDir)
+		fmt.Printf("11. Output Directory: %s\n", app.config.OutputDir)
+		fmt.Printf("12. Archive Directory: %s\n", app.config.ArchiveDir)
 		fmt.Println("r. Reset to defaults")
 		fmt.Println("s. Save and exit")
 		fmt.Println("q. Quit without saving")
-		fmt.Print("\nSelect option (1-11, r, s, q): ")
+		fmt.Print("\nSelect option (1-12, r, s, q): ")
 
 		input, _ := reader.ReadString('\n')
 		choice := strings.TrimSpace(input)
@@ -97,38 +100,42 @@ func (app *App) configureSettings(configPath string) {
 				modified = true
 			}
 		case "3":
-			if app.configureScanInterval(reader) {
+			if app.configureUILanguage(reader) {
 				modified = true
 			}
 		case "4":
-			if app.configureMaxCpuPercent(reader) {
+			if app.configureScanInterval(reader) {
 				modified = true
 			}
 		case "5":
-			if app.configureComputeType(reader) {
+			if app.configureMaxCpuPercent(reader) {
 				modified = true
 			}
 		case "6":
-			if app.configureUseColors(reader) {
+			if app.configureComputeType(reader) {
 				modified = true
 			}
 		case "7":
-			if app.configureUIMode(reader) {
+			if app.configureUseColors(reader) {
 				modified = true
 			}
 		case "8":
-			if app.configureOutputFormat(reader) {
+			if app.configureUIMode(reader) {
 				modified = true
 			}
 		case "9":
-			if app.configureInputDir(reader) {
+			if app.configureOutputFormat(reader) {
 				modified = true
 			}
 		case "10":
-			if app.configureOutputDir(reader) {
+			if app.configureInputDir(reader) {
 				modified = true
 			}
 		case "11":
+			if app.configureOutputDir(reader) {
+				modified = true
+			}
+		case "12":
 			if app.configureArchiveDir(reader) {
 				modified = true
 			}
@@ -276,6 +283,37 @@ func (app *App) configureComputeType(reader *bufio.Reader) bool {
 	if idx, err := strconv.Atoi(choice); err == nil && idx >= 1 && idx <= len(types) {
 		app.config.ComputeType = types[idx-1]
 		fmt.Printf("Compute type set to: %s\n", app.config.ComputeType)
+		return true
+	}
+
+	fmt.Println("Invalid selection.")
+	return false
+}
+
+func (app *App) configureUILanguage(reader *bufio.Reader) bool {
+	languages := []string{"en", "ja"}
+	languageNames := []string{"English", "日本語"}
+
+	fmt.Println("\nAvailable UI languages:")
+	for i, lang := range languages {
+		fmt.Printf("%d. %s (%s)", i+1, lang, languageNames[i])
+		if lang == app.config.UILanguage {
+			fmt.Print(" (current)")
+		}
+		fmt.Println()
+	}
+	fmt.Print("Select UI language (1-2) or press Enter to keep current: ")
+
+	input, _ := reader.ReadString('\n')
+	choice := strings.TrimSpace(input)
+
+	if choice == "" {
+		return false
+	}
+
+	if idx, err := strconv.Atoi(choice); err == nil && idx >= 1 && idx <= len(languages) {
+		app.config.UILanguage = languages[idx-1]
+		fmt.Printf("UI language set to: %s\n", app.config.UILanguage)
 		return true
 	}
 
