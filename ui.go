@@ -33,7 +33,7 @@ func (app *App) displayHeader() {
 	uptime := time.Since(app.startTime)
 
 	fmt.Println("=== KoeMoji-Go v" + version + " ===")
-	
+
 	app.mu.Lock()
 	queueCount := len(app.queuedFiles)
 	processingDisplay := "None"

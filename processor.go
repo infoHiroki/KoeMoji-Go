@@ -104,7 +104,6 @@ func (app *App) processQueue() {
 		} else {
 			duration := time.Since(startTime)
 			app.logDone("Completed: %s (%s)", app.processingFile, app.formatDuration(duration))
-			app.totalProcessed++
 
 			// Move to archive
 			if err := app.moveToArchive(filePath); err != nil {

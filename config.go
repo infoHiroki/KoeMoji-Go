@@ -60,23 +60,6 @@ func (app *App) loadConfig(configPath string) {
 	}
 }
 
-func (app *App) displayConfig() {
-	fmt.Println("\n--- Configuration (config.json) ---")
-	fmt.Printf("Whisper model: %s\n", app.config.WhisperModel)
-	fmt.Printf("Language: %s\n", app.config.Language)
-	fmt.Printf("Scan interval: %d minutes\n", app.config.ScanIntervalMinutes)
-	fmt.Printf("Max CPU percent: %d%%\n", app.config.MaxCpuPercent)
-	fmt.Printf("Compute type: %s\n", app.config.ComputeType)
-	fmt.Printf("Use colors: %t\n", app.config.UseColors)
-	fmt.Printf("UI mode: %s\n", app.config.UIMode)
-	fmt.Printf("Output format: %s\n", app.config.OutputFormat)
-	fmt.Println("\nDirectories:")
-	fmt.Printf("  Input: %s\n", app.config.InputDir)
-	fmt.Printf("  Output: %s\n", app.config.OutputDir)
-	fmt.Printf("  Archive: %s\n", app.config.ArchiveDir)
-	fmt.Println("---")
-}
-
 func (app *App) configureSettings(configPath string) {
 	reader := bufio.NewReader(os.Stdin)
 	modified := false

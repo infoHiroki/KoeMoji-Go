@@ -20,8 +20,8 @@ func (app *App) getWhisperCommand() string {
 
 	// 2. 標準的なインストール場所を検索
 	standardPaths := []string{
-		filepath.Join(os.Getenv("HOME"), ".local", "bin", "whisper-ctranslate2"),                // Linux/macOS user install
-		"/usr/local/bin/whisper-ctranslate2",                                                    // Linux/macOS system
+		filepath.Join(os.Getenv("HOME"), ".local", "bin", "whisper-ctranslate2"),                    // Linux/macOS user install
+		"/usr/local/bin/whisper-ctranslate2",                                                        // Linux/macOS system
 		filepath.Join(os.Getenv("HOME"), "Library", "Python", "3.12", "bin", "whisper-ctranslate2"), // macOS Python 3.12
 		filepath.Join(os.Getenv("HOME"), "Library", "Python", "3.11", "bin", "whisper-ctranslate2"), // macOS Python 3.11
 		filepath.Join(os.Getenv("HOME"), "Library", "Python", "3.10", "bin", "whisper-ctranslate2"), // macOS Python 3.10
@@ -84,7 +84,7 @@ func (app *App) transcribeAudio(inputFile string) error {
 	// Start progress monitoring
 	startTime := time.Now()
 	done := make(chan bool)
-	
+
 	// Monitor progress in background
 	go app.monitorProgress(filepath.Base(inputFile), startTime, done)
 
@@ -94,7 +94,7 @@ func (app *App) transcribeAudio(inputFile string) error {
 		done <- true
 		return fmt.Errorf("failed to create stdout pipe: %w", err)
 	}
-	
+
 	stderr, err := cmd.StderrPipe()
 	if err != nil {
 		done <- true
@@ -113,10 +113,10 @@ func (app *App) transcribeAudio(inputFile string) error {
 
 	// Wait for completion
 	err = cmd.Wait()
-	
+
 	// Stop progress monitoring
 	done <- true
-	
+
 	if err != nil {
 		return fmt.Errorf("whisper execution failed: %w", err)
 	}
@@ -127,7 +127,7 @@ func (app *App) transcribeAudio(inputFile string) error {
 func (app *App) readCommandOutput(pipe io.ReadCloser, source string) {
 	defer pipe.Close()
 	scanner := bufio.NewScanner(pipe)
-	
+
 	for scanner.Scan() {
 		line := strings.TrimSpace(scanner.Text())
 		if line != "" {

@@ -34,6 +34,7 @@ type LogEntry struct {
 
 type App struct {
 	config         *Config
+	configPath     string
 	logger         *log.Logger
 	debugMode      bool
 	wg             sync.WaitGroup
@@ -41,11 +42,10 @@ type App struct {
 	mu             sync.Mutex
 
 	// UI related fields
-	startTime    time.Time
-	lastScanTime time.Time
-	logBuffer    []LogEntry
+	startTime      time.Time
+	lastScanTime   time.Time
+	logBuffer      []LogEntry
 	logMutex     sync.RWMutex
-	totalProcessed int
 	inputCount   int
 	outputCount  int
 	archiveCount int
@@ -70,6 +70,7 @@ func main() {
 	}
 
 	app := &App{
+		configPath:     configPath,
 		debugMode:      debugMode,
 		processedFiles: make(map[string]bool),
 		startTime:      time.Now(),
@@ -81,7 +82,7 @@ func main() {
 	app.loadConfig(configPath)
 
 	if configMode {
-		app.configureSettings(configPath)
+		app.configureSettings(app.configPath)
 		return
 	}
 
@@ -107,7 +108,7 @@ func showHelpText() {
 	fmt.Println("\nOptions:")
 	flag.PrintDefaults()
 	fmt.Println("\nInteractive commands:")
-	fmt.Println("  c - Display configuration")
+	fmt.Println("  c - Configure settings")
 	fmt.Println("  l - Display all logs")
 	fmt.Println("  s - Scan now")
 	fmt.Println("  q - Quit")
@@ -158,9 +159,7 @@ func (app *App) handleUserInput() {
 				app.refreshDisplay()
 			}
 		case "c":
-			app.displayConfig()
-			fmt.Print("Press Enter to continue...")
-			bufio.NewReader(os.Stdin).ReadString('\n')
+			app.configureSettings(app.configPath)
 			if app.config.UIMode == "enhanced" {
 				app.refreshDisplay()
 			}
