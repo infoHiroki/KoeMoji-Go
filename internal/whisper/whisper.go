@@ -1,20 +1,25 @@
-package main
+package whisper
 
 import (
 	"bufio"
 	"fmt"
 	"io"
+	"log"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
+	"sync"
 	"time"
+
+	"github.com/hirokitakamura/koemoji-go/internal/config"
+	"github.com/hirokitakamura/koemoji-go/internal/logger"
+	"github.com/hirokitakamura/koemoji-go/internal/ui"
 )
 
-func (app *App) getWhisperCommand() string {
+func getWhisperCommand() string {
 	// 1. 通常のPATHで試す
 	if _, err := exec.LookPath("whisper-ctranslate2"); err == nil {
-		app.logDebug("Found whisper-ctranslate2 in PATH")
 		return "whisper-ctranslate2"
 	}
 
@@ -30,65 +35,65 @@ func (app *App) getWhisperCommand() string {
 
 	for _, path := range standardPaths {
 		if _, err := os.Stat(path); err == nil {
-			app.logDebug("Found whisper-ctranslate2 at: %s", path)
 			return path
 		}
 	}
 
-	app.logError("whisper-ctranslate2 not found in any standard location")
 	return "whisper-ctranslate2" // フォールバック
 }
 
-func (app *App) isFasterWhisperAvailable() bool {
-	cmd := exec.Command(app.getWhisperCommand(), "--help")
+func isFasterWhisperAvailable() bool {
+	cmd := exec.Command(getWhisperCommand(), "--help")
 	cmd.Stdout = nil
 	cmd.Stderr = nil
 	return cmd.Run() == nil
 }
 
-func (app *App) installFasterWhisper() error {
-	app.logInfo("Installing faster-whisper and whisper-ctranslate2...")
+func installFasterWhisper(log *log.Logger, logBuffer *[]logger.LogEntry, logMutex *sync.RWMutex) error {
+	logger.LogInfo(log, logBuffer, logMutex, "Installing faster-whisper and whisper-ctranslate2...")
 	cmd := exec.Command("pip", "install", "faster-whisper", "whisper-ctranslate2")
 	if err := cmd.Run(); err != nil {
 		return fmt.Errorf("pip install failed: %w", err)
 	}
-	app.logInfo("FasterWhisper installed successfully")
+	logger.LogInfo(log, logBuffer, logMutex, "FasterWhisper installed successfully")
 	return nil
 }
 
-func (app *App) transcribeAudio(inputFile string) error {
+func TranscribeAudio(config *config.Config, log *log.Logger, logBuffer *[]logger.LogEntry, 
+	logMutex *sync.RWMutex, debugMode bool, inputFile string) error {
+	
 	// セキュリティチェック: inputディレクトリ内のファイルのみ許可
 	absPath, err := filepath.Abs(inputFile)
 	if err != nil {
-		msg := app.getMessages()
+		msg := ui.GetMessages(config)
 		return fmt.Errorf(msg.InvalidPath, err)
 	}
-	inputDir, _ := filepath.Abs(app.config.InputDir)
+	inputDir, _ := filepath.Abs(config.InputDir)
 	if !strings.HasPrefix(absPath, inputDir+string(os.PathSeparator)) {
-		msg := app.getMessages()
+		msg := ui.GetMessages(config)
 		return fmt.Errorf(msg.InvalidPath, inputFile)
 	}
 
-	whisperCmd := app.getWhisperCommand()
+	whisperCmd := getWhisperCommand()
 
 	cmd := exec.Command(whisperCmd,
-		"--model", app.config.WhisperModel,
-		"--language", app.config.Language,
-		"--output_dir", app.config.OutputDir,
-		"--output_format", app.config.OutputFormat,
-		"--compute_type", app.config.ComputeType,
+		"--model", config.WhisperModel,
+		"--language", config.Language,
+		"--output_dir", config.OutputDir,
+		"--output_format", config.OutputFormat,
+		"--compute_type", config.ComputeType,
 		"--verbose", "True", // Enable verbose for progress
 		inputFile,
 	)
 
-	app.logDebug("Whisper command: %s", strings.Join(cmd.Args, " "))
+	logger.LogDebug(log, logBuffer, logMutex, debugMode, "Whisper command: %s", strings.Join(cmd.Args, " "))
 
 	// Start progress monitoring
 	startTime := time.Now()
 	done := make(chan bool)
 
 	// Monitor progress in background
-	go app.monitorProgress(filepath.Base(inputFile), startTime, done)
+	go monitorProgress(log, logBuffer, logMutex, filepath.Base(inputFile), startTime, done)
 
 	// Capture and display output
 	stdout, err := cmd.StdoutPipe()
@@ -110,8 +115,8 @@ func (app *App) transcribeAudio(inputFile string) error {
 	}
 
 	// Read output in background
-	go app.readCommandOutput(stdout, "STDOUT")
-	go app.readCommandOutput(stderr, "STDERR")
+	go readCommandOutput(log, logBuffer, logMutex, debugMode, stdout, "STDOUT")
+	go readCommandOutput(log, logBuffer, logMutex, debugMode, stderr, "STDERR")
 
 	// Wait for completion
 	err = cmd.Wait()
@@ -120,14 +125,16 @@ func (app *App) transcribeAudio(inputFile string) error {
 	done <- true
 
 	if err != nil {
-		msg := app.getMessages()
+		msg := ui.GetMessages(config)
 		return fmt.Errorf(msg.TranscribeFail, err)
 	}
 
 	return nil
 }
 
-func (app *App) readCommandOutput(pipe io.ReadCloser, source string) {
+func readCommandOutput(log *log.Logger, logBuffer *[]logger.LogEntry, logMutex *sync.RWMutex, 
+	debugMode bool, pipe io.ReadCloser, source string) {
+	
 	defer pipe.Close()
 	scanner := bufio.NewScanner(pipe)
 
@@ -135,12 +142,14 @@ func (app *App) readCommandOutput(pipe io.ReadCloser, source string) {
 		line := strings.TrimSpace(scanner.Text())
 		if line != "" {
 			// Log other output for debugging
-			app.logDebug("[%s] %s", source, line)
+			logger.LogDebug(log, logBuffer, logMutex, debugMode, "[%s] %s", source, line)
 		}
 	}
 }
 
-func (app *App) monitorProgress(filename string, startTime time.Time, done chan bool) {
+func monitorProgress(log *log.Logger, logBuffer *[]logger.LogEntry, logMutex *sync.RWMutex, 
+	filename string, startTime time.Time, done chan bool) {
+	
 	ticker := time.NewTicker(30 * time.Second) // 30秒ごとに進行状況を報告
 	defer ticker.Stop()
 
@@ -150,20 +159,36 @@ func (app *App) monitorProgress(filename string, startTime time.Time, done chan 
 			return
 		case <-ticker.C:
 			elapsed := time.Since(startTime)
-			app.logInfo("Still processing %s (elapsed: %s)", filename, app.formatDuration(elapsed))
+			logger.LogInfo(log, logBuffer, logMutex, "Still processing %s (elapsed: %s)", filename, formatDuration(elapsed))
 		}
 	}
 }
 
-func (app *App) ensureDependencies() {
-	if !app.isFasterWhisperAvailable() {
-		app.logInfo("FasterWhisper not found. Attempting to install...")
-		if err := app.installFasterWhisper(); err != nil {
-			app.logError("FasterWhisper installation failed: %v", err)
-			app.logError("Please install manually: pip install faster-whisper whisper-ctranslate2")
+func EnsureDependencies(config *config.Config, log *log.Logger, logBuffer *[]logger.LogEntry, 
+	logMutex *sync.RWMutex, debugMode bool) {
+	
+	if !isFasterWhisperAvailable() {
+		logger.LogInfo(log, logBuffer, logMutex, "FasterWhisper not found. Attempting to install...")
+		if err := installFasterWhisper(log, logBuffer, logMutex); err != nil {
+			logger.LogError(log, logBuffer, logMutex, "FasterWhisper installation failed: %v", err)
+			logger.LogError(log, logBuffer, logMutex, "Please install manually: pip install faster-whisper whisper-ctranslate2")
 			os.Exit(1)
 		}
 	} else {
-		app.logDebug("FasterWhisper is available")
+		logger.LogDebug(log, logBuffer, logMutex, debugMode, "FasterWhisper is available")
+	}
+}
+
+func formatDuration(d time.Duration) string {
+	hours := int(d.Hours())
+	minutes := int(d.Minutes()) % 60
+	seconds := int(d.Seconds()) % 60
+	
+	if hours > 0 {
+		return fmt.Sprintf("%dh%dm%ds", hours, minutes, seconds)
+	} else if minutes > 0 {
+		return fmt.Sprintf("%dm%ds", minutes, seconds)
+	} else {
+		return fmt.Sprintf("%ds", seconds)
 	}
 }

@@ -1,4 +1,4 @@
-package main
+package ui
 
 import (
 	"fmt"
@@ -7,69 +7,89 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
+	"sync"
 	"time"
+
+	"github.com/hirokitakamura/koemoji-go/internal/config"
+	"github.com/hirokitakamura/koemoji-go/internal/logger"
+)
+
+// Color constants
+const (
+	ColorReset  = "\033[0m"
+	ColorRed    = "\033[31m" // ERROR
+	ColorGreen  = "\033[32m" // DONE
+	ColorYellow = "\033[33m" // PROC
+	ColorBlue   = "\033[34m" // INFO
+	ColorGray   = "\033[37m" // DEBUG
 )
 
 // UI functions
-func (app *App) refreshDisplay() {
-	if app.config == nil || app.config.UIMode != "enhanced" {
+func RefreshDisplay(config *config.Config, startTime, lastScanTime time.Time, logBuffer *[]logger.LogEntry, 
+	logMutex *sync.RWMutex, inputCount, outputCount, archiveCount int, queuedFiles *[]string, 
+	processingFile string, isProcessing bool, mu *sync.Mutex) {
+	
+	if config == nil || config.UIMode != "enhanced" {
 		return
 	}
 
 	// Clear screen and move cursor to top
 	fmt.Print("\033[2J\033[H")
 
-	app.displayHeader()
-	app.displayRealtimeLogs()
-	app.displayCommands()
+	displayHeader(config, startTime, lastScanTime, inputCount, outputCount, archiveCount, 
+		queuedFiles, processingFile, isProcessing, mu)
+	displayRealtimeLogs(config, logBuffer, logMutex)
+	displayCommands(config)
 }
 
-func (app *App) displayHeader() {
-	app.updateFileCounts()
-	msg := app.getMessages()
+func displayHeader(config *config.Config, startTime, lastScanTime time.Time, inputCount, outputCount, archiveCount int, 
+	queuedFiles *[]string, processingFile string, isProcessing bool, mu *sync.Mutex) {
+	
+	updateFileCounts(config, &inputCount, &outputCount, &archiveCount)
+	msg := GetMessages(config)
 
 	status := "🟢 " + msg.Active
-	if app.isProcessing {
+	if isProcessing {
 		status = "🟡 " + msg.Processing
 	}
 
-	uptime := time.Since(app.startTime)
+	uptime := time.Since(startTime)
 
-	fmt.Println("=== KoeMoji-Go v" + version + " ===")
+	fmt.Println("=== KoeMoji-Go v1.0.0 ===")
 
-	app.mu.Lock()
-	queueCount := len(app.queuedFiles)
+	mu.Lock()
+	queueCount := len(*queuedFiles)
 	processingDisplay := msg.None
-	if app.processingFile != "" {
-		processingDisplay = app.processingFile
+	if processingFile != "" {
+		processingDisplay = processingFile
 	}
-	app.mu.Unlock()
+	mu.Unlock()
 
 	fmt.Printf("%s | %s: %d | %s: %s\n",
 		status, msg.Queue, queueCount, msg.Processing, processingDisplay)
 	fmt.Printf("📁 %s: %d → %s: %d → %s: %d\n",
-		msg.Input, app.inputCount, msg.Output, app.outputCount, msg.Archive, app.archiveCount)
+		msg.Input, inputCount, msg.Output, outputCount, msg.Archive, archiveCount)
 
 	lastScanStr := msg.Never
 	nextScanStr := msg.Soon
-	if !app.lastScanTime.IsZero() {
-		lastScanStr = app.lastScanTime.Format("15:04:05")
-		nextScan := app.lastScanTime.Add(time.Duration(app.config.ScanIntervalMinutes) * time.Minute)
+	if !lastScanTime.IsZero() {
+		lastScanStr = lastScanTime.Format("15:04:05")
+		nextScan := lastScanTime.Add(time.Duration(config.ScanIntervalMinutes) * time.Minute)
 		nextScanStr = nextScan.Format("15:04:05")
 	}
 
 	fmt.Printf("⏰ %s: %s | %s: %s | %s: %s\n",
-		msg.Last, lastScanStr, msg.Next, nextScanStr, msg.Uptime, app.formatDuration(uptime))
+		msg.Last, lastScanStr, msg.Next, nextScanStr, msg.Uptime, formatDuration(uptime))
 	fmt.Println()
 }
 
-func (app *App) displayRealtimeLogs() {
-	app.logMutex.RLock()
-	defer app.logMutex.RUnlock()
-	msg := app.getMessages()
+func displayRealtimeLogs(config *config.Config, logBuffer *[]logger.LogEntry, logMutex *sync.RWMutex) {
+	logMutex.RLock()
+	defer logMutex.RUnlock()
+	msg := GetMessages(config)
 
-	for _, entry := range app.logBuffer {
-		color := app.getLogColor(entry.Level)
+	for _, entry := range *logBuffer {
+		color := getLogColor(config, entry.Level)
 		timestamp := entry.Timestamp.Format("15:04:05")
 		
 		// Convert log level to localized version
@@ -95,19 +115,19 @@ func (app *App) displayRealtimeLogs() {
 	}
 
 	// Fill remaining lines to maintain 12-line display
-	for i := len(app.logBuffer); i < 12; i++ {
+	for i := len(*logBuffer); i < 12; i++ {
 		fmt.Println()
 	}
 }
 
-func (app *App) displayCommands() {
-	msg := app.getMessages()
+func displayCommands(config *config.Config) {
+	msg := GetMessages(config)
 	fmt.Printf("c=%s l=%s s=%s i=%s o=%s q=%s\n", msg.ConfigCmd, msg.LogsCmd, msg.ScanCmd, msg.InputDirCmd, msg.OutputDirCmd, msg.QuitCmd)
 	fmt.Print("> ")
 }
 
-func (app *App) displayLogs() {
-	msg := app.getMessages()
+func DisplayLogs(config *config.Config) {
+	msg := GetMessages(config)
 	
 	if _, err := os.Stat("koemoji.log"); os.IsNotExist(err) {
 		fmt.Println(msg.FileNotFound)
@@ -130,7 +150,7 @@ func (app *App) displayLogs() {
 	}
 }
 
-func (app *App) openDirectory(dirPath string) error {
+func OpenDirectory(dirPath string) error {
 	var cmd *exec.Cmd
 	switch runtime.GOOS {
 	case "windows":
@@ -145,8 +165,8 @@ func (app *App) openDirectory(dirPath string) error {
 }
 
 // Utility functions
-func (app *App) supportsColor() bool {
-	if app.config == nil || !app.config.UseColors {
+func supportsColor(config *config.Config) bool {
+	if config == nil || !config.UseColors {
 		return false
 	}
 
@@ -158,8 +178,8 @@ func (app *App) supportsColor() bool {
 	return term != "" && term != "dumb"
 }
 
-func (app *App) getLogColor(level string) string {
-	if !app.supportsColor() {
+func getLogColor(config *config.Config, level string) string {
+	if !supportsColor(config) {
 		return ""
 	}
 
@@ -179,7 +199,7 @@ func (app *App) getLogColor(level string) string {
 	}
 }
 
-func (app *App) formatDuration(d time.Duration) string {
+func formatDuration(d time.Duration) string {
 	hours := int(d.Hours())
 	minutes := int(d.Minutes()) % 60
 	seconds := int(d.Seconds()) % 60
@@ -193,27 +213,27 @@ func (app *App) formatDuration(d time.Duration) string {
 	}
 }
 
-func (app *App) updateFileCounts() {
+func updateFileCounts(config *config.Config, inputCount, outputCount, archiveCount *int) {
 	// Count files in each directory
-	if entries, err := os.ReadDir(app.config.InputDir); err == nil {
-		app.inputCount = 0
+	if entries, err := os.ReadDir(config.InputDir); err == nil {
+		*inputCount = 0
 		for _, entry := range entries {
-			if !entry.IsDir() && isAudioFile(entry.Name()) {
-				app.inputCount++
+			if !entry.IsDir() && IsAudioFile(entry.Name()) {
+				(*inputCount)++
 			}
 		}
 	}
 	
-	if entries, err := os.ReadDir(app.config.OutputDir); err == nil {
-		app.outputCount = len(entries)
+	if entries, err := os.ReadDir(config.OutputDir); err == nil {
+		*outputCount = len(entries)
 	}
 	
-	if entries, err := os.ReadDir(app.config.ArchiveDir); err == nil {
-		app.archiveCount = len(entries)
+	if entries, err := os.ReadDir(config.ArchiveDir); err == nil {
+		*archiveCount = len(entries)
 	}
 }
 
-func isAudioFile(filename string) bool {
+func IsAudioFile(filename string) bool {
 	ext := strings.ToLower(filepath.Ext(filename))
 	audioExts := []string{".mp3", ".wav", ".m4a", ".flac", ".ogg", ".aac", ".mp4", ".mov", ".avi"}
 	for _, audioExt := range audioExts {
