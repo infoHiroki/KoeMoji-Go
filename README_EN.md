@@ -14,14 +14,14 @@ It's a Go port of the Python-based KoeMojiAuto-cli, providing single binary dist
 - **Single Binary**: Works with just one executable file
 - **Sequential Processing**: Stable processing one file at a time
 - **FasterWhisper Integration**: High-accuracy speech recognition
-- **Cross-Platform**: Windows/Mac/Linux support
+- **Cross-Platform**: Windows/Mac support
 - **Auto Monitoring**: Automatically monitors folders and processes files
 - **Real-time UI**: Real-time display of processing status
 
 ## 1. System Requirements
 
 ### Hardware Requirements
-- **OS**: Windows 10/11, macOS 10.15+, Linux (major distributions)
+- **OS**: Windows 10/11, macOS 10.15+
 - **CPU**: Intel/AMD 64bit, Apple Silicon
 - **Memory**: 4GB+ recommended (8GB+ for better performance)
 - **Storage**: 5GB+ (including Whisper model files)
@@ -54,18 +54,6 @@ brew install python
 # https://www.python.org/downloads/macos/
 ```
 
-**Linux (Ubuntu/Debian):**
-```bash
-sudo apt update
-sudo apt install python3 python3-pip
-```
-
-**Linux (CentOS/RHEL):**
-```bash
-sudo yum install python3 python3-pip
-# or
-sudo dnf install python3 python3-pip
-```
 
 #### Check pip
 ```bash
@@ -76,7 +64,7 @@ pip3 --version
 
 If pip is not available:
 ```bash
-# macOS/Linux
+# macOS
 python3 -m ensurepip --upgrade
 
 # Windows
@@ -96,22 +84,22 @@ python -m ensurepip --upgrade
 └── README.md          # Documentation
 ```
 
-**macOS**: `koemoji-go-macos-1.0.0.tar.gz`
+**macOS Intel**: `koemoji-go-macos-intel-1.0.0.tar.gz`
 ```
-📁 koemoji-go-macos-1.0.0.tar.gz  
-├── koemoji-go-darwin-amd64    # Intel Mac executable
-├── koemoji-go-darwin-arm64    # Apple Silicon executable
-├── config.json                # Configuration file
-└── README.md                  # Documentation
-```
-
-**Linux**: `koemoji-go-linux-1.0.0.tar.gz`
-```
-📁 koemoji-go-linux-1.0.0.tar.gz
-├── koemoji-go         # Executable
+📁 koemoji-go-macos-intel-1.0.0.tar.gz  
+├── koemoji-go         # Intel Mac executable
 ├── config.json        # Configuration file
 └── README.md          # Documentation
 ```
+
+**macOS Apple Silicon**: `koemoji-go-macos-arm64-1.0.0.tar.gz`
+```
+📁 koemoji-go-macos-arm64-1.0.0.tar.gz  
+├── koemoji-go         # Apple Silicon executable
+├── config.json        # Configuration file
+└── README.md          # Documentation
+```
+
 
 2. **Extract the downloaded file**
 
@@ -133,15 +121,6 @@ koemoji-go.exe
 
 **macOS:**
 ```bash
-# Intel Mac
-./koemoji-go-darwin-amd64
-
-# Apple Silicon
-./koemoji-go-darwin-arm64
-```
-
-**Linux:**
-```bash
 ./koemoji-go
 ```
 
@@ -149,12 +128,10 @@ koemoji-go.exe
 
 To run from anywhere, add to PATH:
 
-**macOS/Linux:**
+**macOS:**
 ```bash
 # Add binary to PATH
-sudo cp koemoji-go-darwin-arm64 /usr/local/bin/koemoji-go  # Apple Silicon
-sudo cp koemoji-go-darwin-amd64 /usr/local/bin/koemoji-go  # Intel Mac
-sudo cp koemoji-go /usr/local/bin/koemoji-go               # Linux
+sudo cp koemoji-go /usr/local/bin/koemoji-go
 sudo chmod +x /usr/local/bin/koemoji-go
 
 # Alias setup (optional)
@@ -344,7 +321,6 @@ tail -f koemoji.log
 # Build for specific platform only
 ./build.sh windows   # Windows only
 ./build.sh macos     # macOS only
-./build.sh linux    # Linux only
 
 # Clean build artifacts
 ./build.sh clean
@@ -352,8 +328,8 @@ tail -f koemoji.log
 
 **Generated files:**
 - Windows: `koemoji-go-windows-1.0.0.zip` (executable with icon)
-- macOS: `koemoji-go-macos-1.0.0.tar.gz` (Intel/Apple Silicon support)
-- Linux: `koemoji-go-linux-1.0.0.tar.gz` (64bit version)
+- macOS Intel: `koemoji-go-macos-intel-1.0.0.tar.gz` (Intel Mac only)
+- macOS Apple Silicon: `koemoji-go-macos-arm64-1.0.0.tar.gz` (M1/M2 Mac only)
 
 #### Simple Development Build
 ```bash
@@ -371,8 +347,6 @@ GOOS=darwin GOARCH=amd64 go build -o koemoji-go-darwin-amd64 main.go
 # macOS Apple Silicon
 GOOS=darwin GOARCH=arm64 go build -o koemoji-go-darwin-arm64 main.go
 
-# Linux 64bit
-GOOS=linux GOARCH=amd64 go build -o koemoji-go-linux-amd64 main.go
 ```
 
 ### Development Environment Setup

@@ -25,8 +25,8 @@ func getWhisperCommand() string {
 
 	// 2. 標準的なインストール場所を検索
 	standardPaths := []string{
-		filepath.Join(os.Getenv("HOME"), ".local", "bin", "whisper-ctranslate2"),                    // Linux/macOS user install
-		"/usr/local/bin/whisper-ctranslate2",                                                        // Linux/macOS system
+		filepath.Join(os.Getenv("HOME"), ".local", "bin", "whisper-ctranslate2"),                    // macOS user install
+		"/usr/local/bin/whisper-ctranslate2",                                                        // macOS system
 		filepath.Join(os.Getenv("HOME"), "Library", "Python", "3.12", "bin", "whisper-ctranslate2"), // macOS Python 3.12
 		filepath.Join(os.Getenv("HOME"), "Library", "Python", "3.11", "bin", "whisper-ctranslate2"), // macOS Python 3.11
 		filepath.Join(os.Getenv("HOME"), "Library", "Python", "3.10", "bin", "whisper-ctranslate2"), // macOS Python 3.10

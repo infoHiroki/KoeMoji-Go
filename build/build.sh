@@ -41,11 +41,6 @@ GOOS=darwin GOARCH=arm64 go build -ldflags="-s -w" -o $DIST_DIR/${APP_NAME}-darw
 
 echo "✅ macOS builds completed"
 
-# Linux
-echo "🐧 Building Linux..."
-GOOS=linux GOARCH=amd64 go build -ldflags="-s -w" -o $DIST_DIR/${APP_NAME}-linux-amd64 $SOURCE_DIR
-
-echo "✅ Linux build completed"
 
 # Create distribution packages
 echo "📦 Creating distribution packages..."
@@ -79,14 +74,6 @@ cp ../../README.md koemoji-go-macos-arm64-$VERSION/
 tar -czf koemoji-go-macos-arm64-$VERSION.tar.gz koemoji-go-macos-arm64-$VERSION/
 rm -rf koemoji-go-macos-arm64-$VERSION
 
-# Linux package
-echo "📦 Creating Linux package..."
-mkdir -p koemoji-go-linux-$VERSION
-cp ${APP_NAME}-linux-amd64 koemoji-go-linux-$VERSION/${APP_NAME}
-cp ../../config.example.json koemoji-go-linux-$VERSION/config.json
-cp ../../README.md koemoji-go-linux-$VERSION/
-tar -czf koemoji-go-linux-$VERSION.tar.gz koemoji-go-linux-$VERSION/
-rm -rf koemoji-go-linux-$VERSION
 
 cd ..
 

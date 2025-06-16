@@ -14,14 +14,14 @@ Python版のKoeMojiAuto-cliをGoに移植し、シングルバイナリでの配
 - **シングルバイナリ**: 実行ファイル1つで動作
 - **順次処理**: 1ファイルずつ安定した処理
 - **FasterWhisper連携**: 高精度な音声認識
-- **クロスプラットフォーム**: Windows/Mac/Linux対応
+- **クロスプラットフォーム**: Windows/Mac対応
 - **自動監視**: フォルダを定期的に監視して自動処理
 - **リアルタイムUI**: 処理状況をリアルタイム表示
 
 ## 1. 動作要件の確認
 
 ### システム要件
-- **OS**: Windows 10/11, macOS 10.15+, Linux (主要ディストリビューション)
+- **OS**: Windows 10/11, macOS 10.15+
 - **CPU**: Intel/AMD 64bit, Apple Silicon
 - **メモリ**: 4GB以上推奨（8GB以上でより快適）
 - **ストレージ**: 5GB以上（Whisperモデルファイル含む）
@@ -54,18 +54,6 @@ brew install python
 # https://www.python.org/downloads/macos/
 ```
 
-**Linux (Ubuntu/Debian):**
-```bash
-sudo apt update
-sudo apt install python3 python3-pip
-```
-
-**Linux (CentOS/RHEL):**
-```bash
-sudo yum install python3 python3-pip
-# または
-sudo dnf install python3 python3-pip
-```
 
 #### pipの確認
 ```bash
@@ -76,7 +64,7 @@ pip3 --version
 
 pipが利用できない場合：
 ```bash
-# macOS/Linux
+# macOS
 python3 -m ensurepip --upgrade
 
 # Windows
@@ -112,13 +100,6 @@ python -m ensurepip --upgrade
 └── README.md          # 説明書
 ```
 
-**Linux版**: `koemoji-go-linux-1.0.0.tar.gz`
-```
-📁 koemoji-go-linux-1.0.0.tar.gz
-├── koemoji-go         # 実行ファイル
-├── config.json        # 設定ファイル
-└── README.md          # 説明書
-```
 
 2. **ダウンロードファイルを展開**
 
@@ -143,10 +124,6 @@ koemoji-go.exe
 ./koemoji-go
 ```
 
-**Linux:**
-```bash
-./koemoji-go
-```
 
 初回実行時は自動的にデフォルト設定で起動します。設定は実行後に`c`キーで変更可能です。
 
@@ -154,7 +131,7 @@ koemoji-go.exe
 
 どこからでも実行できるようにPATHに追加できます：
 
-**macOS/Linux:**
+**macOS:**
 ```bash
 # バイナリをPATHに追加
 sudo cp koemoji-go /usr/local/bin/koemoji-go
@@ -287,7 +264,6 @@ python --version
 # 新しいバージョンをインストール（推奨: 3.11以上）
 # Windows: 公式サイトから最新版をダウンロード
 # macOS: brew install python
-# Linux: sudo apt install python3.11
 ```
 
 **Q: FasterWhisperのインストールに失敗する**
@@ -315,7 +291,7 @@ pip show whisper-ctranslate2
 pip list | grep whisper
 
 # パス確認
-which whisper-ctranslate2        # macOS/Linux
+which whisper-ctranslate2        # macOS
 where whisper-ctranslate2        # Windows
 
 # 再インストール
@@ -348,8 +324,7 @@ A: 以下を確認：
 ```
 A: プラットフォーム別の対応：
 - Windows: explorerが利用可能か確認
-- macOS: Finderが利用可能か確認  
-- Linux: デスクトップ環境によってはコマンドライン表示のみ
+- macOS: Finderが利用可能か確認
 ```
 
 **Q: 設定変更（cキー）が反映されない**
@@ -484,7 +459,6 @@ tail -f koemoji.log
 # 特定プラットフォームのみ
 ./build.sh windows   # Windows版のみ
 ./build.sh macos     # macOS版のみ
-./build.sh linux    # Linux版のみ
 
 # ビルド成果物のクリーンアップ
 ./build.sh clean
@@ -494,7 +468,6 @@ tail -f koemoji.log
 - Windows: `koemoji-go-windows-1.0.0.zip` (アイコン付き.exe)
 - macOS Intel: `koemoji-go-macos-intel-1.0.0.tar.gz` (Intel Mac専用)
 - macOS Apple Silicon: `koemoji-go-macos-arm64-1.0.0.tar.gz` (M1/M2 Mac専用)
-- Linux: `koemoji-go-linux-1.0.0.tar.gz` (64bit版)
 
 #### 開発用シンプルビルド
 ```bash
@@ -511,9 +484,6 @@ GOOS=darwin GOARCH=amd64 go build -o koemoji-go-darwin-amd64 main.go
 
 # macOS Apple Silicon
 GOOS=darwin GOARCH=arm64 go build -o koemoji-go-darwin-arm64 main.go
-
-# Linux 64bit
-GOOS=linux GOARCH=amd64 go build -o koemoji-go-linux-amd64 main.go
 ```
 
 ### 開発環境セットアップ
