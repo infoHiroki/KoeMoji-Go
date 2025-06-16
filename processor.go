@@ -58,23 +58,12 @@ func (app *App) filterNewAudioFiles(files []string) []string {
 
 	var newFiles []string
 	for _, file := range files {
-		if app.isAudioFile(file) && !app.processedFiles[file] {
+		if isAudioFile(file) && !app.processedFiles[file] {
 			app.processedFiles[file] = true
 			newFiles = append(newFiles, file)
 		}
 	}
 	return newFiles
-}
-
-func (app *App) isAudioFile(filename string) bool {
-	ext := strings.ToLower(filepath.Ext(filename))
-	audioExts := []string{".mp3", ".wav", ".m4a", ".flac", ".ogg", ".aac", ".mp4", ".mov", ".avi"}
-	for _, audioExt := range audioExts {
-		if ext == audioExt {
-			return true
-		}
-	}
-	return false
 }
 
 func (app *App) processQueue() {
@@ -108,6 +97,8 @@ func (app *App) processQueue() {
 			app.logDone(msg.ProcessComplete, app.processingFile, app.formatDuration(duration))
 
 			// Move to archive
+			msg2 := app.getMessages()
+			app.logProc(msg2.MovingToArchive, app.processingFile)
 			if err := app.moveToArchive(filePath); err != nil {
 				app.logError(msg.ProcessFailed, app.processingFile, err)
 			}
@@ -137,7 +128,8 @@ func (app *App) ensureDirectories() {
 	dirs := []string{app.config.InputDir, app.config.OutputDir, app.config.ArchiveDir}
 	for _, dir := range dirs {
 		if err := os.MkdirAll(dir, 0755); err != nil {
-			app.logError("Failed to create directory %s: %v", dir, err)
+			msg := app.getMessages()
+			app.logError(msg.DirCreateError, dir, err)
 			os.Exit(1)
 		}
 	}

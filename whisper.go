@@ -60,11 +60,13 @@ func (app *App) transcribeAudio(inputFile string) error {
 	// セキュリティチェック: inputディレクトリ内のファイルのみ許可
 	absPath, err := filepath.Abs(inputFile)
 	if err != nil {
-		return fmt.Errorf("invalid file path: %w", err)
+		msg := app.getMessages()
+		return fmt.Errorf(msg.InvalidPath, err)
 	}
 	inputDir, _ := filepath.Abs(app.config.InputDir)
 	if !strings.HasPrefix(absPath, inputDir+string(os.PathSeparator)) {
-		return fmt.Errorf("file must be in input directory: %s", inputFile)
+		msg := app.getMessages()
+		return fmt.Errorf(msg.InvalidPath, inputFile)
 	}
 
 	whisperCmd := app.getWhisperCommand()
@@ -118,7 +120,8 @@ func (app *App) transcribeAudio(inputFile string) error {
 	done <- true
 
 	if err != nil {
-		return fmt.Errorf("whisper execution failed: %w", err)
+		msg := app.getMessages()
+		return fmt.Errorf(msg.TranscribeFail, err)
 	}
 
 	return nil

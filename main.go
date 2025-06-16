@@ -118,7 +118,8 @@ func showHelpText() {
 func (app *App) initLogger() {
 	logFile, err := os.OpenFile("koemoji.log", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
 	if err != nil {
-		log.Fatalf("Failed to open log file: %v", err)
+		msg := app.getMessages()
+		log.Fatalf(msg.LogFileError, err)
 	}
 
 	// Only timestamps for file logging, no prefix for console
@@ -176,7 +177,8 @@ func (app *App) handleUserInput() {
 			app.logInfo("Manual scan triggered")
 			go app.scanAndProcess()
 		case "q":
-			app.logInfo("Shutting down KoeMoji-Go...")
+			msg := app.getMessages()
+			app.logInfo(msg.ShuttingDown)
 			os.Exit(0)
 		default:
 			if strings.TrimSpace(input) != "" {

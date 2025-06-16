@@ -4,7 +4,9 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"runtime"
+	"strings"
 	"time"
 )
 
@@ -161,4 +163,49 @@ func (app *App) getLogColor(level string) string {
 	default:
 		return ""
 	}
+}
+
+func (app *App) formatDuration(d time.Duration) string {
+	hours := int(d.Hours())
+	minutes := int(d.Minutes()) % 60
+	seconds := int(d.Seconds()) % 60
+	
+	if hours > 0 {
+		return fmt.Sprintf("%dh%dm%ds", hours, minutes, seconds)
+	} else if minutes > 0 {
+		return fmt.Sprintf("%dm%ds", minutes, seconds)
+	} else {
+		return fmt.Sprintf("%ds", seconds)
+	}
+}
+
+func (app *App) updateFileCounts() {
+	// Count files in each directory
+	if entries, err := os.ReadDir(app.config.InputDir); err == nil {
+		app.inputCount = 0
+		for _, entry := range entries {
+			if !entry.IsDir() && isAudioFile(entry.Name()) {
+				app.inputCount++
+			}
+		}
+	}
+	
+	if entries, err := os.ReadDir(app.config.OutputDir); err == nil {
+		app.outputCount = len(entries)
+	}
+	
+	if entries, err := os.ReadDir(app.config.ArchiveDir); err == nil {
+		app.archiveCount = len(entries)
+	}
+}
+
+func isAudioFile(filename string) bool {
+	ext := strings.ToLower(filepath.Ext(filename))
+	audioExts := []string{".mp3", ".wav", ".m4a", ".flac", ".ogg", ".aac", ".mp4", ".mov", ".avi"}
+	for _, audioExt := range audioExts {
+		if ext == audioExt {
+			return true
+		}
+	}
+	return false
 }
