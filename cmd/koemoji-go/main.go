@@ -142,8 +142,8 @@ func (app *App) run() {
 	logger.LogInfo(app.logger, &app.logBuffer, &app.logMutex, "Monitoring %s directory every %d minutes", app.Config.InputDir, app.Config.ScanIntervalMinutes)
 	
 	// Display initial dashboard
-	// Give a moment for initial scan to complete
-	time.Sleep(500 * time.Millisecond)
+	// Brief wait for initialization
+	time.Sleep(100 * time.Millisecond)
 	ui.RefreshDisplay(app.Config, app.startTime, app.lastScanTime, &app.logBuffer, 
 		&app.logMutex, app.inputCount, app.outputCount, app.archiveCount,
 		&app.queuedFiles, app.processingFile, app.isProcessing, &app.mu)
