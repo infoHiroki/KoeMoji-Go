@@ -20,7 +20,6 @@ type Config struct {
 	MaxCpuPercent       int    `json:"max_cpu_percent"`
 	ComputeType         string `json:"compute_type"`
 	UseColors           bool   `json:"use_colors"`
-	UIMode              string `json:"ui_mode"`
 	OutputFormat        string `json:"output_format"`
 	InputDir            string `json:"input_dir"`
 	OutputDir           string `json:"output_dir"`
@@ -36,7 +35,6 @@ func GetDefaultConfig() *Config {
 		MaxCpuPercent:       95,
 		ComputeType:         "int8",
 		UseColors:           true,
-		UIMode:              "enhanced",
 		OutputFormat:        "txt",
 		InputDir:            "./input",
 		OutputDir:           "./output",
