@@ -9,6 +9,8 @@
 KoeMoji-Goは、音声・動画ファイルを自動で文字起こしするGoアプリケーションです。
 Python版のKoeMojiAuto-cliをGoに移植し、シングルバイナリでの配布と順次処理による安定動作を実現しています。
 
+![KoeMoji-Go Dashboard](build/screenshot01.png)
+
 ## 特徴
 
 - **シングルバイナリ**: 実行ファイル1つで動作

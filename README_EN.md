@@ -9,6 +9,8 @@ Automatic Audio/Video Transcription Tool
 KoeMoji-Go is a Go application that automatically transcribes audio and video files.
 It's a Go port of the Python-based KoeMojiAuto-cli, providing single binary distribution and stable sequential processing.
 
+![KoeMoji-Go Dashboard](build/screenshot01.png)
+
 ## Features
 
 - **Single Binary**: Works with just one executable file
