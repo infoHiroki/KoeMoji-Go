@@ -95,15 +95,14 @@ func ConfigureSettings(config *Config, configPath string, logger *log.Logger) {
 		fmt.Printf("5. %s: %d%%\n", msg.MaxCPUPercent, config.MaxCpuPercent)
 		fmt.Printf("6. %s: %s\n", msg.ComputeType, config.ComputeType)
 		fmt.Printf("7. %s: %t\n", msg.UseColors, config.UseColors)
-		fmt.Printf("8. %s: %s\n", msg.UIMode, config.UIMode)
-		fmt.Printf("9. %s: %s\n", msg.OutputFormat, config.OutputFormat)
-		fmt.Printf("10. %s: %s\n", msg.InputDirectory, config.InputDir)
-		fmt.Printf("11. %s: %s\n", msg.OutputDirectory, config.OutputDir)
-		fmt.Printf("12. %s: %s\n", msg.ArchiveDirectory, config.ArchiveDir)
+		fmt.Printf("8. %s: %s\n", msg.OutputFormat, config.OutputFormat)
+		fmt.Printf("9. %s: %s\n", msg.InputDirectory, config.InputDir)
+		fmt.Printf("10. %s: %s\n", msg.OutputDirectory, config.OutputDir)
+		fmt.Printf("11. %s: %s\n", msg.ArchiveDirectory, config.ArchiveDir)
 		fmt.Printf("r. %s\n", msg.ResetDefaults)
 		fmt.Printf("s. %s\n", msg.SaveAndExit)
 		fmt.Printf("q. %s\n", msg.QuitWithoutSave)
-		fmt.Printf("\n%s (1-12, r, s, q): ", msg.SelectOption)
+		fmt.Printf("\n%s (1-11, r, s, q): ", msg.SelectOption)
 
 		input, _ := reader.ReadString('\n')
 		choice := strings.TrimSpace(input)
@@ -138,22 +137,18 @@ func ConfigureSettings(config *Config, configPath string, logger *log.Logger) {
 				modified = true
 			}
 		case "8":
-			if configureUIMode(config, reader) {
-				modified = true
-			}
-		case "9":
 			if configureOutputFormat(config, reader) {
 				modified = true
 			}
-		case "10":
+		case "9":
 			if configureInputDir(config, reader) {
 				modified = true
 			}
-		case "11":
+		case "10":
 			if configureOutputDir(config, reader) {
 				modified = true
 			}
-		case "12":
+		case "11":
 			if configureArchiveDir(config, reader) {
 				modified = true
 			}
@@ -376,36 +371,6 @@ func configureUseColors(config *Config, reader *bufio.Reader) bool {
 	return false
 }
 
-func configureUIMode(config *Config, reader *bufio.Reader) bool {
-	modes := []string{"simple", "enhanced"}
-	msg := getMessages(config)
-
-	fmt.Println("\nAvailable UI modes:")
-	for i, mode := range modes {
-		fmt.Printf("%d. %s", i+1, mode)
-		if mode == config.UIMode {
-			fmt.Printf(" (%s)", msg.Current)
-		}
-		fmt.Println()
-	}
-	fmt.Printf("%s ", msg.SelectUIMode)
-
-	input, _ := reader.ReadString('\n')
-	choice := strings.TrimSpace(input)
-
-	if choice == "" {
-		return false
-	}
-
-	if idx, err := strconv.Atoi(choice); err == nil && idx >= 1 && idx <= len(modes) {
-		config.UIMode = modes[idx-1]
-		fmt.Printf(msg.UIModeSet+"\n", config.UIMode)
-		return true
-	}
-
-	fmt.Println(msg.InvalidOption)
-	return false
-}
 
 func configureOutputFormat(config *Config, reader *bufio.Reader) bool {
 	formats := []string{"txt", "vtt", "srt", "tsv", "json"}
