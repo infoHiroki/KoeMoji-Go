@@ -29,7 +29,7 @@ func RefreshDisplay(config *config.Config, startTime, lastScanTime time.Time, lo
 	logMutex *sync.RWMutex, inputCount, outputCount, archiveCount int, queuedFiles *[]string, 
 	processingFile string, isProcessing bool, mu *sync.Mutex) {
 	
-	if config == nil || config.UIMode != "enhanced" {
+	if config == nil {
 		return
 	}
 
@@ -55,7 +55,7 @@ func displayHeader(config *config.Config, startTime, lastScanTime time.Time, inp
 
 	uptime := time.Since(startTime)
 
-	fmt.Println("=== KoeMoji-Go v1.0.0 ===")
+	fmt.Println("=== KoeMoji-Go v1.1.0 ===")
 
 	mu.Lock()
 	queueCount := len(*queuedFiles)
