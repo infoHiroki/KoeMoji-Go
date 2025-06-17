@@ -1,8 +1,8 @@
 {
-    "whisper_model": "medium",
+    "whisper_model": "large-v3",
     "language": "ja",
-    "ui_language": "en",
-    "scan_interval_minutes": 10,
+    "ui_language": "ja",
+    "scan_interval_minutes": 1,
     "max_cpu_percent": 95,
     "compute_type": "int8",
     "use_colors": true,

@@ -28,10 +28,10 @@ type Config struct {
 
 func GetDefaultConfig() *Config {
 	return &Config{
-		WhisperModel:        "medium",
+		WhisperModel:        "large-v3",
 		Language:            "ja",
-		UILanguage:          "en",
-		ScanIntervalMinutes: 10,
+		UILanguage:          "ja",
+		ScanIntervalMinutes: 1,
 		MaxCpuPercent:       95,
 		ComputeType:         "int8",
 		UseColors:           true,
