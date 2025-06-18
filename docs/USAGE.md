@@ -34,6 +34,7 @@
 ### 実行中コマンド
 - `c` - 設定変更
 - `l` - ログ表示
+- `a` - AI要約のオン/オフ切り替え（v1.2.0新機能）
 - `s` - 手動スキャン
 - `i` - 入力ディレクトリを開く
 - `o` - 出力ディレクトリを開く
@@ -55,6 +56,33 @@
 ### UI設定
 - **ui_mode**: enhanced/simple
 - **use_colors**: 色表示の有無
+
+### AI要約設定（v1.2.0新機能）
+- **llm_summary_enabled**: AI要約機能の有効/無効
+- **llm_api_provider**: APIプロバイダー（openai）
+- **llm_api_key**: OpenAI APIキー
+- **llm_model**: 使用モデル（gpt-4o/gpt-4-turbo/gpt-3.5-turbo）
+- **llm_max_tokens**: 最大トークン数（要約の長さ）
+- **summary_prompt_template**: 要約プロンプトテンプレート
+
+## AI要約機能の使い方（v1.2.0新機能）
+
+### 初期設定
+1. OpenAI APIキーを取得（https://platform.openai.com/）
+2. `c`キーで設定画面を開く
+3. 項目14でAPIキーを設定
+4. 項目15でモデルを選択（gpt-4o推奨）
+
+### 使用方法
+1. `a`キーでAI要約をオン
+2. 音声ファイルを`input/`に配置
+3. 文字起こし完了後、自動的に要約生成
+4. `output/ファイル名_summary.txt`に保存
+
+### プロンプトカスタマイズ
+設定項目17で要約プロンプトを編集可能：
+- `{text}`: 文字起こしテキスト
+- `{language}`: 要約言語
 
 ## トラブルシューティング
 

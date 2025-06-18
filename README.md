@@ -16,6 +16,7 @@ Python版のKoeMojiAuto-cliをGoに移植し、シングルバイナリでの配
 - **シングルバイナリ**: 実行ファイル1つで動作
 - **順次処理**: 1ファイルずつ安定した処理
 - **FasterWhisper連携**: 高精度な音声認識
+- **AI要約機能**: OpenAI APIによる自動要約生成（v1.2.0新機能）
 - **クロスプラットフォーム**: Windows/Mac対応
 - **自動監視**: フォルダを定期的に監視して自動処理
 - **リアルタイムUI**: 処理状況をリアルタイム表示
@@ -173,8 +174,8 @@ source ~/.zshrc  # 設定を反映
 ### 処理の流れ
 ```
 [input/音声ファイル] → [文字起こし処理] → [output/テキストファイル]
-                                    ↓
-                            [archive/処理済みファイル]
+                                    ↓              ↓ (AI要約有効時)
+                            [archive/処理済みファイル]   [output/要約ファイル]
 ```
 
 - 1分間隔で自動的に`input/`フォルダをスキャン（デフォルト）
@@ -186,6 +187,7 @@ source ~/.zshrc  # 設定を反映
 実行中に以下のキーで操作できます：
 - `c` - 設定変更
 - `l` - ログ表示
+- `a` - AI要約のオン/オフ切り替え（v1.2.0新機能）
 - `s` - 手動スキャン
 - `i` - 入力ディレクトリを開く
 - `o` - 出力ディレクトリを開く
@@ -208,12 +210,18 @@ source ~/.zshrc  # 設定を反映
   "max_cpu_percent": 95,
   "compute_type": "int8",
   "use_colors": true,
-  "ui_mode": "enhanced"
+  "ui_mode": "enhanced",
+  "llm_summary_enabled": false,
+  "llm_api_provider": "openai",
+  "llm_api_key": "",
+  "llm_model": "gpt-4o",
+  "llm_max_tokens": 4096
 }
 ```
 
 ### 設定項目
 
+**基本設定：**
 - `whisper_model`: Whisperモデル（tiny, base, small, medium, large, large-v2, large-v3）
 - `language`: 言語コード（ja, en等）
 - `scan_interval_minutes`: フォルダ監視間隔（分）
@@ -221,6 +229,13 @@ source ~/.zshrc  # 設定を反映
 - `compute_type`: 量子化タイプ（int8, float16等）
 - `use_colors`: カラー表示の有効/無効
 - `ui_mode`: UI表示モード（enhanced/simple）
+
+**AI要約設定（v1.2.0新機能）：**
+- `llm_summary_enabled`: AI要約機能の有効/無効
+- `llm_api_provider`: APIプロバイダー（現在はopenaiのみ）
+- `llm_api_key`: OpenAI APIキー
+- `llm_model`: 使用するモデル（gpt-4o, gpt-4-turbo, gpt-3.5-turbo等）
+- `llm_max_tokens`: 最大トークン数（要約の長さ）
 
 ### Whisperモデルの選択
 
@@ -235,6 +250,23 @@ source ~/.zshrc  # 設定を反映
 | large-v3 | 最大 | 最遅 | 最高 | **日本語推奨** |
 
 **推奨**: 日本語の文字起こしには`large-v3`が最適です（ハルシネーション大幅減少）。
+
+### AI要約機能の設定（v1.2.0新機能）
+
+1. **OpenAI APIキーの取得**:
+   - [OpenAI Platform](https://platform.openai.com/)でアカウント作成
+   - APIキーを生成
+
+2. **設定方法**:
+   - `c`キーで設定画面を開く
+   - 項目14でAPIキーを設定
+   - 項目15でモデル選択（gpt-4o推奨）
+   - または`config.json`を直接編集
+
+3. **使用方法**:
+   - `a`キーでAI要約をオン/オフ
+   - 文字起こし完了後、自動的に要約が生成される
+   - 要約は`output/ファイル名_summary.txt`として保存
 
 ## 8. コマンドラインオプション
 

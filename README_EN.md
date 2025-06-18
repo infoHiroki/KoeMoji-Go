@@ -16,6 +16,7 @@ It's a Go port of the Python-based KoeMojiAuto-cli, providing single binary dist
 - **Single Binary**: Works with just one executable file
 - **Sequential Processing**: Stable processing one file at a time
 - **FasterWhisper Integration**: High-accuracy speech recognition
+- **AI Summary**: Automatic summary generation using OpenAI API (v1.2.0 new feature)
 - **Cross-Platform**: Windows/Mac support
 - **Auto Monitoring**: Automatically monitors folders and processes files
 - **Real-time UI**: Real-time display of processing status
@@ -170,8 +171,8 @@ The following directories will be automatically created on first run:
 ### Processing Flow
 ```
 [input/audio file] → [transcription] → [output/text file]
-                                    ↓
-                            [archive/processed file]
+                                    ↓              ↓ (if AI summary enabled)
+                            [archive/processed file]   [output/summary file]
 ```
 
 - Automatically scans the `input/` folder every 10 minutes
@@ -183,6 +184,7 @@ The following directories will be automatically created on first run:
 During execution, you can use the following keys:
 - `c` - Configure settings
 - `l` - Display logs
+- `a` - Toggle AI summary on/off (v1.2.0 new feature)
 - `s` - Manual scan
 - `i` - Open input directory
 - `o` - Open output directory
@@ -205,17 +207,32 @@ You can customize behavior with `config.json`:
   "max_cpu_percent": 95,
   "compute_type": "int8",
   "use_colors": true,
-  "ui_mode": "enhanced"
+  "ui_mode": "enhanced",
+  "llm_summary_enabled": false,
+  "llm_api_provider": "openai",
+  "llm_api_key": "",
+  "llm_model": "gpt-4o",
+  "llm_max_tokens": 4096
 }
 ```
 
 ### Configuration Options
 
+**Basic Settings:**
 - `whisper_model`: Whisper model (tiny, base, small, medium, large, large-v2, large-v3)
 - `language`: Language code (ja, en, etc.)
 - `scan_interval_minutes`: Folder monitoring interval (minutes)
 - `max_cpu_percent`: CPU usage limit (currently unused)
 - `compute_type`: Quantization type (int8, float16, etc.)
+- `use_colors`: Enable/disable color display
+- `ui_mode`: UI display mode (enhanced/simple)
+
+**AI Summary Settings (v1.2.0 new feature):**
+- `llm_summary_enabled`: Enable/disable AI summary
+- `llm_api_provider`: API provider (currently only openai)
+- `llm_api_key`: OpenAI API key
+- `llm_model`: Model to use (gpt-4o, gpt-4-turbo, gpt-3.5-turbo, etc.)
+- `llm_max_tokens`: Maximum tokens (summary length)
 - `use_colors`: Enable/disable color display
 - `ui_mode`: UI display mode (enhanced/simple)
 
@@ -232,6 +249,23 @@ You can customize behavior with `config.json`:
 | large-v3 | Largest | Slowest | Highest | **Japanese recommended** |
 
 **Recommended**: For Japanese transcription, `large-v3` is optimal (significantly reduced hallucinations).
+
+### AI Summary Setup (v1.2.0 new feature)
+
+1. **Get OpenAI API Key**:
+   - Create account at [OpenAI Platform](https://platform.openai.com/)
+   - Generate API key
+
+2. **Configuration**:
+   - Press `c` to open settings
+   - Set API key in option 14
+   - Select model in option 15 (gpt-4o recommended)
+   - Or edit `config.json` directly
+
+3. **Usage**:
+   - Press `a` to toggle AI summary on/off
+   - Summary is automatically generated after transcription
+   - Summary saved as `output/filename_summary.txt`
 
 ## 8. Command Line Options
 

@@ -38,13 +38,15 @@ The project follows Go's standard internal package layout:
 - **`internal/processor/`** - File monitoring, queue management, and processing orchestration
 - **`internal/ui/`** - Real-time terminal UI with multilingual support
 - **`internal/whisper/`** - FasterWhisper integration and audio transcription
+- **`internal/llm/`** - LLM integration for AI summarization (v1.2.0+)
 
 ### Core Processing Flow
 1. **File Monitoring**: Periodic directory scanning (`input/`) with configurable intervals
 2. **Queue Management**: Sequential processing to ensure stability (one file at a time)
 3. **Transcription**: Shell command execution to `whisper-ctranslate2` with progress monitoring
-4. **File Management**: Automatic archiving of processed files to `archive/`
-5. **Real-time UI**: Live status updates and interactive controls
+4. **AI Summarization** (v1.2.0+): Optional LLM-based summary generation via OpenAI API
+5. **File Management**: Automatic archiving of processed files to `archive/`
+6. **Real-time UI**: Live status updates and interactive controls
 
 ### Multilingual Support
 The application supports English and Japanese UI languages. Messages are centralized in `internal/config/config.go` with `Messages` struct and language-specific instances (`messagesEN`, `messagesJA`).
@@ -96,6 +98,12 @@ The `build/build.sh` script handles:
 
 ### Audio File Support
 Supported formats: MP3, WAV, M4A, FLAC, OGG, AAC, MP4, MOV, AVI
+
+### LLM Integration (v1.2.0+)
+- **Package**: `internal/llm/` - OpenAI API integration
+- **Features**: Automatic summarization post-transcription
+- **API Support**: OpenAI GPT models (gpt-4o, gpt-4-turbo, gpt-3.5-turbo)
+- **Error Handling**: Retry logic, rate limit handling, API validation
 
 ## Development Notes
 
