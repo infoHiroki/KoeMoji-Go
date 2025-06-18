@@ -24,9 +24,10 @@ jobs:
     - name: Build Windows
       run: |
         cd build
-        goversioninfo -o resource.syso versioninfo.json
+        goversioninfo -o resource_windows_amd64.syso versioninfo.json
+        cp resource_windows_amd64.syso ../cmd/koemoji-go/
         GOOS=windows GOARCH=amd64 go build -ldflags="-s -w" -o koemoji-go.exe ../cmd/koemoji-go
-        rm -f resource.syso
+        rm -f resource_windows_amd64.syso ../cmd/koemoji-go/resource_windows_amd64.syso
     
     - name: Build macOS Intel
       run: |
