@@ -24,6 +24,14 @@ type Config struct {
 	InputDir            string `json:"input_dir"`
 	OutputDir           string `json:"output_dir"`
 	ArchiveDir          string `json:"archive_dir"`
+	// LLM Summary settings
+	LLMSummaryEnabled   bool   `json:"llm_summary_enabled"`
+	LLMAPIProvider      string `json:"llm_api_provider"`
+	LLMAPIKey           string `json:"llm_api_key"`
+	LLMModel            string `json:"llm_model"`
+	LLMMaxTokens        int    `json:"llm_max_tokens"`
+	SummaryPromptTemplate string `json:"summary_prompt_template"`
+	SummaryLanguage     string `json:"summary_language"`
 }
 
 func GetDefaultConfig() *Config {
@@ -39,6 +47,14 @@ func GetDefaultConfig() *Config {
 		InputDir:            "./input",
 		OutputDir:           "./output",
 		ArchiveDir:          "./archive",
+		// LLM Summary defaults
+		LLMSummaryEnabled:   false,
+		LLMAPIProvider:      "openai",
+		LLMAPIKey:           "",
+		LLMModel:            "gpt-4o",
+		LLMMaxTokens:        4096,
+		SummaryPromptTemplate: "以下の文字起こしテキストを{language}で要約してください。重要なポイントを箇条書きでまとめ、全体の概要も含めてください。\n\n{text}",
+		SummaryLanguage:     "auto",
 	}
 }
 
@@ -99,10 +115,16 @@ func ConfigureSettings(config *Config, configPath string, logger *log.Logger) {
 		fmt.Printf("9. %s: %s\n", msg.InputDirectory, config.InputDir)
 		fmt.Printf("10. %s: %s\n", msg.OutputDirectory, config.OutputDir)
 		fmt.Printf("11. %s: %s\n", msg.ArchiveDirectory, config.ArchiveDir)
+		fmt.Printf("12. %s: %t\n", msg.LLMSummaryEnabled, config.LLMSummaryEnabled)
+		fmt.Printf("13. %s: %s\n", msg.LLMAPIProvider, config.LLMAPIProvider)
+		fmt.Printf("14. %s: %s\n", msg.LLMAPIKey, getAPIKeyDisplay(config.LLMAPIKey))
+		fmt.Printf("15. %s: %s\n", msg.LLMModel, config.LLMModel)
+		fmt.Printf("16. %s: %d\n", msg.LLMMaxTokens, config.LLMMaxTokens)
+		fmt.Printf("17. %s: [%s]\n", msg.SummaryPrompt, msg.EditablePrompt)
 		fmt.Printf("r. %s\n", msg.ResetDefaults)
 		fmt.Printf("s. %s\n", msg.SaveAndExit)
 		fmt.Printf("q. %s\n", msg.QuitWithoutSave)
-		fmt.Printf("\n%s (1-11, r, s, q): ", msg.SelectOption)
+		fmt.Printf("\n%s (1-17, r, s, q): ", msg.SelectOption)
 
 		input, _ := reader.ReadString('\n')
 		choice := strings.TrimSpace(input)
@@ -150,6 +172,30 @@ func ConfigureSettings(config *Config, configPath string, logger *log.Logger) {
 			}
 		case "11":
 			if configureArchiveDir(config, reader) {
+				modified = true
+			}
+		case "12":
+			if configureLLMSummaryEnabled(config, reader) {
+				modified = true
+			}
+		case "13":
+			if configureLLMAPIProvider(config, reader) {
+				modified = true
+			}
+		case "14":
+			if configureLLMAPIKey(config, reader) {
+				modified = true
+			}
+		case "15":
+			if configureLLMModel(config, reader) {
+				modified = true
+			}
+		case "16":
+			if configureLLMMaxTokens(config, reader) {
+				modified = true
+			}
+		case "17":
+			if configureSummaryPrompt(config, reader) {
 				modified = true
 			}
 		case "r":
@@ -535,12 +581,20 @@ type Messages struct {
 	InputDirectory  string
 	OutputDirectory string
 	ArchiveDirectory string
-	ResetDefaults   string
-	SaveAndExit     string
-	QuitWithoutSave string
-	SelectOption    string
-	Minutes         string
-	Current         string
+	// LLM Settings
+	LLMSummaryEnabled string
+	LLMAPIProvider   string
+	LLMAPIKey        string
+	LLMModel         string
+	LLMMaxTokens     string
+	SummaryPrompt    string
+	EditablePrompt   string
+	ResetDefaults    string
+	SaveAndExit      string
+	QuitWithoutSave  string
+	SelectOption     string
+	Minutes          string
+	Current          string
 	
 	// Config prompts
 	SelectModel     string
@@ -555,6 +609,15 @@ type Messages struct {
 	SelectFolder    string
 	ResetConfirm    string
 	UnsavedChanges  string
+	// LLM prompts
+	EnableLLMSummary    string
+	SelectLLMProvider   string
+	EnterLLMAPIKey      string
+	SelectLLMModel      string
+	EnterLLMMaxTokens   string
+	CurrentPrompt       string
+	PromptInstructions  string
+	EnterNewPrompt      string
 	
 	// Config messages
 	ModelSet        string
@@ -570,13 +633,21 @@ type Messages struct {
 	InputDirSet     string
 	OutputDirSet    string
 	ArchiveDirSet   string
-	ConfigReset     string
-	ConfigSaved     string
-	NoChanges       string
-	InvalidOption   string
-	InvalidInput    string
-	FolderSelectFail string
-	ConfigSaveError string
+	// LLM messages
+	LLMSummaryEnabledMsg  string
+	LLMSummaryDisabledMsg string
+	LLMProviderSet        string
+	LLMAPIKeySet          string
+	LLMModelSet           string
+	LLMMaxTokensSet       string
+	PromptSet             string
+	ConfigReset           string
+	ConfigSaved           string
+	NoChanges             string
+	InvalidOption         string
+	InvalidInput          string
+	FolderSelectFail      string
+	ConfigSaveError       string
 }
 
 var messagesEN = Messages{
@@ -594,12 +665,20 @@ var messagesEN = Messages{
 	InputDirectory:  "Input Directory",
 	OutputDirectory: "Output Directory",
 	ArchiveDirectory: "Archive Directory",
-	ResetDefaults:   "Reset to defaults",
-	SaveAndExit:     "Save and exit",
-	QuitWithoutSave: "Quit without saving",
-	SelectOption:    "Select option",
-	Minutes:         "minutes",
-	Current:         "current",
+	// LLM Settings
+	LLMSummaryEnabled: "LLM Summary",
+	LLMAPIProvider:   "LLM API Provider",
+	LLMAPIKey:        "LLM API Key",
+	LLMModel:         "LLM Model",
+	LLMMaxTokens:     "Max Tokens",
+	SummaryPrompt:    "Summary Prompt",
+	EditablePrompt:   "Editable",
+	ResetDefaults:    "Reset to defaults",
+	SaveAndExit:      "Save and exit",
+	QuitWithoutSave:  "Quit without saving",
+	SelectOption:     "Select option",
+	Minutes:          "minutes",
+	Current:          "current",
 	
 	// Config prompts
 	SelectModel:     "Select model (1-%d) or press Enter to keep current:",
@@ -614,6 +693,15 @@ var messagesEN = Messages{
 	SelectFolder:    "Press Enter to select folder with dialog, or type path manually:",
 	ResetConfirm:    "Are you sure you want to reset all settings to defaults? (y/N):",
 	UnsavedChanges:  "You have unsaved changes. Are you sure you want to quit? (y/N):",
+	// LLM prompts
+	EnableLLMSummary:    "Enable LLM summary? (y/n) or press Enter to keep current:",
+	SelectLLMProvider:   "Select LLM provider (1-1) or press Enter to keep current:",
+	EnterLLMAPIKey:      "Enter LLM API key or press Enter to keep current:",
+	SelectLLMModel:      "Select LLM model (1-%d) or press Enter to keep current:",
+	EnterLLMMaxTokens:   "Enter max tokens (1-16384) or press Enter to keep current:",
+	CurrentPrompt:       "Current prompt",
+	PromptInstructions:  "Use {text} for content and {language} for language. Enter new prompt:",
+	EnterNewPrompt:      "Enter new prompt or press Enter to keep current:",
 	
 	// Config messages
 	ModelSet:        "Whisper model set to: %s",
@@ -629,13 +717,21 @@ var messagesEN = Messages{
 	InputDirSet:     "Input directory set to: %s",
 	OutputDirSet:    "Output directory set to: %s",
 	ArchiveDirSet:   "Archive directory set to: %s",
-	ConfigReset:     "Configuration reset to defaults.",
-	ConfigSaved:     "Configuration saved successfully!",
-	NoChanges:       "No changes to save.",
-	InvalidOption:   "Invalid option. Please try again.",
-	InvalidInput:    "Invalid input.",
-	FolderSelectFail: "Folder selection failed: %v",
-	ConfigSaveError: "Failed to save config: %v",
+	// LLM messages
+	LLMSummaryEnabledMsg:  "LLM summary enabled",
+	LLMSummaryDisabledMsg: "LLM summary disabled",
+	LLMProviderSet:        "LLM provider set to: %s",
+	LLMAPIKeySet:          "LLM API key set to: %s",
+	LLMModelSet:           "LLM model set to: %s",
+	LLMMaxTokensSet:       "Max tokens set to: %d",
+	PromptSet:             "Summary prompt updated",
+	ConfigReset:           "Configuration reset to defaults.",
+	ConfigSaved:           "Configuration saved successfully!",
+	NoChanges:             "No changes to save.",
+	InvalidOption:         "Invalid option. Please try again.",
+	InvalidInput:          "Invalid input.",
+	FolderSelectFail:      "Folder selection failed: %v",
+	ConfigSaveError:       "Failed to save config: %v",
 }
 
 var messagesJA = Messages{
@@ -653,12 +749,20 @@ var messagesJA = Messages{
 	InputDirectory:  "入力ディレクトリ",
 	OutputDirectory: "出力ディレクトリ",
 	ArchiveDirectory: "アーカイブディレクトリ",
-	ResetDefaults:   "デフォルトに戻す",
-	SaveAndExit:     "保存して終了",
-	QuitWithoutSave: "保存せずに終了",
-	SelectOption:    "オプションを選択",
-	Minutes:         "分",
-	Current:         "現在",
+	// LLM Settings
+	LLMSummaryEnabled: "LLM要約機能",
+	LLMAPIProvider:   "LLM APIプロバイダー",
+	LLMAPIKey:        "LLM APIキー",
+	LLMModel:         "LLMモデル",
+	LLMMaxTokens:     "最大トークン数",
+	SummaryPrompt:    "要約プロンプト",
+	EditablePrompt:   "編集可能",
+	ResetDefaults:    "デフォルトに戻す",
+	SaveAndExit:      "保存して終了",
+	QuitWithoutSave:  "保存せずに終了",
+	SelectOption:     "オプションを選択",
+	Minutes:          "分",
+	Current:          "現在",
 	
 	// Config prompts
 	SelectModel:     "モデルを選択 (1-%d) またはEnterで現在の設定を維持:",
@@ -673,6 +777,15 @@ var messagesJA = Messages{
 	SelectFolder:    "Enterでフォルダ選択ダイアログを開く、または手動でパスを入力:",
 	ResetConfirm:    "本当にすべての設定をデフォルトに戻しますか？ (y/N):",
 	UnsavedChanges:  "未保存の変更があります。本当に終了しますか？ (y/N):",
+	// LLM prompts
+	EnableLLMSummary:    "LLM要約を有効にしますか？ (y/n) またはEnterで現在の設定を維持:",
+	SelectLLMProvider:   "LLM APIプロバイダーを選択 (1-1) またはEnterで現在の設定を維持:",
+	EnterLLMAPIKey:      "LLM APIキーを入力またはEnterで現在の設定を維持:",
+	SelectLLMModel:      "LLMモデルを選択 (1-%d) またはEnterで現在の設定を維持:",
+	EnterLLMMaxTokens:   "最大トークン数を入力 (1-16384) またはEnterで現在の設定を維持:",
+	CurrentPrompt:       "現在のプロンプト",
+	PromptInstructions:  "{text}でコンテンツ、{language}で言語を指定できます。新しいプロンプトを入力:",
+	EnterNewPrompt:      "新しいプロンプトを入力またはEnterで現在の設定を維持:",
 	
 	// Config messages
 	ModelSet:        "Whisperモデルを設定: %s",
@@ -688,13 +801,21 @@ var messagesJA = Messages{
 	InputDirSet:     "入力ディレクトリを設定: %s",
 	OutputDirSet:    "出力ディレクトリを設定: %s",
 	ArchiveDirSet:   "アーカイブディレクトリを設定: %s",
-	ConfigReset:     "設定をデフォルトに戻しました。",
-	ConfigSaved:     "設定を保存しました！",
-	NoChanges:       "変更はありません。",
-	InvalidOption:   "無効なオプションです。もう一度お試しください。",
-	InvalidInput:    "無効な入力です。",
-	FolderSelectFail: "フォルダ選択に失敗: %v",
-	ConfigSaveError: "設定の保存に失敗: %v",
+	// LLM messages
+	LLMSummaryEnabledMsg:  "LLM要約機能を有効にしました",
+	LLMSummaryDisabledMsg: "LLM要約機能を無効にしました",
+	LLMProviderSet:        "LLM APIプロバイダーを設定: %s",
+	LLMAPIKeySet:          "LLM APIキーを設定: %s",
+	LLMModelSet:           "LLMモデルを設定: %s",
+	LLMMaxTokensSet:       "最大トークン数を設定: %d",
+	PromptSet:             "要約プロンプトを更新しました",
+	ConfigReset:           "設定をデフォルトに戻しました。",
+	ConfigSaved:           "設定を保存しました！",
+	NoChanges:             "変更はありません。",
+	InvalidOption:         "無効なオプションです。もう一度お試しください。",
+	InvalidInput:          "無効な入力です。",
+	FolderSelectFail:      "フォルダ選択に失敗: %v",
+	ConfigSaveError:       "設定の保存に失敗: %v",
 }
 
 // getMessages returns the messages for the current UI language
@@ -703,4 +824,161 @@ func getMessages(config *Config) *Messages {
 		return &messagesJA
 	}
 	return &messagesEN
+}
+
+// getAPIKeyDisplay returns a display-friendly version of the API key
+func getAPIKeyDisplay(apiKey string) string {
+	if apiKey == "" {
+		return "[未設定]"
+	}
+	if len(apiKey) > 10 {
+		return apiKey[:4] + "..." + apiKey[len(apiKey)-4:]
+	}
+	return "[設定済み]"
+}
+
+// LLM configuration functions
+func configureLLMSummaryEnabled(config *Config, reader *bufio.Reader) bool {
+	msg := getMessages(config)
+	fmt.Printf("%s %s: %t\n", msg.Current, msg.LLMSummaryEnabled, config.LLMSummaryEnabled)
+	fmt.Printf("%s ", msg.EnableLLMSummary)
+
+	input, _ := reader.ReadString('\n')
+	choice := strings.ToLower(strings.TrimSpace(input))
+
+	if choice == "" {
+		return false
+	}
+
+	if choice == "y" || choice == "yes" {
+		config.LLMSummaryEnabled = true
+		fmt.Println(msg.LLMSummaryEnabledMsg)
+		return true
+	} else if choice == "n" || choice == "no" {
+		config.LLMSummaryEnabled = false
+		fmt.Println(msg.LLMSummaryDisabledMsg)
+		return true
+	}
+
+	fmt.Println(msg.InvalidInput)
+	return false
+}
+
+func configureLLMAPIProvider(config *Config, reader *bufio.Reader) bool {
+	providers := []string{"openai"}
+	msg := getMessages(config)
+
+	fmt.Println("\nAvailable LLM providers:")
+	for i, provider := range providers {
+		fmt.Printf("%d. %s", i+1, provider)
+		if provider == config.LLMAPIProvider {
+			fmt.Printf(" (%s)", msg.Current)
+		}
+		fmt.Println()
+	}
+	fmt.Printf("%s ", msg.SelectLLMProvider)
+
+	input, _ := reader.ReadString('\n')
+	choice := strings.TrimSpace(input)
+
+	if choice == "" {
+		return false
+	}
+
+	if idx, err := strconv.Atoi(choice); err == nil && idx >= 1 && idx <= len(providers) {
+		config.LLMAPIProvider = providers[idx-1]
+		fmt.Printf(msg.LLMProviderSet+"\n", config.LLMAPIProvider)
+		return true
+	}
+
+	fmt.Println(msg.InvalidOption)
+	return false
+}
+
+func configureLLMAPIKey(config *Config, reader *bufio.Reader) bool {
+	msg := getMessages(config)
+	fmt.Printf("%s %s: %s\n", msg.Current, msg.LLMAPIKey, getAPIKeyDisplay(config.LLMAPIKey))
+	fmt.Printf("%s ", msg.EnterLLMAPIKey)
+
+	input, _ := reader.ReadString('\n')
+	newKey := strings.TrimSpace(input)
+
+	if newKey == "" {
+		return false
+	}
+
+	config.LLMAPIKey = newKey
+	fmt.Printf(msg.LLMAPIKeySet+"\n", getAPIKeyDisplay(config.LLMAPIKey))
+	return true
+}
+
+func configureLLMModel(config *Config, reader *bufio.Reader) bool {
+	models := []string{"gpt-4o", "gpt-4-turbo", "gpt-3.5-turbo", "gpt-3.5-turbo-16k"}
+	msg := getMessages(config)
+
+	fmt.Println("\nAvailable LLM models:")
+	for i, model := range models {
+		fmt.Printf("%d. %s", i+1, model)
+		if model == config.LLMModel {
+			fmt.Printf(" (%s)", msg.Current)
+		}
+		fmt.Println()
+	}
+	fmt.Printf(msg.SelectLLMModel+" ", len(models))
+
+	input, _ := reader.ReadString('\n')
+	choice := strings.TrimSpace(input)
+
+	if choice == "" {
+		return false
+	}
+
+	if idx, err := strconv.Atoi(choice); err == nil && idx >= 1 && idx <= len(models) {
+		config.LLMModel = models[idx-1]
+		fmt.Printf(msg.LLMModelSet+"\n", config.LLMModel)
+		return true
+	}
+
+	fmt.Println(msg.InvalidOption)
+	return false
+}
+
+func configureLLMMaxTokens(config *Config, reader *bufio.Reader) bool {
+	msg := getMessages(config)
+	fmt.Printf("%s %s: %d\n", msg.Current, msg.LLMMaxTokens, config.LLMMaxTokens)
+	fmt.Printf("%s ", msg.EnterLLMMaxTokens)
+
+	input, _ := reader.ReadString('\n')
+	newTokens := strings.TrimSpace(input)
+
+	if newTokens == "" {
+		return false
+	}
+
+	if tokens, err := strconv.Atoi(newTokens); err == nil && tokens > 0 && tokens <= 16384 {
+		config.LLMMaxTokens = tokens
+		fmt.Printf(msg.LLMMaxTokensSet+"\n", config.LLMMaxTokens)
+		return true
+	}
+
+	fmt.Println(msg.InvalidInput)
+	return false
+}
+
+func configureSummaryPrompt(config *Config, reader *bufio.Reader) bool {
+	msg := getMessages(config)
+	fmt.Printf("%s:\n%s\n", msg.CurrentPrompt, config.SummaryPromptTemplate)
+	fmt.Printf("\n%s\n", msg.PromptInstructions)
+	fmt.Printf("%s ", msg.EnterNewPrompt)
+
+	input, _ := reader.ReadString('\n')
+	newPrompt := strings.TrimSpace(input)
+
+	if newPrompt == "" {
+		return false
+	}
+
+	config.SummaryPromptTemplate = newPrompt
+	fmt.Println(msg.PromptSet)
+	return true
 }

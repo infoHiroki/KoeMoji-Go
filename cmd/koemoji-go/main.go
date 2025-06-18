@@ -114,6 +114,7 @@ func showHelpText() {
 	fmt.Println("  s - Scan now")
 	fmt.Println("  i - Open input directory")
 	fmt.Println("  o - Open output directory")
+	fmt.Println("  a - Toggle AI summary")
 	fmt.Println("  q - Quit")
 	fmt.Println("  Enter - Refresh display")
 }
@@ -195,12 +196,27 @@ func (app *App) handleUserInput() {
 			if err := ui.OpenDirectory(app.Config.OutputDir); err != nil {
 				logger.LogError(app.logger, &app.logBuffer, &app.logMutex, "Failed to open output directory: %v", err)
 			}
+		case "a":
+			// Toggle AI summary
+			app.Config.LLMSummaryEnabled = !app.Config.LLMSummaryEnabled
+			status := "disabled"
+			if app.Config.LLMSummaryEnabled {
+				status = "enabled"
+			}
+			logger.LogInfo(app.logger, &app.logBuffer, &app.logMutex, "AI summary %s", status)
+			// Save the configuration change
+			if err := config.SaveConfig(app.Config, app.configPath); err != nil {
+				logger.LogError(app.logger, &app.logBuffer, &app.logMutex, "Failed to save config: %v", err)
+			}
+			ui.RefreshDisplay(app.Config, app.startTime, app.lastScanTime, &app.logBuffer, 
+				&app.logMutex, app.inputCount, app.outputCount, app.archiveCount,
+				&app.queuedFiles, app.processingFile, app.isProcessing, &app.mu)
 		case "q":
 			logger.LogInfo(app.logger, &app.logBuffer, &app.logMutex, "Shutting down KoeMoji-Go...")
 			os.Exit(0)
 		default:
 			if strings.TrimSpace(input) != "" {
-				fmt.Printf("Invalid command '%s' (use c/l/s/i/o/q or Enter to refresh)\n", strings.TrimSpace(input))
+				fmt.Printf("Invalid command '%s' (use c/l/s/i/o/a/q or Enter to refresh)\n", strings.TrimSpace(input))
 			}
 		}
 	}
