@@ -392,4 +392,4 @@ See [LICENSE](LICENSE) file for details.
 
 KoeMoji-Go Development Team
 
-Contact: dev@habitengineer.com
+Contact: koemoji2024@gmail.com
