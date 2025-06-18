@@ -39,7 +39,7 @@ jobs:
         GOOS=darwin GOARCH=arm64 go build -ldflags="-s -w" -o koemoji-go-darwin-arm64 ../cmd/koemoji-go
     
     - name: Upload artifacts
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: koemoji-go-binaries
         path: |
