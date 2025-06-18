@@ -20,7 +20,7 @@ import (
 	"github.com/hirokitakamura/koemoji-go/internal/whisper"
 )
 
-const version = "1.1.0"
+const version = "1.2.0"
 
 // Color constants
 const (

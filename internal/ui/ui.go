@@ -55,7 +55,7 @@ func displayHeader(config *config.Config, startTime, lastScanTime time.Time, inp
 
 	uptime := time.Since(startTime)
 
-	fmt.Println("=== KoeMoji-Go v1.1.0 ===")
+	fmt.Println("=== KoeMoji-Go v1.2.0 ===")
 
 	mu.Lock()
 	queueCount := len(*queuedFiles)
