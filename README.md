@@ -78,25 +78,25 @@ python -m ensurepip --upgrade
 ### ダウンロード
 1. **[GitHubリリースページ](https://github.com/hirokitakamura/koemoji-go/releases)から対応OS版をダウンロード**
 
-**Windows版**: `koemoji-go-windows-1.1.0.zip`
+**Windows版**: `koemoji-go-windows-1.1.1.zip`
 ```
-📁 koemoji-go-windows-1.0.0.zip
+📁 koemoji-go-windows-1.1.1.zip
 ├── koemoji-go.exe     # アイコン付き実行ファイル
 ├── config.json        # 設定ファイル
 └── README.md          # 説明書
 ```
 
-**macOS Intel版**: `koemoji-go-macos-intel-1.1.0.tar.gz`
+**macOS Intel版**: `koemoji-go-macos-intel-1.1.1.tar.gz`
 ```
-📁 koemoji-go-macos-intel-1.0.0.tar.gz  
+📁 koemoji-go-macos-intel-1.1.1.tar.gz  
 ├── koemoji-go         # Intel Mac用実行ファイル
 ├── config.json        # 設定ファイル
 └── README.md          # 説明書
 ```
 
-**macOS Apple Silicon版**: `koemoji-go-macos-arm64-1.1.0.tar.gz`
+**macOS Apple Silicon版**: `koemoji-go-macos-arm64-1.1.1.tar.gz`
 ```
-📁 koemoji-go-macos-arm64-1.0.0.tar.gz  
+📁 koemoji-go-macos-arm64-1.1.1.tar.gz  
 ├── koemoji-go         # Apple Silicon用実行ファイル
 ├── config.json        # 設定ファイル
 └── README.md          # 説明書
@@ -177,7 +177,7 @@ source ~/.zshrc  # 設定を反映
                             [archive/処理済みファイル]
 ```
 
-- 10分間隔で自動的に`input/`フォルダをスキャン
+- 1分間隔で自動的に`input/`フォルダをスキャン（デフォルト）
 - 新しいファイルが見つかると順次処理を開始
 - 処理完了後、元ファイルは`archive/`に移動
 
@@ -204,7 +204,7 @@ source ~/.zshrc  # 設定を反映
 {
   "whisper_model": "large-v3",
   "language": "ja",
-  "scan_interval_minutes": 10,
+  "scan_interval_minutes": 1,
   "max_cpu_percent": 95,
   "compute_type": "int8",
   "use_colors": true,
@@ -416,7 +416,7 @@ cp config.json config-quality.json # 高品質処理用
 **Q: 監視間隔を変更したい**
 ```json
 {
-  "scan_interval_minutes": 5  // 5分間隔（デフォルト:10分）
+  "scan_interval_minutes": 5  // 5分間隔（デフォルト:1分）
 }
 ```
 
