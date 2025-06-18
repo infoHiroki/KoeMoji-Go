@@ -110,7 +110,7 @@ func displayRealtimeLogs(config *config.Config, logBuffer *[]logger.LogEntry, lo
 		if color != "" {
 			fmt.Printf("%s%-5s%s %s %s\n", color, localizedLevel, ColorReset, timestamp, entry.Message)
 		} else {
-			fmt.Printf("[%-5s] %s %s\n", localizedLevel, timestamp, entry.Message)
+			fmt.Printf("[%s] %s %s\n", localizedLevel, timestamp, entry.Message)
 		}
 	}
 
@@ -137,7 +137,7 @@ func DisplayLogs(config *config.Config) {
 	var cmd *exec.Cmd
 	switch runtime.GOOS {
 	case "windows":
-		cmd = exec.Command("cmd", "/c", "start", "koemoji.log")
+		cmd = exec.Command("notepad", "koemoji.log")
 	case "darwin":
 		cmd = exec.Command("open", "koemoji.log")
 	default:
@@ -171,7 +171,7 @@ func supportsColor(config *config.Config) bool {
 	}
 
 	if runtime.GOOS == "windows" {
-		return os.Getenv("WT_SESSION") != "" || os.Getenv("ConEmuPID") != ""
+		return true // Windows 10以降は強制有効
 	}
 
 	term := os.Getenv("TERM")
