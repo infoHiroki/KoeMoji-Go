@@ -14,13 +14,14 @@ import (
 	"time"
 
 	"github.com/hirokitakamura/koemoji-go/internal/config"
+	"github.com/hirokitakamura/koemoji-go/internal/gui"
 	"github.com/hirokitakamura/koemoji-go/internal/logger"
 	"github.com/hirokitakamura/koemoji-go/internal/processor"
 	"github.com/hirokitakamura/koemoji-go/internal/ui"
 	"github.com/hirokitakamura/koemoji-go/internal/whisper"
 )
 
-const version = "1.2.0"
+const version = "1.3.0"
 
 // Color constants
 const (
@@ -57,7 +58,7 @@ type App struct {
 }
 
 func main() {
-	configPath, debugMode, showVersion, showHelp, configMode := parseFlags()
+	configPath, debugMode, showVersion, showHelp, configMode, guiMode := parseFlags()
 
 	if showVersion {
 		fmt.Printf("KoeMoji-Go v%s\n", version)
@@ -66,6 +67,12 @@ func main() {
 
 	if showHelp {
 		showHelpText()
+		return
+	}
+
+	// Handle GUI mode
+	if guiMode {
+		gui.Run(configPath, debugMode)
 		return
 	}
 
@@ -92,14 +99,15 @@ func main() {
 	app.run()
 }
 
-func parseFlags() (string, bool, bool, bool, bool) {
+func parseFlags() (string, bool, bool, bool, bool, bool) {
 	configPath := flag.String("config", "config.json", "Path to config file")
 	debugMode := flag.Bool("debug", false, "Enable debug mode")
 	showVersion := flag.Bool("version", false, "Show version")
 	showHelp := flag.Bool("help", false, "Show help")
 	configMode := flag.Bool("configure", false, "Enter configuration mode")
+	guiMode := flag.Bool("gui", false, "Run in GUI mode")
 	flag.Parse()
-	return *configPath, *debugMode, *showVersion, *showHelp, *configMode
+	return *configPath, *debugMode, *showVersion, *showHelp, *configMode, *guiMode
 }
 
 func showHelpText() {
@@ -108,7 +116,10 @@ func showHelpText() {
 	fmt.Println("Usage: koemoji-go [options]")
 	fmt.Println("\nOptions:")
 	flag.PrintDefaults()
-	fmt.Println("\nInteractive commands:")
+	fmt.Println("\nModes:")
+	fmt.Println("  Default - Terminal UI (TUI) mode")
+	fmt.Println("  --gui   - Graphical User Interface (GUI) mode")
+	fmt.Println("\nInteractive commands (TUI mode only):")
 	fmt.Println("  c - Configure settings")
 	fmt.Println("  l - Display all logs")
 	fmt.Println("  s - Scan now")
