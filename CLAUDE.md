@@ -20,6 +20,9 @@ cd build && ./build.sh
 ./koemoji-go --version
 ./koemoji-go --help
 ./koemoji-go --configure
+
+# Run in GUI mode
+./koemoji-go --gui
 ```
 
 ### Dependencies
@@ -39,6 +42,7 @@ The project follows Go's standard internal package layout:
 - **`internal/ui/`** - Real-time terminal UI with multilingual support
 - **`internal/whisper/`** - FasterWhisper integration and audio transcription
 - **`internal/llm/`** - LLM integration for AI summarization (v1.2.0+)
+- **`internal/gui/`** - Fyne-based GUI implementation (v1.3.0+)
 
 ### Core Processing Flow
 1. **File Monitoring**: Periodic directory scanning (`input/`) with configurable intervals
@@ -50,6 +54,40 @@ The project follows Go's standard internal package layout:
 
 ### Multilingual Support
 The application supports English and Japanese UI languages. Messages are centralized in `internal/config/config.go` with `Messages` struct and language-specific instances (`messagesEN`, `messagesJA`).
+
+## GUI System (v1.3.0+)
+
+### GUI Design Principles
+- **Functional Compatibility**: Complete feature parity with existing TUI
+- **Simple Design**: Minimal implementation with intuitive interface
+- **Code Reuse**: Existing processor/logger/whisper/config packages unchanged
+- **Immediate Exit**: Window close/quit button → instant application termination
+
+### GUI Architecture
+```bash
+# GUI mode launch
+./koemoji-go --gui
+
+# Traditional TUI launch (default)
+./koemoji-go
+```
+
+### Package Structure (`internal/gui/`)
+- **`app.go`** - GUI application core
+- **`window.go`** - Window layout (BorderLayout: status/logs/buttons)
+- **`components.go`** - UI components (status panel, log viewer, button panel)
+- **`icons/`** - Application icon resources
+
+### UI Specifications
+- **Window**: 800x700 pixels, centered, resizable
+- **Update Method**: 5-second periodic refresh (not event-driven)
+- **Log Display**: 12-entry circular buffer with scrollable RichText widget
+- **Settings Dialog**: Tabbed interface (Basic/Directories/LLM)
+
+### Technical Stack
+- **Framework**: Fyne v2 for cross-platform GUI
+- **Build Impact**: +30-40MB binary size, +30-40MB memory usage
+- **Dependencies**: fyne.io/fyne/v2 packages only
 
 ## Configuration System
 
