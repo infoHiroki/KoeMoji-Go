@@ -6,6 +6,7 @@ import (
 	"sync"
 	"time"
 
+	"fyne.io/fyne/v2"
 	"github.com/hirokitakamura/koemoji-go/internal/config"
 	"github.com/hirokitakamura/koemoji-go/internal/logger"
 	"github.com/hirokitakamura/koemoji-go/internal/processor"
@@ -66,12 +67,16 @@ func (app *GUIApp) updateUI() {
 
 	statusText := fmt.Sprintf("%s | %s: %d | %s: %s",
 		status, msg.Queue, queueCount, msg.Processing, processingDisplay)
-	app.statusLabel.SetText(statusText)
+	fyne.DoAndWait(func() {
+		app.statusLabel.SetText(statusText)
+	})
 
 	// Update files label
 	filesText := fmt.Sprintf("📁 %s: %d → %s: %d → %s: %d",
 		msg.Input, app.inputCount, msg.Output, app.outputCount, msg.Archive, app.archiveCount)
-	app.filesLabel.SetText(filesText)
+	fyne.DoAndWait(func() {
+		app.filesLabel.SetText(filesText)
+	})
 
 	// Update timing label
 	uptime := time.Since(app.startTime)
@@ -85,7 +90,9 @@ func (app *GUIApp) updateUI() {
 
 	timingText := fmt.Sprintf("⏰ %s: %s | %s: %s | %s: %s",
 		msg.Last, lastScanStr, msg.Next, nextScanStr, msg.Uptime, formatDuration(uptime))
-	app.timingLabel.SetText(timingText)
+	fyne.DoAndWait(func() {
+		app.timingLabel.SetText(timingText)
+	})
 
 	// Update log display
 	app.updateLogDisplay()
@@ -118,7 +125,9 @@ func (app *GUIApp) updateLogDisplay() {
 	defer app.logMutex.RUnlock()
 
 	if len(app.logBuffer) == 0 {
-		app.logText.ParseMarkdown("**Waiting for log entries...**")
+		fyne.DoAndWait(func() {
+			app.logText.ParseMarkdown("**Waiting for log entries...**")
+		})
 		return
 	}
 
@@ -130,7 +139,9 @@ func (app *GUIApp) updateLogDisplay() {
 		logText += fmt.Sprintf("**[%s]** %s %s\n\n", entry.Level, timestamp, entry.Message)
 	}
 
-	app.logText.ParseMarkdown(logText)
+	fyne.DoAndWait(func() {
+		app.logText.ParseMarkdown(logText)
+	})
 }
 
 // formatDuration formats a duration for display (copied from ui/ui.go)
