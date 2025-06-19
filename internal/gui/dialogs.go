@@ -86,17 +86,18 @@ func (app *GUIApp) showConfigDialog() {
 		tabs,
 	)
 	
-	// Create dialog
-	configDialog := dialog.NewCustom("Settings", "Save", content, app.window)
+	// Create dialog with Save/Cancel buttons
+	configDialog := dialog.NewCustomConfirm("Settings", "Save", "Cancel", content, 
+		func(save bool) {
+			if save {
+				// Save configuration changes only when Save is clicked
+				app.saveConfigFromDialog(whisperModelEntry, languageEntry, uiLanguageSelect, 
+					scanIntervalEntry, colorsCheck, inputDirEntry, outputDirEntry, 
+					archiveDirEntry, llmEnabledCheck, llmAPIKeyEntry, llmModelSelect)
+			}
+			// If Cancel is clicked, changes are discarded automatically
+		}, app.window)
 	configDialog.Resize(fyne.NewSize(500, 400))
-	
-	// Handle save button
-	configDialog.SetOnClosed(func() {
-		// Save configuration changes
-		app.saveConfigFromDialog(whisperModelEntry, languageEntry, uiLanguageSelect, 
-			scanIntervalEntry, colorsCheck, inputDirEntry, outputDirEntry, 
-			archiveDirEntry, llmEnabledCheck, llmAPIKeyEntry, llmModelSelect)
-	})
 	
 	configDialog.Show()
 }
