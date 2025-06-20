@@ -43,13 +43,13 @@ type App struct {
 	mu             sync.Mutex
 
 	// UI related fields
-	startTime      time.Time
-	lastScanTime   time.Time
-	logBuffer      []logger.LogEntry
-	logMutex       sync.RWMutex
-	inputCount     int
-	outputCount    int
-	archiveCount   int
+	startTime    time.Time
+	lastScanTime time.Time
+	logBuffer    []logger.LogEntry
+	logMutex     sync.RWMutex
+	inputCount   int
+	outputCount  int
+	archiveCount int
 
 	// Queue management for sequential processing
 	queuedFiles    []string // 処理待ちファイルキュー
@@ -145,18 +145,18 @@ func (app *App) run() {
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, os.Interrupt, syscall.SIGTERM)
 
-	go processor.StartProcessing(app.Config, app.logger, &app.logBuffer, &app.logMutex, 
-		&app.lastScanTime, &app.queuedFiles, &app.processingFile, &app.isProcessing, 
+	go processor.StartProcessing(app.Config, app.logger, &app.logBuffer, &app.logMutex,
+		&app.lastScanTime, &app.queuedFiles, &app.processingFile, &app.isProcessing,
 		&app.processedFiles, &app.mu, &app.wg, app.debugMode)
 	go app.handleUserInput()
 
 	logger.LogInfo(app.logger, &app.logBuffer, &app.logMutex, "KoeMoji-Go is running. Use commands below to interact.")
 	logger.LogInfo(app.logger, &app.logBuffer, &app.logMutex, "Monitoring %s directory every %d minutes", app.Config.InputDir, app.Config.ScanIntervalMinutes)
-	
+
 	// Display initial dashboard
 	// Brief wait for initialization
 	time.Sleep(100 * time.Millisecond)
-	ui.RefreshDisplay(app.Config, app.startTime, app.lastScanTime, &app.logBuffer, 
+	ui.RefreshDisplay(app.Config, app.startTime, app.lastScanTime, &app.logBuffer,
 		&app.logMutex, app.inputCount, app.outputCount, app.archiveCount,
 		&app.queuedFiles, app.processingFile, app.isProcessing, &app.mu)
 
@@ -179,25 +179,25 @@ func (app *App) handleUserInput() {
 		switch strings.TrimSpace(strings.ToLower(input)) {
 		case "":
 			// Empty Enter = manual refresh
-			ui.RefreshDisplay(app.Config, app.startTime, app.lastScanTime, &app.logBuffer, 
+			ui.RefreshDisplay(app.Config, app.startTime, app.lastScanTime, &app.logBuffer,
 				&app.logMutex, app.inputCount, app.outputCount, app.archiveCount,
 				&app.queuedFiles, app.processingFile, app.isProcessing, &app.mu)
 		case "c":
 			config.ConfigureSettings(app.Config, app.configPath, app.logger)
-			ui.RefreshDisplay(app.Config, app.startTime, app.lastScanTime, &app.logBuffer, 
+			ui.RefreshDisplay(app.Config, app.startTime, app.lastScanTime, &app.logBuffer,
 				&app.logMutex, app.inputCount, app.outputCount, app.archiveCount,
 				&app.queuedFiles, app.processingFile, app.isProcessing, &app.mu)
 		case "l":
 			ui.DisplayLogs(app.Config)
 			fmt.Print("Press Enter to continue...")
 			bufio.NewReader(os.Stdin).ReadString('\n')
-			ui.RefreshDisplay(app.Config, app.startTime, app.lastScanTime, &app.logBuffer, 
+			ui.RefreshDisplay(app.Config, app.startTime, app.lastScanTime, &app.logBuffer,
 				&app.logMutex, app.inputCount, app.outputCount, app.archiveCount,
 				&app.queuedFiles, app.processingFile, app.isProcessing, &app.mu)
 		case "s":
 			logger.LogInfo(app.logger, &app.logBuffer, &app.logMutex, "Manual scan triggered")
-			go processor.ScanAndProcess(app.Config, app.logger, &app.logBuffer, &app.logMutex, 
-				&app.lastScanTime, &app.queuedFiles, &app.processingFile, &app.isProcessing, 
+			go processor.ScanAndProcess(app.Config, app.logger, &app.logBuffer, &app.logMutex,
+				&app.lastScanTime, &app.queuedFiles, &app.processingFile, &app.isProcessing,
 				&app.processedFiles, &app.mu, &app.wg, app.debugMode)
 		case "i":
 			if err := ui.OpenDirectory(app.Config.InputDir); err != nil {
@@ -219,7 +219,7 @@ func (app *App) handleUserInput() {
 			if err := config.SaveConfig(app.Config, app.configPath); err != nil {
 				logger.LogError(app.logger, &app.logBuffer, &app.logMutex, "Failed to save config: %v", err)
 			}
-			ui.RefreshDisplay(app.Config, app.startTime, app.lastScanTime, &app.logBuffer, 
+			ui.RefreshDisplay(app.Config, app.startTime, app.lastScanTime, &app.logBuffer,
 				&app.logMutex, app.inputCount, app.outputCount, app.archiveCount,
 				&app.queuedFiles, app.processingFile, app.isProcessing, &app.mu)
 		case "q":

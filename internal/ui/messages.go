@@ -5,35 +5,35 @@ import "github.com/hirokitakamura/koemoji-go/internal/config"
 // Messages contains all UI text strings
 type Messages struct {
 	// Main UI
-	Active          string
-	Processing      string
-	Queue           string
-	None            string
-	Input           string
-	Output          string
-	Archive         string
-	Last            string
-	Next            string
-	Never           string
-	Soon            string
-	Uptime          string
-	
+	Active     string
+	Processing string
+	Queue      string
+	None       string
+	Input      string
+	Output     string
+	Archive    string
+	Last       string
+	Next       string
+	Never      string
+	Soon       string
+	Uptime     string
+
 	// Commands
-	ConfigCmd       string
-	LogsCmd         string
-	ScanCmd         string
-	QuitCmd         string
-	InputDirCmd     string
-	OutputDirCmd    string
-	AISummaryCmd    string
-	
+	ConfigCmd    string
+	LogsCmd      string
+	ScanCmd      string
+	QuitCmd      string
+	InputDirCmd  string
+	OutputDirCmd string
+	AISummaryCmd string
+
 	// Log levels
-	LogInfo         string
-	LogProc         string
-	LogDone         string
-	LogError        string
-	LogDebug        string
-	
+	LogInfo  string
+	LogProc  string
+	LogDone  string
+	LogError string
+	LogDebug string
+
 	// Processing messages
 	AppStarted      string
 	AppRunning      string
@@ -45,7 +45,7 @@ type Messages struct {
 	ProcessComplete string
 	ProcessFailed   string
 	MovingToArchive string
-	
+
 	// Error messages
 	LogFileError    string
 	ConfigLoadError string
@@ -60,35 +60,35 @@ type Messages struct {
 
 var messagesEN = Messages{
 	// Main UI
-	Active:          "Active",
-	Processing:      "Processing",
-	Queue:           "Queue",
-	None:            "None",
-	Input:           "Input",
-	Output:          "Output",
-	Archive:         "Archive",
-	Last:            "Last",
-	Next:            "Next",
-	Never:           "Never",
-	Soon:            "Soon",
-	Uptime:          "Uptime",
-	
+	Active:     "Active",
+	Processing: "Processing",
+	Queue:      "Queue",
+	None:       "None",
+	Input:      "Input",
+	Output:     "Output",
+	Archive:    "Archive",
+	Last:       "Last",
+	Next:       "Next",
+	Never:      "Never",
+	Soon:       "Soon",
+	Uptime:     "Uptime",
+
 	// Commands
-	ConfigCmd:       "config",
-	LogsCmd:         "logs",
-	ScanCmd:         "scan",
-	QuitCmd:         "quit",
-	InputDirCmd:     "input",
-	OutputDirCmd:    "output",
-	AISummaryCmd:    "AI summary",
-	
+	ConfigCmd:    "config",
+	LogsCmd:      "logs",
+	ScanCmd:      "scan",
+	QuitCmd:      "quit",
+	InputDirCmd:  "input",
+	OutputDirCmd: "output",
+	AISummaryCmd: "AI summary",
+
 	// Log levels
-	LogInfo:         "INFO",
-	LogProc:         "PROC",
-	LogDone:         "DONE",
-	LogError:        "ERROR",
-	LogDebug:        "DEBUG",
-	
+	LogInfo:  "INFO",
+	LogProc:  "PROC",
+	LogDone:  "DONE",
+	LogError: "ERROR",
+	LogDebug: "DEBUG",
+
 	// Processing messages
 	AppStarted:      "KoeMoji-Go v%s started",
 	AppRunning:      "KoeMoji-Go is running. Use commands below to interact.",
@@ -100,7 +100,7 @@ var messagesEN = Messages{
 	ProcessComplete: "Completed %s in %s",
 	ProcessFailed:   "Failed to process %s: %v",
 	MovingToArchive: "Moving %s to archive",
-	
+
 	// Error messages
 	LogFileError:    "Failed to open log file: %v",
 	ConfigLoadError: "Failed to load config: %v",
@@ -115,35 +115,35 @@ var messagesEN = Messages{
 
 var messagesJA = Messages{
 	// Main UI
-	Active:          "稼働中",
-	Processing:      "処理中",
-	Queue:           "待機",
-	None:            "なし",
-	Input:           "入力",
-	Output:          "出力",
-	Archive:         "アーカイブ",
-	Last:            "最終",
-	Next:            "次回",
-	Never:           "未実行",
-	Soon:            "まもなく",
-	Uptime:          "稼働時間",
-	
+	Active:     "稼働中",
+	Processing: "処理中",
+	Queue:      "待機",
+	None:       "なし",
+	Input:      "入力",
+	Output:     "出力",
+	Archive:    "アーカイブ",
+	Last:       "最終",
+	Next:       "次回",
+	Never:      "未実行",
+	Soon:       "まもなく",
+	Uptime:     "稼働時間",
+
 	// Commands
-	ConfigCmd:       "設定",
-	LogsCmd:         "ログ",
-	ScanCmd:         "スキャン",
-	QuitCmd:         "終了",
-	InputDirCmd:     "入力",
-	OutputDirCmd:    "出力",
-	AISummaryCmd:    "AI要約",
-	
+	ConfigCmd:    "設定",
+	LogsCmd:      "ログ",
+	ScanCmd:      "スキャン",
+	QuitCmd:      "終了",
+	InputDirCmd:  "入力",
+	OutputDirCmd: "出力",
+	AISummaryCmd: "AI要約",
+
 	// Log levels
-	LogInfo:         "情報",
-	LogProc:         "処理",
-	LogDone:         "完了",
-	LogError:        "エラー",
-	LogDebug:        "デバッグ",
-	
+	LogInfo:  "情報",
+	LogProc:  "処理",
+	LogDone:  "完了",
+	LogError: "エラー",
+	LogDebug: "デバッグ",
+
 	// Processing messages
 	AppStarted:      "KoeMoji-Go v%s を開始しました",
 	AppRunning:      "KoeMoji-Goが実行中です。以下のコマンドを使用してください。",
@@ -155,7 +155,7 @@ var messagesJA = Messages{
 	ProcessComplete: "%sの処理を完了 (処理時間: %s)",
 	ProcessFailed:   "%sの処理に失敗: %v",
 	MovingToArchive: "%sをアーカイブに移動",
-	
+
 	// Error messages
 	LogFileError:    "ログファイルを開けません: %v",
 	ConfigLoadError: "設定の読み込みに失敗: %v",

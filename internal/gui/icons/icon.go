@@ -10,7 +10,7 @@ func GetAppIcon() fyne.Resource {
 	// For now, we'll use a simple placeholder
 	// In the future, this can be replaced with a proper icon file
 	// The icon should be embedded as a resource using fyne bundle
-	
+
 	// Return nil for now - Fyne will use a default icon
 	return nil
 }

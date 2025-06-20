@@ -54,6 +54,6 @@ func TestEnsureDirectories_AlreadyExists(t *testing.T) {
 // Note: ScanAndProcess and StartProcessing require complex setup with logger buffers
 // and multiple concurrent variables. These are better tested through integration tests
 // or by testing individual components separately.
-// 
+//
 // The core business logic in these functions is handled by unexported helper functions
 // which would need to be made exported to be unit tested, or tested indirectly.

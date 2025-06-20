@@ -25,13 +25,13 @@ type Config struct {
 	OutputDir           string `json:"output_dir"`
 	ArchiveDir          string `json:"archive_dir"`
 	// LLM Summary settings
-	LLMSummaryEnabled   bool   `json:"llm_summary_enabled"`
-	LLMAPIProvider      string `json:"llm_api_provider"`
-	LLMAPIKey           string `json:"llm_api_key"`
-	LLMModel            string `json:"llm_model"`
-	LLMMaxTokens        int    `json:"llm_max_tokens"`
+	LLMSummaryEnabled     bool   `json:"llm_summary_enabled"`
+	LLMAPIProvider        string `json:"llm_api_provider"`
+	LLMAPIKey             string `json:"llm_api_key"`
+	LLMModel              string `json:"llm_model"`
+	LLMMaxTokens          int    `json:"llm_max_tokens"`
 	SummaryPromptTemplate string `json:"summary_prompt_template"`
-	SummaryLanguage     string `json:"summary_language"`
+	SummaryLanguage       string `json:"summary_language"`
 }
 
 func GetDefaultConfig() *Config {
@@ -48,13 +48,13 @@ func GetDefaultConfig() *Config {
 		OutputDir:           "./output",
 		ArchiveDir:          "./archive",
 		// LLM Summary defaults
-		LLMSummaryEnabled:   false,
-		LLMAPIProvider:      "openai",
-		LLMAPIKey:           "",
-		LLMModel:            "gpt-4o",
-		LLMMaxTokens:        4096,
+		LLMSummaryEnabled:     false,
+		LLMAPIProvider:        "openai",
+		LLMAPIKey:             "",
+		LLMModel:              "gpt-4o",
+		LLMMaxTokens:          4096,
 		SummaryPromptTemplate: "以下の文字起こしテキストを{language}で要約してください。重要なポイントを箇条書きでまとめ、全体の概要も含めてください。\n\n{text}",
-		SummaryLanguage:     "auto",
+		SummaryLanguage:       "auto",
 	}
 }
 
@@ -417,7 +417,6 @@ func configureUseColors(config *Config, reader *bufio.Reader) bool {
 	return false
 }
 
-
 func configureOutputFormat(config *Config, reader *bufio.Reader) bool {
 	formats := []string{"txt", "vtt", "srt", "tsv", "json"}
 	msg := getMessages(config)
@@ -537,7 +536,7 @@ func resetToDefaults(config *Config, reader *bufio.Reader) bool {
 
 func selectFolder(title string) (string, error) {
 	var cmd *exec.Cmd
-	
+
 	switch runtime.GOOS {
 	case "windows":
 		cmd = exec.Command("powershell", "-Command",
@@ -551,88 +550,88 @@ func selectFolder(title string) (string, error) {
 	default:
 		return "", fmt.Errorf("folder selection not supported on this platform")
 	}
-	
+
 	output, err := cmd.Output()
 	if err != nil {
 		return "", err
 	}
-	
+
 	selectedPath := strings.TrimSpace(string(output))
 	if selectedPath == "" {
 		return "", fmt.Errorf("no folder selected")
 	}
-	
+
 	return selectedPath, nil
 }
 
 // Messages contains all UI text strings
 type Messages struct {
 	// Config menu
-	ConfigTitle     string
-	WhisperModel    string
-	Language        string
-	UILanguage      string
-	ScanInterval    string
-	MaxCPUPercent   string
-	ComputeType     string
-	UseColors       string
-	UIMode          string
-	OutputFormat    string
-	InputDirectory  string
-	OutputDirectory string
+	ConfigTitle      string
+	WhisperModel     string
+	Language         string
+	UILanguage       string
+	ScanInterval     string
+	MaxCPUPercent    string
+	ComputeType      string
+	UseColors        string
+	UIMode           string
+	OutputFormat     string
+	InputDirectory   string
+	OutputDirectory  string
 	ArchiveDirectory string
 	// LLM Settings
 	LLMSummaryEnabled string
-	LLMAPIProvider   string
-	LLMAPIKey        string
-	LLMModel         string
-	LLMMaxTokens     string
-	SummaryPrompt    string
-	EditablePrompt   string
-	ResetDefaults    string
-	SaveAndExit      string
-	QuitWithoutSave  string
-	SelectOption     string
-	Minutes          string
-	Current          string
-	
+	LLMAPIProvider    string
+	LLMAPIKey         string
+	LLMModel          string
+	LLMMaxTokens      string
+	SummaryPrompt     string
+	EditablePrompt    string
+	ResetDefaults     string
+	SaveAndExit       string
+	QuitWithoutSave   string
+	SelectOption      string
+	Minutes           string
+	Current           string
+
 	// Config prompts
-	SelectModel     string
-	EnterLanguage   string
-	SelectUILang    string
-	EnterInterval   string
-	EnterCPU        string
-	SelectCompute   string
-	EnableColors    string
-	SelectUIMode    string
-	SelectFormat    string
-	SelectFolder    string
-	ResetConfirm    string
-	UnsavedChanges  string
+	SelectModel    string
+	EnterLanguage  string
+	SelectUILang   string
+	EnterInterval  string
+	EnterCPU       string
+	SelectCompute  string
+	EnableColors   string
+	SelectUIMode   string
+	SelectFormat   string
+	SelectFolder   string
+	ResetConfirm   string
+	UnsavedChanges string
 	// LLM prompts
-	EnableLLMSummary    string
-	SelectLLMProvider   string
-	EnterLLMAPIKey      string
-	SelectLLMModel      string
-	EnterLLMMaxTokens   string
-	CurrentPrompt       string
-	PromptInstructions  string
-	EnterNewPrompt      string
-	
+	EnableLLMSummary   string
+	SelectLLMProvider  string
+	EnterLLMAPIKey     string
+	SelectLLMModel     string
+	EnterLLMMaxTokens  string
+	CurrentPrompt      string
+	PromptInstructions string
+	EnterNewPrompt     string
+
 	// Config messages
-	ModelSet        string
-	LanguageSet     string
-	UILanguageSet   string
-	IntervalSet     string
-	CPUSet          string
-	ComputeSet      string
-	ColorsEnabled   string
-	ColorsDisabled  string
-	UIModeSet       string
-	FormatSet       string
-	InputDirSet     string
-	OutputDirSet    string
-	ArchiveDirSet   string
+	ModelSet       string
+	LanguageSet    string
+	UILanguageSet  string
+	IntervalSet    string
+	CPUSet         string
+	ComputeSet     string
+	ColorsEnabled  string
+	ColorsDisabled string
+	UIModeSet      string
+	FormatSet      string
+	InputDirSet    string
+	OutputDirSet   string
+	ArchiveDirSet  string
 	// LLM messages
 	LLMSummaryEnabledMsg  string
 	LLMSummaryDisabledMsg string
@@ -652,71 +651,71 @@ type Messages struct {
 
 var messagesEN = Messages{
 	// Config menu
-	ConfigTitle:     "KoeMoji-Go Configuration",
-	WhisperModel:    "Whisper Model",
-	Language:        "Language",
-	UILanguage:      "UI Language",
-	ScanInterval:    "Scan Interval",
-	MaxCPUPercent:   "Max CPU Percent",
-	ComputeType:     "Compute Type",
-	UseColors:       "Use Colors",
-	UIMode:          "UI Mode",
-	OutputFormat:    "Output Format",
-	InputDirectory:  "Input Directory",
-	OutputDirectory: "Output Directory",
+	ConfigTitle:      "KoeMoji-Go Configuration",
+	WhisperModel:     "Whisper Model",
+	Language:         "Language",
+	UILanguage:       "UI Language",
+	ScanInterval:     "Scan Interval",
+	MaxCPUPercent:    "Max CPU Percent",
+	ComputeType:      "Compute Type",
+	UseColors:        "Use Colors",
+	UIMode:           "UI Mode",
+	OutputFormat:     "Output Format",
+	InputDirectory:   "Input Directory",
+	OutputDirectory:  "Output Directory",
 	ArchiveDirectory: "Archive Directory",
 	// LLM Settings
 	LLMSummaryEnabled: "LLM Summary",
-	LLMAPIProvider:   "LLM API Provider",
-	LLMAPIKey:        "LLM API Key",
-	LLMModel:         "LLM Model",
-	LLMMaxTokens:     "Max Tokens",
-	SummaryPrompt:    "Summary Prompt",
-	EditablePrompt:   "Editable",
-	ResetDefaults:    "Reset to defaults",
-	SaveAndExit:      "Save and exit",
-	QuitWithoutSave:  "Quit without saving",
-	SelectOption:     "Select option",
-	Minutes:          "minutes",
-	Current:          "current",
-	
+	LLMAPIProvider:    "LLM API Provider",
+	LLMAPIKey:         "LLM API Key",
+	LLMModel:          "LLM Model",
+	LLMMaxTokens:      "Max Tokens",
+	SummaryPrompt:     "Summary Prompt",
+	EditablePrompt:    "Editable",
+	ResetDefaults:     "Reset to defaults",
+	SaveAndExit:       "Save and exit",
+	QuitWithoutSave:   "Quit without saving",
+	SelectOption:      "Select option",
+	Minutes:           "minutes",
+	Current:           "current",
+
 	// Config prompts
-	SelectModel:     "Select model (1-%d) or press Enter to keep current:",
-	EnterLanguage:   "Enter new language code (e.g., ja, en, zh) or press Enter to keep current:",
-	SelectUILang:    "Select UI language (1-2) or press Enter to keep current:",
-	EnterInterval:   "Enter new scan interval (minutes) or press Enter to keep current:",
-	EnterCPU:        "Enter new max CPU percent (1-100) or press Enter to keep current:",
-	SelectCompute:   "Select compute type (1-%d) or press Enter to keep current:",
-	EnableColors:    "Enable colors? (y/n) or press Enter to keep current:",
-	SelectUIMode:    "Select UI mode (1-2) or press Enter to keep current:",
-	SelectFormat:    "Select output format (1-%d) or press Enter to keep current:",
-	SelectFolder:    "Press Enter to select folder with dialog, or type path manually:",
-	ResetConfirm:    "Are you sure you want to reset all settings to defaults? (y/N):",
-	UnsavedChanges:  "You have unsaved changes. Are you sure you want to quit? (y/N):",
+	SelectModel:    "Select model (1-%d) or press Enter to keep current:",
+	EnterLanguage:  "Enter new language code (e.g., ja, en, zh) or press Enter to keep current:",
+	SelectUILang:   "Select UI language (1-2) or press Enter to keep current:",
+	EnterInterval:  "Enter new scan interval (minutes) or press Enter to keep current:",
+	EnterCPU:       "Enter new max CPU percent (1-100) or press Enter to keep current:",
+	SelectCompute:  "Select compute type (1-%d) or press Enter to keep current:",
+	EnableColors:   "Enable colors? (y/n) or press Enter to keep current:",
+	SelectUIMode:   "Select UI mode (1-2) or press Enter to keep current:",
+	SelectFormat:   "Select output format (1-%d) or press Enter to keep current:",
+	SelectFolder:   "Press Enter to select folder with dialog, or type path manually:",
+	ResetConfirm:   "Are you sure you want to reset all settings to defaults? (y/N):",
+	UnsavedChanges: "You have unsaved changes. Are you sure you want to quit? (y/N):",
 	// LLM prompts
-	EnableLLMSummary:    "Enable LLM summary? (y/n) or press Enter to keep current:",
-	SelectLLMProvider:   "Select LLM provider (1-1) or press Enter to keep current:",
-	EnterLLMAPIKey:      "Enter LLM API key or press Enter to keep current:",
-	SelectLLMModel:      "Select LLM model (1-%d) or press Enter to keep current:",
-	EnterLLMMaxTokens:   "Enter max tokens (1-16384) or press Enter to keep current:",
-	CurrentPrompt:       "Current prompt",
-	PromptInstructions:  "Use {text} for content and {language} for language. Enter new prompt:",
-	EnterNewPrompt:      "Enter new prompt or press Enter to keep current:",
-	
+	EnableLLMSummary:   "Enable LLM summary? (y/n) or press Enter to keep current:",
+	SelectLLMProvider:  "Select LLM provider (1-1) or press Enter to keep current:",
+	EnterLLMAPIKey:     "Enter LLM API key or press Enter to keep current:",
+	SelectLLMModel:     "Select LLM model (1-%d) or press Enter to keep current:",
+	EnterLLMMaxTokens:  "Enter max tokens (1-16384) or press Enter to keep current:",
+	CurrentPrompt:      "Current prompt",
+	PromptInstructions: "Use {text} for content and {language} for language. Enter new prompt:",
+	EnterNewPrompt:     "Enter new prompt or press Enter to keep current:",
+
 	// Config messages
-	ModelSet:        "Whisper model set to: %s",
-	LanguageSet:     "Language set to: %s",
-	UILanguageSet:   "UI language set to: %s",
-	IntervalSet:     "Scan interval set to: %d minutes",
-	CPUSet:          "Max CPU percent set to: %d%%",
-	ComputeSet:      "Compute type set to: %s",
-	ColorsEnabled:   "Colors enabled",
-	ColorsDisabled:  "Colors disabled",
-	UIModeSet:       "UI mode set to: %s",
-	FormatSet:       "Output format set to: %s",
-	InputDirSet:     "Input directory set to: %s",
-	OutputDirSet:    "Output directory set to: %s",
-	ArchiveDirSet:   "Archive directory set to: %s",
+	ModelSet:       "Whisper model set to: %s",
+	LanguageSet:    "Language set to: %s",
+	UILanguageSet:  "UI language set to: %s",
+	IntervalSet:    "Scan interval set to: %d minutes",
+	CPUSet:         "Max CPU percent set to: %d%%",
+	ComputeSet:     "Compute type set to: %s",
+	ColorsEnabled:  "Colors enabled",
+	ColorsDisabled: "Colors disabled",
+	UIModeSet:      "UI mode set to: %s",
+	FormatSet:      "Output format set to: %s",
+	InputDirSet:    "Input directory set to: %s",
+	OutputDirSet:   "Output directory set to: %s",
+	ArchiveDirSet:  "Archive directory set to: %s",
 	// LLM messages
 	LLMSummaryEnabledMsg:  "LLM summary enabled",
 	LLMSummaryDisabledMsg: "LLM summary disabled",
@@ -736,71 +735,71 @@ var messagesEN = Messages{
 
 var messagesJA = Messages{
 	// Config menu
-	ConfigTitle:     "KoeMoji-Go 設定",
-	WhisperModel:    "Whisperモデル",
-	Language:        "認識言語",
-	UILanguage:      "UI言語",
-	ScanInterval:    "スキャン間隔",
-	MaxCPUPercent:   "最大CPU使用率",
-	ComputeType:     "計算タイプ",
-	UseColors:       "色を使用",
-	UIMode:          "UIモード",
-	OutputFormat:    "出力フォーマット",
-	InputDirectory:  "入力ディレクトリ",
-	OutputDirectory: "出力ディレクトリ",
+	ConfigTitle:      "KoeMoji-Go 設定",
+	WhisperModel:     "Whisperモデル",
+	Language:         "認識言語",
+	UILanguage:       "UI言語",
+	ScanInterval:     "スキャン間隔",
+	MaxCPUPercent:    "最大CPU使用率",
+	ComputeType:      "計算タイプ",
+	UseColors:        "色を使用",
+	UIMode:           "UIモード",
+	OutputFormat:     "出力フォーマット",
+	InputDirectory:   "入力ディレクトリ",
+	OutputDirectory:  "出力ディレクトリ",
 	ArchiveDirectory: "アーカイブディレクトリ",
 	// LLM Settings
 	LLMSummaryEnabled: "LLM要約機能",
-	LLMAPIProvider:   "LLM APIプロバイダー",
-	LLMAPIKey:        "LLM APIキー",
-	LLMModel:         "LLMモデル",
-	LLMMaxTokens:     "最大トークン数",
-	SummaryPrompt:    "要約プロンプト",
-	EditablePrompt:   "編集可能",
-	ResetDefaults:    "デフォルトに戻す",
-	SaveAndExit:      "保存して終了",
-	QuitWithoutSave:  "保存せずに終了",
-	SelectOption:     "オプションを選択",
-	Minutes:          "分",
-	Current:          "現在",
-	
+	LLMAPIProvider:    "LLM APIプロバイダー",
+	LLMAPIKey:         "LLM APIキー",
+	LLMModel:          "LLMモデル",
+	LLMMaxTokens:      "最大トークン数",
+	SummaryPrompt:     "要約プロンプト",
+	EditablePrompt:    "編集可能",
+	ResetDefaults:     "デフォルトに戻す",
+	SaveAndExit:       "保存して終了",
+	QuitWithoutSave:   "保存せずに終了",
+	SelectOption:      "オプションを選択",
+	Minutes:           "分",
+	Current:           "現在",
+
 	// Config prompts
-	SelectModel:     "モデルを選択 (1-%d) またはEnterで現在の設定を維持:",
-	EnterLanguage:   "新しい言語コード (例: ja, en, zh) を入力またはEnterで現在の設定を維持:",
-	SelectUILang:    "UI言語を選択 (1-2) またはEnterで現在の設定を維持:",
-	EnterInterval:   "新しいスキャン間隔（分）を入力またはEnterで現在の設定を維持:",
-	EnterCPU:        "新しい最大CPU使用率 (1-100) を入力またはEnterで現在の設定を維持:",
-	SelectCompute:   "計算タイプを選択 (1-%d) またはEnterで現在の設定を維持:",
-	EnableColors:    "色を有効にしますか？ (y/n) またはEnterで現在の設定を維持:",
-	SelectUIMode:    "UIモードを選択 (1-2) またはEnterで現在の設定を維持:",
-	SelectFormat:    "出力フォーマットを選択 (1-%d) またはEnterで現在の設定を維持:",
-	SelectFolder:    "Enterでフォルダ選択ダイアログを開く、または手動でパスを入力:",
-	ResetConfirm:    "本当にすべての設定をデフォルトに戻しますか？ (y/N):",
-	UnsavedChanges:  "未保存の変更があります。本当に終了しますか？ (y/N):",
+	SelectModel:    "モデルを選択 (1-%d) またはEnterで現在の設定を維持:",
+	EnterLanguage:  "新しい言語コード (例: ja, en, zh) を入力またはEnterで現在の設定を維持:",
+	SelectUILang:   "UI言語を選択 (1-2) またはEnterで現在の設定を維持:",
+	EnterInterval:  "新しいスキャン間隔（分）を入力またはEnterで現在の設定を維持:",
+	EnterCPU:       "新しい最大CPU使用率 (1-100) を入力またはEnterで現在の設定を維持:",
+	SelectCompute:  "計算タイプを選択 (1-%d) またはEnterで現在の設定を維持:",
+	EnableColors:   "色を有効にしますか？ (y/n) またはEnterで現在の設定を維持:",
+	SelectUIMode:   "UIモードを選択 (1-2) またはEnterで現在の設定を維持:",
+	SelectFormat:   "出力フォーマットを選択 (1-%d) またはEnterで現在の設定を維持:",
+	SelectFolder:   "Enterでフォルダ選択ダイアログを開く、または手動でパスを入力:",
+	ResetConfirm:   "本当にすべての設定をデフォルトに戻しますか？ (y/N):",
+	UnsavedChanges: "未保存の変更があります。本当に終了しますか？ (y/N):",
 	// LLM prompts
-	EnableLLMSummary:    "LLM要約を有効にしますか？ (y/n) またはEnterで現在の設定を維持:",
-	SelectLLMProvider:   "LLM APIプロバイダーを選択 (1-1) またはEnterで現在の設定を維持:",
-	EnterLLMAPIKey:      "LLM APIキーを入力またはEnterで現在の設定を維持:",
-	SelectLLMModel:      "LLMモデルを選択 (1-%d) またはEnterで現在の設定を維持:",
-	EnterLLMMaxTokens:   "最大トークン数を入力 (1-16384) またはEnterで現在の設定を維持:",
-	CurrentPrompt:       "現在のプロンプト",
-	PromptInstructions:  "{text}でコンテンツ、{language}で言語を指定できます。新しいプロンプトを入力:",
-	EnterNewPrompt:      "新しいプロンプトを入力またはEnterで現在の設定を維持:",
-	
+	EnableLLMSummary:   "LLM要約を有効にしますか？ (y/n) またはEnterで現在の設定を維持:",
+	SelectLLMProvider:  "LLM APIプロバイダーを選択 (1-1) またはEnterで現在の設定を維持:",
+	EnterLLMAPIKey:     "LLM APIキーを入力またはEnterで現在の設定を維持:",
+	SelectLLMModel:     "LLMモデルを選択 (1-%d) またはEnterで現在の設定を維持:",
+	EnterLLMMaxTokens:  "最大トークン数を入力 (1-16384) またはEnterで現在の設定を維持:",
+	CurrentPrompt:      "現在のプロンプト",
+	PromptInstructions: "{text}でコンテンツ、{language}で言語を指定できます。新しいプロンプトを入力:",
+	EnterNewPrompt:     "新しいプロンプトを入力またはEnterで現在の設定を維持:",
+
 	// Config messages
-	ModelSet:        "Whisperモデルを設定: %s",
-	LanguageSet:     "言語を設定: %s",
-	UILanguageSet:   "UI言語を設定: %s",
-	IntervalSet:     "スキャン間隔を設定: %d分",
-	CPUSet:          "最大CPU使用率を設定: %d%%",
-	ComputeSet:      "計算タイプを設定: %s",
-	ColorsEnabled:   "色を有効にしました",
-	ColorsDisabled:  "色を無効にしました",
-	UIModeSet:       "UIモードを設定: %s",
-	FormatSet:       "出力フォーマットを設定: %s",
-	InputDirSet:     "入力ディレクトリを設定: %s",
-	OutputDirSet:    "出力ディレクトリを設定: %s",
-	ArchiveDirSet:   "アーカイブディレクトリを設定: %s",
+	ModelSet:       "Whisperモデルを設定: %s",
+	LanguageSet:    "言語を設定: %s",
+	UILanguageSet:  "UI言語を設定: %s",
+	IntervalSet:    "スキャン間隔を設定: %d分",
+	CPUSet:         "最大CPU使用率を設定: %d%%",
+	ComputeSet:     "計算タイプを設定: %s",
+	ColorsEnabled:  "色を有効にしました",
+	ColorsDisabled: "色を無効にしました",
+	UIModeSet:      "UIモードを設定: %s",
+	FormatSet:      "出力フォーマットを設定: %s",
+	InputDirSet:    "入力ディレクトリを設定: %s",
+	OutputDirSet:   "出力ディレクトリを設定: %s",
+	ArchiveDirSet:  "アーカイブディレクトリを設定: %s",
 	// LLM messages
 	LLMSummaryEnabledMsg:  "LLM要約機能を有効にしました",
 	LLMSummaryDisabledMsg: "LLM要約機能を無効にしました",

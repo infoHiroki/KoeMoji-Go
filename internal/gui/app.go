@@ -22,13 +22,13 @@ type GUIApp struct {
 	mu             sync.Mutex
 
 	// UI related fields
-	startTime      time.Time
-	lastScanTime   time.Time
-	logBuffer      []logger.LogEntry
-	logMutex       sync.RWMutex
-	inputCount     int
-	outputCount    int
-	archiveCount   int
+	startTime    time.Time
+	lastScanTime time.Time
+	logBuffer    []logger.LogEntry
+	logMutex     sync.RWMutex
+	inputCount   int
+	outputCount  int
+	archiveCount int
 
 	// Queue management for sequential processing
 	queuedFiles    []string // 処理待ちファイルキュー
@@ -38,17 +38,17 @@ type GUIApp struct {
 	// GUI specific fields
 	fyneApp fyne.App
 	window  fyne.Window
-	
+
 	// UI components (will be implemented in components.go)
-	statusWidget    fyne.CanvasObject
-	logWidget       fyne.CanvasObject
-	buttonWidget    fyne.CanvasObject
-	
+	statusWidget fyne.CanvasObject
+	logWidget    fyne.CanvasObject
+	buttonWidget fyne.CanvasObject
+
 	// UI component references for updates
-	statusLabel     *widget.Label
-	filesLabel      *widget.Label
-	timingLabel     *widget.Label
-	logText         *widget.RichText
+	statusLabel *widget.Label
+	filesLabel  *widget.Label
+	timingLabel *widget.Label
+	logText     *widget.RichText
 }
 
 // Run starts the GUI application
@@ -64,10 +64,10 @@ func Run(configPath string, debugMode bool) {
 
 	// Initialize the application
 	guiApp.fyneApp = app.NewWithID("com.hirokitakamura.koemoji-go")
-	
+
 	// Load configuration
 	guiApp.loadConfig()
-	
+
 	// Create and show the main window
 	guiApp.createWindow()
 	guiApp.window.ShowAndRun()
@@ -77,7 +77,7 @@ func Run(configPath string, debugMode bool) {
 func (app *GUIApp) loadConfig() {
 	// Initialize logger first (similar to main.go)
 	app.initLogger()
-	
+
 	// Load configuration
 	cfg := config.LoadConfig(app.configPath, nil) // GUI mode doesn't need file logger
 	app.Config = cfg

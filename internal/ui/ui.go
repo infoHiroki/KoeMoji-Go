@@ -25,10 +25,10 @@ const (
 )
 
 // UI functions
-func RefreshDisplay(config *config.Config, startTime, lastScanTime time.Time, logBuffer *[]logger.LogEntry, 
-	logMutex *sync.RWMutex, inputCount, outputCount, archiveCount int, queuedFiles *[]string, 
+func RefreshDisplay(config *config.Config, startTime, lastScanTime time.Time, logBuffer *[]logger.LogEntry,
+	logMutex *sync.RWMutex, inputCount, outputCount, archiveCount int, queuedFiles *[]string,
 	processingFile string, isProcessing bool, mu *sync.Mutex) {
-	
+
 	if config == nil {
 		return
 	}
@@ -36,15 +36,15 @@ func RefreshDisplay(config *config.Config, startTime, lastScanTime time.Time, lo
 	// Clear screen and move cursor to top
 	fmt.Print("\033[2J\033[H")
 
-	displayHeader(config, startTime, lastScanTime, inputCount, outputCount, archiveCount, 
+	displayHeader(config, startTime, lastScanTime, inputCount, outputCount, archiveCount,
 		queuedFiles, processingFile, isProcessing, mu)
 	displayRealtimeLogs(config, logBuffer, logMutex)
 	displayCommands(config)
 }
 
-func displayHeader(config *config.Config, startTime, lastScanTime time.Time, inputCount, outputCount, archiveCount int, 
+func displayHeader(config *config.Config, startTime, lastScanTime time.Time, inputCount, outputCount, archiveCount int,
 	queuedFiles *[]string, processingFile string, isProcessing bool, mu *sync.Mutex) {
-	
+
 	updateFileCounts(config, &inputCount, &outputCount, &archiveCount)
 	msg := GetMessages(config)
 
@@ -91,7 +91,7 @@ func displayRealtimeLogs(config *config.Config, logBuffer *[]logger.LogEntry, lo
 	for _, entry := range *logBuffer {
 		color := getLogColor(config, entry.Level)
 		timestamp := entry.Timestamp.Format("15:04:05")
-		
+
 		// Convert log level to localized version
 		localizedLevel := entry.Level
 		switch entry.Level {
@@ -128,7 +128,7 @@ func displayCommands(config *config.Config) {
 
 func DisplayLogs(config *config.Config) {
 	msg := GetMessages(config)
-	
+
 	if _, err := os.Stat("koemoji.log"); os.IsNotExist(err) {
 		fmt.Println(msg.FileNotFound)
 		return
@@ -203,7 +203,7 @@ func formatDuration(d time.Duration) string {
 	hours := int(d.Hours())
 	minutes := int(d.Minutes()) % 60
 	seconds := int(d.Seconds()) % 60
-	
+
 	if hours > 0 {
 		return fmt.Sprintf("%dh%dm%ds", hours, minutes, seconds)
 	} else if minutes > 0 {
@@ -223,11 +223,11 @@ func updateFileCounts(config *config.Config, inputCount, outputCount, archiveCou
 			}
 		}
 	}
-	
+
 	if entries, err := os.ReadDir(config.OutputDir); err == nil {
 		*outputCount = len(entries)
 	}
-	
+
 	if entries, err := os.ReadDir(config.ArchiveDir); err == nil {
 		*archiveCount = len(entries)
 	}

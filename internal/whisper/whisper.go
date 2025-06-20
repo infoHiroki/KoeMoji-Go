@@ -59,9 +59,9 @@ func installFasterWhisper(log *log.Logger, logBuffer *[]logger.LogEntry, logMute
 	return nil
 }
 
-func TranscribeAudio(config *config.Config, log *log.Logger, logBuffer *[]logger.LogEntry, 
+func TranscribeAudio(config *config.Config, log *log.Logger, logBuffer *[]logger.LogEntry,
 	logMutex *sync.RWMutex, debugMode bool, inputFile string) error {
-	
+
 	// セキュリティチェック: inputディレクトリ内のファイルのみ許可
 	absPath, err := filepath.Abs(inputFile)
 	if err != nil {
@@ -132,9 +132,9 @@ func TranscribeAudio(config *config.Config, log *log.Logger, logBuffer *[]logger
 	return nil
 }
 
-func readCommandOutput(log *log.Logger, logBuffer *[]logger.LogEntry, logMutex *sync.RWMutex, 
+func readCommandOutput(log *log.Logger, logBuffer *[]logger.LogEntry, logMutex *sync.RWMutex,
 	debugMode bool, pipe io.ReadCloser, source string) {
-	
+
 	defer pipe.Close()
 	scanner := bufio.NewScanner(pipe)
 
@@ -147,9 +147,9 @@ func readCommandOutput(log *log.Logger, logBuffer *[]logger.LogEntry, logMutex *
 	}
 }
 
-func monitorProgress(log *log.Logger, logBuffer *[]logger.LogEntry, logMutex *sync.RWMutex, 
+func monitorProgress(log *log.Logger, logBuffer *[]logger.LogEntry, logMutex *sync.RWMutex,
 	filename string, startTime time.Time, done chan bool) {
-	
+
 	ticker := time.NewTicker(30 * time.Second) // 30秒ごとに進行状況を報告
 	defer ticker.Stop()
 
@@ -164,9 +164,9 @@ func monitorProgress(log *log.Logger, logBuffer *[]logger.LogEntry, logMutex *sy
 	}
 }
 
-func EnsureDependencies(config *config.Config, log *log.Logger, logBuffer *[]logger.LogEntry, 
+func EnsureDependencies(config *config.Config, log *log.Logger, logBuffer *[]logger.LogEntry,
 	logMutex *sync.RWMutex, debugMode bool) {
-	
+
 	if !isFasterWhisperAvailable() {
 		logger.LogInfo(log, logBuffer, logMutex, "FasterWhisper not found. Attempting to install...")
 		if err := installFasterWhisper(log, logBuffer, logMutex); err != nil {
@@ -183,7 +183,7 @@ func formatDuration(d time.Duration) string {
 	hours := int(d.Hours())
 	minutes := int(d.Minutes()) % 60
 	seconds := int(d.Seconds()) % 60
-	
+
 	if hours > 0 {
 		return fmt.Sprintf("%dh%dm%ds", hours, minutes, seconds)
 	} else if minutes > 0 {

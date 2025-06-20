@@ -18,20 +18,20 @@ func (app *GUIApp) startPeriodicUpdate() {
 	// Initialize dependencies once
 	processor.EnsureDirectories(app.Config, nil)
 	whisper.EnsureDependencies(app.Config, nil, &app.logBuffer, &app.logMutex, app.debugMode)
-	
+
 	// Initial UI update
 	app.updateUI()
-	
+
 	// Start file processing
 	go processor.StartProcessing(app.Config, nil, &app.logBuffer, &app.logMutex,
 		&app.lastScanTime, &app.queuedFiles, &app.processingFile, &app.isProcessing,
 		&app.processedFiles, &app.mu, nil, app.debugMode)
-	
+
 	// Start periodic updates in a goroutine
 	go func() {
 		ticker := time.NewTicker(5 * time.Second)
 		defer ticker.Stop()
-		
+
 		for range ticker.C {
 			app.updateUI()
 		}
@@ -163,7 +163,7 @@ func formatDuration(d time.Duration) string {
 func (app *GUIApp) onConfigPressed() {
 	// Show the configuration dialog
 	app.showConfigDialog()
-	
+
 	// Log the action
 	logger.LogInfo(nil, &app.logBuffer, &app.logMutex, "Configuration dialog opened")
 }
@@ -172,7 +172,7 @@ func (app *GUIApp) onConfigPressed() {
 func (app *GUIApp) onLogsPressed() {
 	// Open log file using existing UI function
 	ui.DisplayLogs(app.Config)
-	
+
 	// Log the action
 	logger.LogInfo(nil, &app.logBuffer, &app.logMutex, "Log file opened")
 }
@@ -180,7 +180,7 @@ func (app *GUIApp) onLogsPressed() {
 // onScanPressed handles the scan button press
 func (app *GUIApp) onScanPressed() {
 	logger.LogInfo(nil, &app.logBuffer, &app.logMutex, "Manual scan triggered")
-	
+
 	// Use existing sync.WaitGroup reference if available, or create minimal scan
 	processor.ScanAndProcess(app.Config, nil, &app.logBuffer, &app.logMutex,
 		&app.lastScanTime, &app.queuedFiles, &app.processingFile, &app.isProcessing,
@@ -210,7 +210,7 @@ func (app *GUIApp) onAITogglePressed() {
 		status = "enabled"
 	}
 	logger.LogInfo(nil, &app.logBuffer, &app.logMutex, "AI summary %s", status)
-	
+
 	// Save the configuration change
 	if err := config.SaveConfig(app.Config, app.configPath); err != nil {
 		logger.LogError(nil, &app.logBuffer, &app.logMutex, "Failed to save config: %v", err)

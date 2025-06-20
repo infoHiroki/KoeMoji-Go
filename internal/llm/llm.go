@@ -28,7 +28,7 @@ type Message struct {
 }
 
 type OpenAIResponse struct {
-	Choices []Choice `json:"choices"`
+	Choices []Choice  `json:"choices"`
 	Error   *APIError `json:"error,omitempty"`
 }
 
@@ -43,20 +43,20 @@ type APIError struct {
 }
 
 // SummarizeText generates a summary of the given text using LLM API
-func SummarizeText(config *config.Config, log *log.Logger, logBuffer *[]logger.LogEntry, 
+func SummarizeText(config *config.Config, log *log.Logger, logBuffer *[]logger.LogEntry,
 	logMutex *sync.RWMutex, debugMode bool, text string) (string, error) {
-	
+
 	if !config.LLMSummaryEnabled {
 		return "", fmt.Errorf("LLM summary is disabled")
 	}
-	
+
 	if config.LLMAPIKey == "" {
 		return "", fmt.Errorf("LLM API key is not configured")
 	}
-	
+
 	// Prepare prompt
 	prompt := preparePrompt(config, text)
-	
+
 	// Call API based on provider
 	switch config.LLMAPIProvider {
 	case "openai":
@@ -68,12 +68,12 @@ func SummarizeText(config *config.Config, log *log.Logger, logBuffer *[]logger.L
 
 func preparePrompt(config *config.Config, text string) string {
 	prompt := config.SummaryPromptTemplate
-	
+
 	// Replace variables in template
 	language := getSummaryLanguage(config)
 	prompt = strings.ReplaceAll(prompt, "{text}", text)
 	prompt = strings.ReplaceAll(prompt, "{language}", language)
-	
+
 	return prompt
 }
 
@@ -94,9 +94,9 @@ func getSummaryLanguage(config *config.Config) string {
 	}
 }
 
-func callOpenAI(config *config.Config, log *log.Logger, logBuffer *[]logger.LogEntry, 
+func callOpenAI(config *config.Config, log *log.Logger, logBuffer *[]logger.LogEntry,
 	logMutex *sync.RWMutex, debugMode bool, prompt string) (string, error) {
-	
+
 	// Prepare request
 	request := OpenAIRequest{
 		Model:     config.LLMModel,
@@ -108,23 +108,23 @@ func callOpenAI(config *config.Config, log *log.Logger, logBuffer *[]logger.LogE
 			},
 		},
 	}
-	
+
 	jsonData, err := json.Marshal(request)
 	if err != nil {
 		return "", fmt.Errorf("failed to marshal request: %w", err)
 	}
-	
+
 	logger.LogDebug(log, logBuffer, logMutex, debugMode, "OpenAI API request prepared")
-	
+
 	// Create HTTP request
 	req, err := http.NewRequest("POST", "https://api.openai.com/v1/chat/completions", bytes.NewBuffer(jsonData))
 	if err != nil {
 		return "", fmt.Errorf("failed to create request: %w", err)
 	}
-	
+
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Authorization", "Bearer "+config.LLMAPIKey)
-	
+
 	// Make request with retry logic
 	var response *http.Response
 	maxRetries := 3
@@ -132,7 +132,7 @@ func callOpenAI(config *config.Config, log *log.Logger, logBuffer *[]logger.LogE
 		client := &http.Client{
 			Timeout: 5 * time.Minute,
 		}
-		
+
 		response, err = client.Do(req)
 		if err != nil {
 			logger.LogError(log, logBuffer, logMutex, "OpenAI API request failed (attempt %d/%d): %v", attempt, maxRetries, err)
@@ -142,7 +142,7 @@ func callOpenAI(config *config.Config, log *log.Logger, logBuffer *[]logger.LogE
 			}
 			return "", fmt.Errorf("failed to call OpenAI API after %d attempts: %w", maxRetries, err)
 		}
-		
+
 		if response.StatusCode == 429 {
 			// Rate limit hit
 			logger.LogInfo(log, logBuffer, logMutex, "Rate limit hit, waiting 60 seconds...")
@@ -152,37 +152,37 @@ func callOpenAI(config *config.Config, log *log.Logger, logBuffer *[]logger.LogE
 				continue
 			}
 		}
-		
+
 		break
 	}
 	defer response.Body.Close()
-	
+
 	// Read response
 	body, err := io.ReadAll(response.Body)
 	if err != nil {
 		return "", fmt.Errorf("failed to read response: %w", err)
 	}
-	
+
 	logger.LogDebug(log, logBuffer, logMutex, debugMode, "OpenAI API response received (status: %d)", response.StatusCode)
-	
+
 	// Parse response
 	var apiResponse OpenAIResponse
 	if err := json.Unmarshal(body, &apiResponse); err != nil {
 		return "", fmt.Errorf("failed to parse response: %w", err)
 	}
-	
+
 	// Check for API errors
 	if apiResponse.Error != nil {
 		return "", fmt.Errorf("OpenAI API error: %s", apiResponse.Error.Message)
 	}
-	
+
 	if len(apiResponse.Choices) == 0 {
 		return "", fmt.Errorf("no response from OpenAI API")
 	}
-	
+
 	summary := apiResponse.Choices[0].Message.Content
 	logger.LogDebug(log, logBuffer, logMutex, debugMode, "Summary generated successfully (%d characters)", len(summary))
-	
+
 	return summary, nil
 }
 
@@ -191,7 +191,7 @@ func ValidateAPIKey(config *config.Config) error {
 	if config.LLMAPIKey == "" {
 		return fmt.Errorf("API key is empty")
 	}
-	
+
 	// Simple test request
 	request := OpenAIRequest{
 		Model:     "gpt-3.5-turbo",
@@ -203,38 +203,38 @@ func ValidateAPIKey(config *config.Config) error {
 			},
 		},
 	}
-	
+
 	jsonData, err := json.Marshal(request)
 	if err != nil {
 		return fmt.Errorf("failed to marshal test request: %w", err)
 	}
-	
+
 	req, err := http.NewRequest("POST", "https://api.openai.com/v1/chat/completions", bytes.NewBuffer(jsonData))
 	if err != nil {
 		return fmt.Errorf("failed to create test request: %w", err)
 	}
-	
+
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Authorization", "Bearer "+config.LLMAPIKey)
-	
+
 	client := &http.Client{
 		Timeout: 30 * time.Second,
 	}
-	
+
 	response, err := client.Do(req)
 	if err != nil {
 		return fmt.Errorf("failed to test API key: %w", err)
 	}
 	defer response.Body.Close()
-	
+
 	if response.StatusCode == 401 {
 		return fmt.Errorf("invalid API key")
 	}
-	
+
 	if response.StatusCode >= 400 {
 		body, _ := io.ReadAll(response.Body)
 		return fmt.Errorf("API test failed with status %d: %s", response.StatusCode, string(body))
 	}
-	
+
 	return nil
 }
