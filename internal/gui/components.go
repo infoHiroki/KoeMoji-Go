@@ -3,7 +3,6 @@ package gui
 import (
 	"fmt"
 	"os"
-	"sync"
 	"time"
 
 	"fyne.io/fyne/v2"
@@ -20,8 +19,23 @@ func (app *GUIApp) startPeriodicUpdate() {
 	processor.EnsureDirectories(app.Config, nil)
 	whisper.EnsureDependencies(app.Config, nil, &app.logBuffer, &app.logMutex, app.debugMode)
 	
-	// Simple initial UI update without goroutines
+	// Initial UI update
 	app.updateUI()
+	
+	// Start file processing
+	go processor.StartProcessing(app.Config, nil, &app.logBuffer, &app.logMutex,
+		&app.lastScanTime, &app.queuedFiles, &app.processingFile, &app.isProcessing,
+		&app.processedFiles, &app.mu, nil, app.debugMode)
+	
+	// Start periodic updates in a goroutine
+	go func() {
+		ticker := time.NewTicker(5 * time.Second)
+		defer ticker.Stop()
+		
+		for range ticker.C {
+			app.updateUI()
+		}
+	}()
 }
 
 // updateUI updates all UI components with current data
@@ -165,13 +179,12 @@ func (app *GUIApp) onLogsPressed() {
 
 // onScanPressed handles the scan button press
 func (app *GUIApp) onScanPressed() {
-	// Trigger manual scan using existing processor function
-	var wg sync.WaitGroup
 	logger.LogInfo(nil, &app.logBuffer, &app.logMutex, "Manual scan triggered")
 	
-	go processor.ScanAndProcess(app.Config, nil, &app.logBuffer, &app.logMutex,
+	// Use existing sync.WaitGroup reference if available, or create minimal scan
+	processor.ScanAndProcess(app.Config, nil, &app.logBuffer, &app.logMutex,
 		&app.lastScanTime, &app.queuedFiles, &app.processingFile, &app.isProcessing,
-		&app.processedFiles, &app.mu, &wg, app.debugMode)
+		&app.processedFiles, &app.mu, nil, app.debugMode)
 }
 
 // onInputDirPressed handles the input directory button press

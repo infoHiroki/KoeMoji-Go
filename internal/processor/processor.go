@@ -64,7 +64,9 @@ func ScanAndProcess(config *config.Config, log *log.Logger, logBuffer *[]logger.
 
 	// Start processing if not already processing
 	if !*isProcessing {
-		wg.Add(1)
+		if wg != nil {
+			wg.Add(1)
+		}
 		go processQueue(config, log, logBuffer, logMutex, queuedFiles, processingFile, 
 			isProcessing, mu, wg, debugMode)
 	}
@@ -88,7 +90,11 @@ func processQueue(config *config.Config, log *log.Logger, logBuffer *[]logger.Lo
 	queuedFiles *[]string, processingFile *string, isProcessing *bool, mu *sync.Mutex, 
 	wg *sync.WaitGroup, debugMode bool) {
 	
-	defer wg.Done()
+	defer func() {
+		if wg != nil {
+			wg.Done()
+		}
+	}()
 
 	for {
 		mu.Lock()
