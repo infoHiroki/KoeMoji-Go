@@ -16,28 +16,12 @@ import (
 
 // startPeriodicUpdate starts the 5-second periodic UI update
 func (app *GUIApp) startPeriodicUpdate() {
-	go func() {
-		// Initialize dependencies and start processing (similar to main.go)
-		processor.EnsureDirectories(app.Config, nil)
-		whisper.EnsureDependencies(app.Config, nil, &app.logBuffer, &app.logMutex, app.debugMode)
-		
-		// Start file processing
-		var wg sync.WaitGroup
-		go processor.StartProcessing(app.Config, nil, &app.logBuffer, &app.logMutex,
-			&app.lastScanTime, &app.queuedFiles, &app.processingFile, &app.isProcessing,
-			&app.processedFiles, &app.mu, &wg, app.debugMode)
-		
-		// Update UI every 5 seconds
-		ticker := time.NewTicker(5 * time.Second)
-		defer ticker.Stop()
-
-		for {
-			select {
-			case <-ticker.C:
-				app.updateUI()
-			}
-		}
-	}()
+	// Initialize dependencies once
+	processor.EnsureDirectories(app.Config, nil)
+	whisper.EnsureDependencies(app.Config, nil, &app.logBuffer, &app.logMutex, app.debugMode)
+	
+	// Simple initial UI update without goroutines
+	app.updateUI()
 }
 
 // updateUI updates all UI components with current data
