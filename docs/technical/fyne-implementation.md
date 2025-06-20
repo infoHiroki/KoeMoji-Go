@@ -1,16 +1,41 @@
-# GUI実装テックノート
+# Fyne実装テクニカルノート
 
-## Overview
-KoeMoji-GoのGUI実装における技術的課題と解決策をまとめたテックノート。特にFyneフレームワークを使用したGUI開発での知見を記録。
+## 概要
+KoeMoji-GoのGUI実装における技術的課題と解決策を記録したテクニカルノート。Fyneフレームワークを使用したクロスプラットフォームGUI開発での重要な知見を体系化。
 
-## 問題1: Fyneスクロールコンテナの適用範囲
+## Fyneダイアログボタン制御の課題
 
-### 発生状況と原因分析
-- **症状**: フォーム要素が一行ずつしか表示され、視認性が悪化
-- **発生箇所**: 設定ダイアログ、複雑なフォームレイアウト
-- **根本原因**: Fyneの`container.NewScroll()`は**仕様として**コンテンツのMinSizeを縮小する
+### 問題の詳細
+`dialog.NewCustom("設定", "", content, window)`で空文字を指定しても、Fyneが内部的にデフォルトの閉じるボタンを自動生成し、ダイアログの中央に小さなボタンとして表示される。
+
+#### 症状
+- 設定ダイアログの中央に謎の小さなグレーボタンが表示
+- クリックするとダイアログが閉じる動作
+- 独自ボタン（キャンセル、保存等）とは別に表示される
+
+#### 根本原因
+`dialog.NewCustom()`の第2引数（dismissText）に空文字`""`を指定しても、Fyneフレームワークが内部的に標準の閉じるボタンを生成する仕様のため。
+
+#### 解決策
+```go
+// ❌ 問題のあるコード
+cd.dialog = dialog.NewCustom("設定", "", content, cd.app.window)
+
+// ✅ 修正後のコード  
+cd.dialog = dialog.NewCustomWithoutButtons("設定", content, cd.app.window)
+```
+
+#### 学習事項
+- Fyneダイアログで完全にカスタムボタンのみを使用したい場合は`NewCustomWithoutButtons()`を使用
+- `NewCustom()`は標準ボタンが必ず生成される仕様
+- 当て推量での修正ではなく、原因を特定してから適切な修正を実施することの重要性
+
+## Fyneスクロールコンテナの適用範囲
 
 ### 技術的背景
+Fyneの`container.NewScroll()`は**仕様として**コンテンツのMinSizeを縮小する。これはFyne公式ドキュメントにも明記されており、意図的な設計でありバグではない。
+
+### 発生する問題
 ```go
 // ❌ フォーム要素での問題例
 form := container.NewVBox(
@@ -19,11 +44,10 @@ form := container.NewVBox(
 return container.NewScroll(form) // フォームが圧縮される
 ```
 
-**Fyne公式ドキュメントより**:
-- `container.NewScroll()` は「may cause the MinSize to be smaller than that of the passed object」
-- これは意図的な設計であり、バグではない
+- **症状**: フォーム要素が一行ずつしか表示され、視認性が悪化
+- **発生箇所**: 設定ダイアログ、複雑なフォームレイアウト
 
-### 解決策（用途別）
+### 用途別解決策
 
 #### A. フォーム要素（推奨：スクロール回避）
 ```go
@@ -47,14 +71,9 @@ scrollContainer := container.NewScroll(entry)
 scrollContainer.ScrollToBottom() // 新しい内容で下スクロール
 ```
 
-### 設計原則の更新
-1. **フォーム要素**: スクロール使用を避け、`container.NewVBox()`や`container.NewBorder()`を使用
-2. **ログ・テキスト表示**: `container.NewVScroll()`や適切なウィジェット選択で対応
-3. **用途に応じた使い分け**: コンテンツの性質に応じてスクロール適用を判断
+## Fyne Preferences API設定
 
-## 問題2: Fyne Preferences API警告
-
-### 発生状況
+### 発生する警告
 ```
 Fyne error: Preferences API requires a unique ID, use app.NewWithID()
 ```
@@ -68,7 +87,7 @@ fyneApp := app.New()
 fyneApp := app.NewWithID("com.hirokitakamura.koemoji-go")
 ```
 
-## GUI設定ダイアログ実装アーキテクチャ
+## GUI設定ダイアログアーキテクチャ
 
 ### 構造設計
 ```
@@ -147,18 +166,18 @@ func (cd *ConfigDialog) updateLLMWidgetStates() {
 
 ## ベストプラクティス
 
-### 1. レイアウト設計
+### 1. レイアウト設計原則
 - **スクロールの使い分け**: フォーム要素では回避、ログ・テキスト表示では適用
 - **Border layoutで適切な領域分割**
 - **VBoxで自然な垂直配置**
 - **ダイアログサイズは内容に応じて調整**
 
-### 2. 設定管理
+### 2. 設定管理ベストプラクティス
 - **一時設定オブジェクトで編集**
 - **保存時にバリデーション実行**
 - **キャンセル時は変更を破棄**
 
-### 3. ユーザビリティ
+### 3. ユーザビリティ向上
 - **リアルタイムバリデーション**
 - **エラーメッセージの適切な表示**
 - **多言語対応の統一**
@@ -168,11 +187,11 @@ func (cd *ConfigDialog) updateLLMWidgetStates() {
 - **設定変更時のUI更新**
 - **ログ出力による操作記録**
 
-## 参考実装
+## 参考実装例
 
-### メインウィンドウレイアウト (window.go)
+### メインウィンドウレイアウト
 ```go
-// 成功例: Border layoutでの適切な領域分割
+// ✅ Border layoutでの適切な領域分割
 content := container.NewBorder(
     topSection,    // top - 固定ヘッダー
     bottomSection, // bottom - 固定ボタン
@@ -196,7 +215,7 @@ content := container.NewBorder(
 - **原因**: 無効化されたウィジェットまたはイベントハンドラの未設定
 - **解決**: Enable/Disableの状態確認、OnChangedハンドラの設定
 
-## まとめ
+## 設計原則まとめ
 
 FyneでのGUI開発では、**コンテンツの性質に応じたスクロール適用**が最も重要：
 
@@ -205,3 +224,7 @@ FyneでのGUI開発では、**コンテンツの性質に応じたスクロー�
 3. **大量データ**: `widget.List`や適切なスクロール対応ウィジェットを選択
 
 Fyneのスクロールコンテナは「MinSize縮小」が仕様であることを理解し、用途に応じて適切に使い分けることで、ユーザビリティの高いGUIが実現できる。
+
+## 更新履歴
+- 2025-06-18: Fyneダイアログボタン制御の問題と解決策を記録
+- 2025-06-20: スクロールコンテナの適用範囲とGUI設定ダイアログのアーキテクチャを統合
