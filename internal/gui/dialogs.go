@@ -10,6 +10,7 @@ import (
 
 	"github.com/hirokitakamura/koemoji-go/internal/config"
 	"github.com/hirokitakamura/koemoji-go/internal/logger"
+	"github.com/hirokitakamura/koemoji-go/internal/recorder"
 )
 
 // showConfigDialog displays the configuration dialog with tabbed interface
@@ -73,11 +74,15 @@ func (app *GUIApp) showConfigDialog() {
 		widget.NewFormItem("Model", llmModelSelect),
 	)
 
+	// Recording settings
+	recordingForm := app.createRecordingForm()
+
 	// Create tabs
 	tabs := container.NewAppTabs(
 		container.NewTabItem("Basic", basicForm),
 		container.NewTabItem("Directories", dirForm),
 		container.NewTabItem("LLM", llmForm),
+		container.NewTabItem("Recording", recordingForm),
 	)
 
 	// Create dialog content
@@ -97,9 +102,55 @@ func (app *GUIApp) showConfigDialog() {
 			}
 			// If Cancel is clicked, changes are discarded automatically
 		}, app.window)
-	configDialog.Resize(fyne.NewSize(500, 400))
+	configDialog.Resize(fyne.NewSize(600, 450))
 
 	configDialog.Show()
+}
+
+// createRecordingForm creates the recording settings form
+func (app *GUIApp) createRecordingForm() *widget.Form {
+	// Get available recording devices
+	devices, err := recorder.ListDevices()
+	if err != nil {
+		logger.LogError(nil, &app.logBuffer, &app.logMutex, "Failed to list recording devices: %v", err)
+		return widget.NewForm(
+			widget.NewFormItem("Error", widget.NewLabel("Failed to load recording devices")),
+		)
+	}
+
+	// Create device options
+	var deviceNames []string
+	var deviceMap = make(map[string]int)
+	var selectedDevice string
+
+	deviceNames = append(deviceNames, "Default Device")
+	deviceMap["Default Device"] = -1
+	selectedDevice = "Default Device"
+
+	for _, device := range devices {
+		deviceNames = append(deviceNames, device.Name)
+		deviceMap[device.Name] = device.ID
+		if device.ID == app.Config.RecordingDeviceID {
+			selectedDevice = device.Name
+		}
+	}
+
+	// If current device ID is -1, keep "Default Device" selected
+	if app.Config.RecordingDeviceID == -1 {
+		selectedDevice = "Default Device"
+	}
+
+	// Create device selection widget
+	deviceSelect := widget.NewSelect(deviceNames, nil)
+	deviceSelect.SetSelected(selectedDevice)
+
+	// Store reference for saving
+	app.recordingDeviceSelect = deviceSelect
+	app.recordingDeviceMap = deviceMap
+
+	return widget.NewForm(
+		widget.NewFormItem("Recording Device", deviceSelect),
+	)
 }
 
 // saveConfigFromDialog saves the configuration from dialog form entries
@@ -124,6 +175,15 @@ func (app *GUIApp) saveConfigFromDialog(whisperModel, language *widget.Entry,
 	app.Config.LLMSummaryEnabled = llmEnabled.Checked
 	app.Config.LLMAPIKey = llmAPIKey.Text
 	app.Config.LLMModel = llmModel.Selected
+
+	// Update recording configuration
+	if app.recordingDeviceSelect != nil && app.recordingDeviceMap != nil {
+		selectedDevice := app.recordingDeviceSelect.Selected
+		if deviceID, exists := app.recordingDeviceMap[selectedDevice]; exists {
+			app.Config.RecordingDeviceID = deviceID
+			app.Config.RecordingDeviceName = selectedDevice
+		}
+	}
 
 	// Save to file
 	if err := config.SaveConfig(app.Config, app.configPath); err != nil {

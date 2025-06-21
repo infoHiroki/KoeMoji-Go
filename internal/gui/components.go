@@ -3,11 +3,15 @@ package gui
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 	"time"
 
 	"fyne.io/fyne/v2"
+	"fyne.io/fyne/v2/canvas"
+	"fyne.io/fyne/v2/widget"
 	"github.com/hirokitakamura/koemoji-go/internal/logger"
 	"github.com/hirokitakamura/koemoji-go/internal/processor"
+	"github.com/hirokitakamura/koemoji-go/internal/recorder"
 	"github.com/hirokitakamura/koemoji-go/internal/ui"
 	"github.com/hirokitakamura/koemoji-go/internal/whisper"
 )
@@ -17,9 +21,6 @@ func (app *GUIApp) startPeriodicUpdate() {
 	// Initialize dependencies once
 	processor.EnsureDirectories(app.Config, nil)
 	whisper.EnsureDependencies(app.Config, nil, &app.logBuffer, &app.logMutex, app.debugMode)
-
-	// Initial UI update
-	app.updateUI()
 
 	// Start file processing
 	go processor.StartProcessing(app.Config, nil, &app.logBuffer, &app.logMutex,
@@ -32,7 +33,10 @@ func (app *GUIApp) startPeriodicUpdate() {
 		defer ticker.Stop()
 
 		for range ticker.C {
-			app.updateUI()
+			// Use fyne.Do to safely update UI from goroutine
+			fyne.Do(func() {
+				app.updateUI()
+			})
 		}
 	}()
 }
@@ -64,18 +68,12 @@ func (app *GUIApp) updateUI() {
 
 	statusText := fmt.Sprintf("%s | %s: %d | %s: %s",
 		status, msg.Queue, queueCount, msg.Processing, processingDisplay)
-	fyne.DoAndWait(func() {
-		app.statusLabel.SetText(statusText)
-	})
 
 	// Update files label
 	filesText := fmt.Sprintf("📁 %s: %d → %s: %d → %s: %d",
 		msg.Input, app.inputCount, msg.Output, app.outputCount, msg.Archive, app.archiveCount)
-	fyne.DoAndWait(func() {
-		app.filesLabel.SetText(filesText)
-	})
 
-	// Update timing label
+	// Update timing label with recording status
 	uptime := time.Since(app.startTime)
 	lastScanStr := msg.Never
 	nextScanStr := msg.Soon
@@ -87,9 +85,17 @@ func (app *GUIApp) updateUI() {
 
 	timingText := fmt.Sprintf("⏰ %s: %s | %s: %s | %s: %s",
 		msg.Last, lastScanStr, msg.Next, nextScanStr, msg.Uptime, formatDuration(uptime))
-	fyne.DoAndWait(func() {
-		app.timingLabel.SetText(timingText)
-	})
+
+	// Add recording status if recording
+	if app.isRecording {
+		elapsed := time.Since(app.recordingStartTime)
+		timingText += fmt.Sprintf(" | 🔴 %s: %s", msg.Recording, formatDuration(elapsed))
+	}
+
+	// Update UI elements on main thread
+	app.statusLabel.SetText(statusText)
+	app.filesLabel.SetText(filesText)
+	app.timingLabel.SetText(timingText)
 
 	// Update log display
 	app.updateLogDisplay()
@@ -122,9 +128,7 @@ func (app *GUIApp) updateLogDisplay() {
 	defer app.logMutex.RUnlock()
 
 	if len(app.logBuffer) == 0 {
-		fyne.DoAndWait(func() {
-			app.logText.ParseMarkdown("**Waiting for log entries...**")
-		})
+		app.logText.ParseMarkdown("**Waiting for log entries...**")
 		return
 	}
 
@@ -136,9 +140,7 @@ func (app *GUIApp) updateLogDisplay() {
 		logText += fmt.Sprintf("**[%s]** %s %s\n\n", entry.Level, timestamp, entry.Message)
 	}
 
-	fyne.DoAndWait(func() {
-		app.logText.ParseMarkdown(logText)
-	})
+	app.logText.ParseMarkdown(logText)
 }
 
 // formatDuration formats a duration for display (copied from ui/ui.go)
@@ -201,8 +203,106 @@ func (app *GUIApp) onOutputDirPressed() {
 }
 
 
+// onRecordPressed handles the record button press
+func (app *GUIApp) onRecordPressed() {
+	if app.isRecording {
+		// Stop recording
+		app.stopRecording()
+	} else {
+		// Start recording
+		app.startRecording()
+	}
+}
+
+// startRecording starts audio recording
+func (app *GUIApp) startRecording() {
+	// Initialize recorder if not already done
+	if app.recorder == nil {
+		var err error
+		if app.Config.RecordingDeviceID == -1 {
+			app.recorder, err = recorder.NewRecorder()
+		} else {
+			app.recorder, err = recorder.NewRecorderWithDevice(app.Config.RecordingDeviceID)
+		}
+
+		if err != nil {
+			logger.LogError(nil, &app.logBuffer, &app.logMutex, "録音の初期化に失敗: %v", err)
+			return
+		}
+	}
+
+	// Start recording
+	err := app.recorder.Start()
+	if err != nil {
+		logger.LogError(nil, &app.logBuffer, &app.logMutex, "録音の開始に失敗: %v", err)
+		return
+	}
+
+	app.isRecording = true
+	app.recordingStartTime = time.Now()
+	logger.LogInfo(nil, &app.logBuffer, &app.logMutex, "録音を開始しました")
+
+	// Update button appearance
+	app.updateRecordingUI()
+}
+
+// stopRecording stops audio recording
+func (app *GUIApp) stopRecording() {
+	if app.recorder == nil {
+		logger.LogError(nil, &app.logBuffer, &app.logMutex, "録音が初期化されていません")
+		return
+	}
+
+	// Stop recording
+	err := app.recorder.Stop()
+	if err != nil {
+		logger.LogError(nil, &app.logBuffer, &app.logMutex, "録音の停止に失敗: %v", err)
+		return
+	}
+
+	// Generate filename with current timestamp
+	now := time.Now()
+	filename := fmt.Sprintf("recording_%s.wav", now.Format("20060102_1504"))
+
+	// Save to input directory
+	outputPath := filepath.Join(app.Config.InputDir, filename)
+	err = app.recorder.SaveToFile(outputPath)
+	if err != nil {
+		logger.LogError(nil, &app.logBuffer, &app.logMutex, "録音ファイルの保存に失敗: %v", err)
+		return
+	}
+
+	app.isRecording = false
+	duration := time.Since(app.recordingStartTime)
+	logger.LogInfo(nil, &app.logBuffer, &app.logMutex, "録音を停止しました: %s (時間: %s)", filename, duration.Round(time.Second))
+
+	// Update button appearance
+	app.updateRecordingUI()
+}
+
+// updateRecordingUI updates the recording-related UI elements
+func (app *GUIApp) updateRecordingUI() {
+	if app.recordButton == nil {
+		return
+	}
+
+	msg := ui.GetMessages(app.Config)
+	if app.isRecording {
+		app.recordButton.SetText("🔴 停止")
+		app.recordButton.Importance = widget.DangerImportance
+	} else {
+		app.recordButton.SetText("🎤 " + msg.RecordCmd)
+		app.recordButton.Importance = widget.WarningImportance
+	}
+	app.recordButton.Refresh()
+}
+
 // onQuitPressed handles the quit button press
 func (app *GUIApp) onQuitPressed() {
+	// Stop recording if in progress before quitting
+	if app.isRecording {
+		app.stopRecording()
+	}
 	// Immediate exit as per design document
 	app.fyneApp.Quit()
 }

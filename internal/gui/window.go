@@ -38,8 +38,7 @@ func (app *GUIApp) createWindow() {
 		app.fyneApp.Quit()
 	})
 
-	// Set up periodic updates (5 seconds as per design)
-	app.startPeriodicUpdate()
+	// Periodic updates are started in app.go after window creation
 }
 
 // createComponents creates all UI components
@@ -117,6 +116,15 @@ func (app *GUIApp) createButtonPanel(msg *ui.Messages) fyne.CanvasObject {
 	})
 	scanBtn.Importance = widget.HighImportance
 
+	// Create recording button with dynamic text and importance
+	recordBtn := widget.NewButton("🎤 "+msg.RecordCmd, func() {
+		app.onRecordPressed()
+	})
+	recordBtn.Importance = widget.WarningImportance
+
+	// Store reference for updating button text and appearance
+	app.recordButton = recordBtn
+
 	inputBtn := widget.NewButton(msg.InputDirCmd, func() {
 		app.onInputDirPressed()
 	})
@@ -125,21 +133,34 @@ func (app *GUIApp) createButtonPanel(msg *ui.Messages) fyne.CanvasObject {
 		app.onOutputDirPressed()
 	})
 
-
 	quitBtn := widget.NewButton(msg.QuitCmd, func() {
 		app.onQuitPressed()
 	})
 	quitBtn.Importance = widget.DangerImportance
 
-	// Arrange buttons in a horizontal container
-	buttonContainer := container.NewHBox(
-		configBtn,
-		widget.NewSeparator(),
-		logsBtn,
+	// Create primary and secondary button groups for better organization
+	primaryButtons := container.NewHBox(
 		scanBtn,
-		widget.NewSeparator(),
+		recordBtn,
+	)
+
+	configButtons := container.NewHBox(
+		configBtn,
+		logsBtn,
+	)
+
+	directoryButtons := container.NewHBox(
 		inputBtn,
 		outputBtn,
+	)
+
+	// Arrange buttons in a horizontal container with better spacing
+	buttonContainer := container.NewHBox(
+		primaryButtons,
+		widget.NewSeparator(),
+		configButtons,
+		widget.NewSeparator(),
+		directoryButtons,
 		widget.NewSeparator(),
 		quitBtn,
 	)

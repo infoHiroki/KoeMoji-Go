@@ -10,6 +10,7 @@ import (
 
 	"github.com/hirokitakamura/koemoji-go/internal/config"
 	"github.com/hirokitakamura/koemoji-go/internal/logger"
+	"github.com/hirokitakamura/koemoji-go/internal/recorder"
 )
 
 // GUIApp represents the GUI application
@@ -49,6 +50,14 @@ type GUIApp struct {
 	filesLabel  *widget.Label
 	timingLabel *widget.Label
 	logText     *widget.RichText
+	recordButton *widget.Button
+
+	// Recording related fields
+	recorder               *recorder.Recorder
+	isRecording            bool
+	recordingStartTime     time.Time
+	recordingDeviceSelect  *widget.Select
+	recordingDeviceMap     map[string]int
 }
 
 // Run starts the GUI application
@@ -70,6 +79,13 @@ func Run(configPath string, debugMode bool) {
 
 	// Create and show the main window
 	guiApp.createWindow()
+	
+	// Start periodic updates in a separate goroutine after ShowAndRun starts
+	go func() {
+		time.Sleep(100 * time.Millisecond) // Give window time to initialize
+		guiApp.startPeriodicUpdate()
+	}()
+	
 	guiApp.window.ShowAndRun()
 }
 
