@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-KoeMoji-Go is a Go-based audio/video transcription tool that uses FasterWhisper for high-accuracy speech recognition. It provides a real-time terminal UI for monitoring file processing and supports cross-platform distribution (Windows/macOS).
+KoeMoji-Go is a Go-based audio/video transcription tool that uses FasterWhisper for high-accuracy speech recognition. It provides a real-time terminal UI for monitoring file processing, built-in audio recording capabilities, and supports cross-platform distribution (Windows/macOS).
 
 ## Key Commands
 
@@ -48,7 +48,7 @@ gofmt -l .
 - Go 1.21+ required
 - Python 3.8+ with FasterWhisper (auto-installed on first run)
 - Manual installation: `pip install faster-whisper whisper-ctranslate2`
-- Recording feature (macOS): `brew install portaudio pkg-config`
+- Recording feature: `brew install portaudio pkg-config` (macOS) or PortAudio DLL (Windows)
 
 ## Architecture
 
@@ -63,15 +63,16 @@ The project follows Go's standard internal package layout:
 - **`internal/whisper/`** - FasterWhisper integration and audio transcription
 - **`internal/llm/`** - LLM integration for AI summarization (v1.2.0+)
 - **`internal/gui/`** - Fyne-based GUI implementation (v1.3.0+)
-- **`internal/recorder/`** - Audio recording with PortAudio (development branch)
+- **`internal/recorder/`** - Audio recording with PortAudio integration (v1.4.0+)
 
 ### Core Processing Flow
-1. **File Monitoring**: Periodic directory scanning (`input/`) with configurable intervals
-2. **Queue Management**: Sequential processing to ensure stability (one file at a time)
-3. **Transcription**: Shell command execution to `whisper-ctranslate2` with progress monitoring
-4. **AI Summarization** (v1.2.0+): Optional LLM-based summary generation via OpenAI API
-5. **File Management**: Automatic archiving of processed files to `archive/`
-6. **Real-time UI**: Live status updates and interactive controls
+1. **Audio Recording** (v1.4.0+): Built-in recording with device selection and real-time monitoring
+2. **File Monitoring**: Periodic directory scanning (`input/`) with configurable intervals
+3. **Queue Management**: Sequential processing to ensure stability (one file at a time)
+4. **Transcription**: Shell command execution to `whisper-ctranslate2` with progress monitoring
+5. **AI Summarization** (v1.2.0+): Optional LLM-based summary generation via OpenAI API
+6. **File Management**: Automatic archiving of processed files to `archive/`
+7. **Real-time UI**: Live status updates and interactive controls
 
 ### Multilingual Support
 The application supports English and Japanese UI languages. Messages are centralized in `internal/config/config.go` with `Messages` struct and language-specific instances (`messagesEN`, `messagesJA`).
@@ -126,10 +127,8 @@ The application supports English and Japanese UI languages. Messages are central
   "input_dir": "./input",
   "output_dir": "./output", 
   "archive_dir": "./archive",
-  "recording_enabled": true,
   "recording_device_id": -1,
-  "recording_device_name": "",
-  "recording_auto_start": false
+  "recording_device_name": "既定のマイク"
 }
 ```
 
@@ -168,11 +167,13 @@ Supported formats: MP3, WAV, M4A, FLAC, OGG, AAC, MP4, MOV, AVI
 - **API Support**: OpenAI GPT models (gpt-4o, gpt-4-turbo, gpt-3.5-turbo)
 - **Error Handling**: Retry logic, rate limit handling, API validation
 
-### Recording Integration (Development)
+### Recording Integration (v1.4.0+)
 - **Package**: `internal/recorder/` - PortAudio-based recording
 - **Dependencies**: github.com/gordonklaus/portaudio
-- **Features**: Device selection, WAV output (44.1kHz, 16bit, mono)
-- **UI Integration**: 'r' key for record start/stop (planned)
+- **Features**: Device selection, WAV output (44.1kHz, 16bit, mono), virtual device detection
+- **UI Integration**: 'r' key for record start/stop, real-time duration display
+- **Device Support**: Default/specific device selection, BlackHole/Stereo Mix detection
+- **File Management**: Automatic saving to input directory with timestamp naming
 
 ## Development Notes
 
