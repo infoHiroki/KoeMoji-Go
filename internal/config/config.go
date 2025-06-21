@@ -10,6 +10,8 @@ import (
 	"runtime"
 	"strconv"
 	"strings"
+
+	"github.com/gordonklaus/portaudio"
 )
 
 type Config struct {
@@ -33,10 +35,8 @@ type Config struct {
 	SummaryPromptTemplate string `json:"summary_prompt_template"`
 	SummaryLanguage       string `json:"summary_language"`
 	// Recording settings
-	RecordingEnabled      bool   `json:"recording_enabled"`
-	RecordingDeviceID     int    `json:"recording_device_id"`
-	RecordingDeviceName   string `json:"recording_device_name"`
-	RecordingAutoStart    bool   `json:"recording_auto_start"`
+	RecordingDeviceID   int    `json:"recording_device_id"`
+	RecordingDeviceName string `json:"recording_device_name"`
 }
 
 func GetDefaultConfig() *Config {
@@ -61,10 +61,8 @@ func GetDefaultConfig() *Config {
 		SummaryPromptTemplate: "以下の文字起こしテキストを{language}で要約してください。重要なポイントを箇条書きでまとめ、全体の概要も含めてください。\n\n{text}",
 		SummaryLanguage:       "auto",
 		// Recording defaults
-		RecordingEnabled:      true,
-		RecordingDeviceID:     -1, // -1 means use default device
-		RecordingDeviceName:   "",
-		RecordingAutoStart:    false,
+		RecordingDeviceID:   -1, // -1 means use default device
+		RecordingDeviceName: "既定のマイク",
 	}
 }
 
@@ -131,10 +129,11 @@ func ConfigureSettings(config *Config, configPath string, logger *log.Logger) {
 		fmt.Printf("15. %s: %s\n", msg.LLMModel, config.LLMModel)
 		fmt.Printf("16. %s: %d\n", msg.LLMMaxTokens, config.LLMMaxTokens)
 		fmt.Printf("17. %s: [%s]\n", msg.SummaryPrompt, msg.EditablePrompt)
+		fmt.Printf("18. %s: %s\n", msg.RecordingDeviceName, config.RecordingDeviceName)
 		fmt.Printf("r. %s\n", msg.ResetDefaults)
 		fmt.Printf("s. %s\n", msg.SaveAndExit)
 		fmt.Printf("q. %s\n", msg.QuitWithoutSave)
-		fmt.Printf("\n%s (1-17, r, s, q): ", msg.SelectOption)
+		fmt.Printf("\n%s (1-18, r, s, q): ", msg.SelectOption)
 
 		input, _ := reader.ReadString('\n')
 		choice := strings.TrimSpace(input)
@@ -206,6 +205,10 @@ func ConfigureSettings(config *Config, configPath string, logger *log.Logger) {
 			}
 		case "17":
 			if configureSummaryPrompt(config, reader) {
+				modified = true
+			}
+		case "18":
+			if configureRecordingDevice(config, reader) {
 				modified = true
 			}
 		case "r":
@@ -656,18 +659,18 @@ type Messages struct {
 	LLMMaxTokensSet       string
 	PromptSet             string
 	// Recording messages
-	RecordingEnabledMsg   string
-	RecordingDisabledMsg  string
-	RecordingDeviceSet    string
+	RecordingEnabledMsg        string
+	RecordingDisabledMsg       string
+	RecordingDeviceSet         string
 	RecordingAutoStartEnabled  string
 	RecordingAutoStartDisabled string
-	ConfigReset           string
-	ConfigSaved           string
-	NoChanges             string
-	InvalidOption         string
-	InvalidInput          string
-	FolderSelectFail      string
-	ConfigSaveError       string
+	ConfigReset                string
+	ConfigSaved                string
+	NoChanges                  string
+	InvalidOption              string
+	InvalidInput               string
+	FolderSelectFail           string
+	ConfigSaveError            string
 }
 
 var messagesEN = Messages{
@@ -691,19 +694,19 @@ var messagesEN = Messages{
 	LLMAPIKey:         "LLM API Key",
 	LLMModel:          "LLM Model",
 	LLMMaxTokens:      "Max Tokens",
-	SummaryPrompt:      "Summary Prompt",
-	EditablePrompt:     "Editable",
+	SummaryPrompt:     "Summary Prompt",
+	EditablePrompt:    "Editable",
 	// Recording Settings
-	RecordingEnabled:   "Recording Enabled",
-	RecordingDeviceID:  "Recording Device ID",
+	RecordingEnabled:    "Recording Enabled",
+	RecordingDeviceID:   "Recording Device ID",
 	RecordingDeviceName: "Recording Device Name",
-	RecordingAutoStart: "Auto-start Recording",
-	ResetDefaults:      "Reset to defaults",
-	SaveAndExit:        "Save and exit",
-	QuitWithoutSave:    "Quit without saving",
-	SelectOption:       "Select option",
-	Minutes:            "minutes",
-	Current:            "current",
+	RecordingAutoStart:  "Auto-start Recording",
+	ResetDefaults:       "Reset to defaults",
+	SaveAndExit:         "Save and exit",
+	QuitWithoutSave:     "Quit without saving",
+	SelectOption:        "Select option",
+	Minutes:             "minutes",
+	Current:             "current",
 
 	// Config prompts
 	SelectModel:    "Select model (1-%d) or press Enter to keep current:",
@@ -751,18 +754,18 @@ var messagesEN = Messages{
 	LLMMaxTokensSet:       "Max tokens set to: %d",
 	PromptSet:             "Summary prompt updated",
 	// Recording messages
-	RecordingEnabledMsg:          "Recording enabled",
-	RecordingDisabledMsg:         "Recording disabled", 
-	RecordingDeviceSet:           "Recording device set to: %s",
-	RecordingAutoStartEnabled:    "Auto-start recording enabled",
-	RecordingAutoStartDisabled:   "Auto-start recording disabled",
-	ConfigReset:           "Configuration reset to defaults.",
-	ConfigSaved:           "Configuration saved successfully!",
-	NoChanges:             "No changes to save.",
-	InvalidOption:         "Invalid option. Please try again.",
-	InvalidInput:          "Invalid input.",
-	FolderSelectFail:      "Folder selection failed: %v",
-	ConfigSaveError:       "Failed to save config: %v",
+	RecordingEnabledMsg:        "Recording enabled",
+	RecordingDisabledMsg:       "Recording disabled",
+	RecordingDeviceSet:         "Recording device set to: %s",
+	RecordingAutoStartEnabled:  "Auto-start recording enabled",
+	RecordingAutoStartDisabled: "Auto-start recording disabled",
+	ConfigReset:                "Configuration reset to defaults.",
+	ConfigSaved:                "Configuration saved successfully!",
+	NoChanges:                  "No changes to save.",
+	InvalidOption:              "Invalid option. Please try again.",
+	InvalidInput:               "Invalid input.",
+	FolderSelectFail:           "Folder selection failed: %v",
+	ConfigSaveError:            "Failed to save config: %v",
 }
 
 var messagesJA = Messages{
@@ -786,19 +789,19 @@ var messagesJA = Messages{
 	LLMAPIKey:         "LLM APIキー",
 	LLMModel:          "LLMモデル",
 	LLMMaxTokens:      "最大トークン数",
-	SummaryPrompt:      "要約プロンプト",
-	EditablePrompt:     "編集可能",
+	SummaryPrompt:     "要約プロンプト",
+	EditablePrompt:    "編集可能",
 	// Recording Settings
-	RecordingEnabled:   "録音機能",
-	RecordingDeviceID:  "録音デバイスID",
+	RecordingEnabled:    "録音機能",
+	RecordingDeviceID:   "録音デバイスID",
 	RecordingDeviceName: "録音デバイス名",
-	RecordingAutoStart: "録音自動開始",
-	ResetDefaults:      "デフォルトに戻す",
-	SaveAndExit:        "保存して終了",
-	QuitWithoutSave:    "保存せずに終了",
-	SelectOption:       "オプションを選択",
-	Minutes:            "分",
-	Current:            "現在",
+	RecordingAutoStart:  "録音自動開始",
+	ResetDefaults:       "デフォルトに戻す",
+	SaveAndExit:         "保存して終了",
+	QuitWithoutSave:     "保存せずに終了",
+	SelectOption:        "オプションを選択",
+	Minutes:             "分",
+	Current:             "現在",
 
 	// Config prompts
 	SelectModel:    "モデルを選択 (1-%d) またはEnterで現在の設定を維持:",
@@ -846,18 +849,18 @@ var messagesJA = Messages{
 	LLMMaxTokensSet:       "最大トークン数を設定: %d",
 	PromptSet:             "要約プロンプトを更新しました",
 	// Recording messages
-	RecordingEnabledMsg:          "録音機能を有効にしました",
-	RecordingDisabledMsg:         "録音機能を無効にしました",
-	RecordingDeviceSet:           "録音デバイスを設定: %s",
-	RecordingAutoStartEnabled:    "録音自動開始を有効にしました",
-	RecordingAutoStartDisabled:   "録音自動開始を無効にしました",
-	ConfigReset:           "設定をデフォルトに戻しました。",
-	ConfigSaved:           "設定を保存しました！",
-	NoChanges:             "変更はありません。",
-	InvalidOption:         "無効なオプションです。もう一度お試しください。",
-	InvalidInput:          "無効な入力です。",
-	FolderSelectFail:      "フォルダ選択に失敗: %v",
-	ConfigSaveError:       "設定の保存に失敗: %v",
+	RecordingEnabledMsg:        "録音機能を有効にしました",
+	RecordingDisabledMsg:       "録音機能を無効にしました",
+	RecordingDeviceSet:         "録音デバイスを設定: %s",
+	RecordingAutoStartEnabled:  "録音自動開始を有効にしました",
+	RecordingAutoStartDisabled: "録音自動開始を無効にしました",
+	ConfigReset:                "設定をデフォルトに戻しました。",
+	ConfigSaved:                "設定を保存しました！",
+	NoChanges:                  "変更はありません。",
+	InvalidOption:              "無効なオプションです。もう一度お試しください。",
+	InvalidInput:               "無効な入力です。",
+	FolderSelectFail:           "フォルダ選択に失敗: %v",
+	ConfigSaveError:            "設定の保存に失敗: %v",
 }
 
 // getMessages returns the messages for the current UI language
@@ -1023,4 +1026,76 @@ func configureSummaryPrompt(config *Config, reader *bufio.Reader) bool {
 	config.SummaryPromptTemplate = newPrompt
 	fmt.Println(msg.PromptSet)
 	return true
+}
+
+func configureRecordingDevice(config *Config, reader *bufio.Reader) bool {
+	msg := getMessages(config)
+
+	// Initialize PortAudio
+	err := portaudio.Initialize()
+	if err != nil {
+		fmt.Printf("録音機能が利用できません: %v\n", err)
+		return false
+	}
+	defer portaudio.Terminate()
+
+	// Get available devices
+	devices, err := portaudio.Devices()
+	if err != nil {
+		fmt.Printf("デバイス一覧の取得に失敗: %v\n", err)
+		return false
+	}
+
+	// Filter input devices
+	var inputDevices []*portaudio.DeviceInfo
+	var deviceIndices []int
+
+	for _, device := range devices {
+		if device.MaxInputChannels > 0 {
+			inputDevices = append(inputDevices, device)
+			deviceIndices = append(deviceIndices, device.Index)
+		}
+	}
+
+	if len(inputDevices) == 0 {
+		fmt.Println("録音デバイスが見つかりません")
+		return false
+	}
+
+	fmt.Printf("\n%s %s: %s (ID: %d)\n", msg.Current, msg.RecordingDeviceName, config.RecordingDeviceName, config.RecordingDeviceID)
+	fmt.Println("\n利用可能な録音デバイス:")
+
+	for i, device := range inputDevices {
+		fmt.Printf("%d. %s", i+1, device.Name)
+		if device.Index == config.RecordingDeviceID {
+			fmt.Printf(" (%s)", msg.Current)
+		}
+
+		// Check for virtual devices
+		name := strings.ToLower(device.Name)
+		if strings.Contains(name, "blackhole") || strings.Contains(name, "stereo mix") || strings.Contains(name, "virtual") {
+			fmt.Printf(" [仮想デバイス]")
+		}
+		fmt.Println()
+	}
+
+	fmt.Printf("\nデバイスを選択 (1-%d) または Enter で現在の設定を維持: ", len(inputDevices))
+
+	input, _ := reader.ReadString('\n')
+	choice := strings.TrimSpace(input)
+
+	if choice == "" {
+		return false
+	}
+
+	if idx, err := strconv.Atoi(choice); err == nil && idx >= 1 && idx <= len(inputDevices) {
+		selectedDevice := inputDevices[idx-1]
+		config.RecordingDeviceID = selectedDevice.Index
+		config.RecordingDeviceName = selectedDevice.Name
+		fmt.Printf("録音デバイスを設定しました: %s (ID: %d)\n", config.RecordingDeviceName, config.RecordingDeviceID)
+		return true
+	}
+
+	fmt.Println(msg.InvalidOption)
+	return false
 }

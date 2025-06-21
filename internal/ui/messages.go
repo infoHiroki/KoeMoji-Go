@@ -26,6 +26,7 @@ type Messages struct {
 	InputDirCmd  string
 	OutputDirCmd string
 	AISummaryCmd string
+	RecordCmd    string
 
 	// Log levels
 	LogInfo  string
@@ -56,6 +57,12 @@ type Messages struct {
 	InvalidPath     string
 	TranscribeFail  string
 	UnsupportedOS   string
+
+	// Recording messages
+	RecordingDevice string
+	Recording       string
+	RecordingStop   string
+	SelectDevice    string
 }
 
 var messagesEN = Messages{
@@ -81,6 +88,7 @@ var messagesEN = Messages{
 	InputDirCmd:  "input",
 	OutputDirCmd: "output",
 	AISummaryCmd: "AI summary",
+	RecordCmd:    "record",
 
 	// Log levels
 	LogInfo:  "INFO",
@@ -111,6 +119,12 @@ var messagesEN = Messages{
 	InvalidPath:     "Invalid file path: %v",
 	TranscribeFail:  "Transcription failed: %v",
 	UnsupportedOS:   "Log viewing not supported on this platform",
+
+	// Recording messages
+	RecordingDevice: "Recording Device",
+	Recording:       "Recording",
+	RecordingStop:   "Recording stopped: %s",
+	SelectDevice:    "Select recording device",
 }
 
 var messagesJA = Messages{
@@ -136,6 +150,7 @@ var messagesJA = Messages{
 	InputDirCmd:  "入力",
 	OutputDirCmd: "出力",
 	AISummaryCmd: "AI要約",
+	RecordCmd:    "録音",
 
 	// Log levels
 	LogInfo:  "情報",
@@ -166,6 +181,12 @@ var messagesJA = Messages{
 	InvalidPath:     "無効なファイルパス: %v",
 	TranscribeFail:  "文字起こしに失敗: %v",
 	UnsupportedOS:   "このプラットフォームではログ表示はサポートされていません",
+
+	// Recording messages
+	RecordingDevice: "録音デバイス",
+	Recording:       "録音中",
+	RecordingStop:   "録音を停止しました: %s",
+	SelectDevice:    "録音デバイスを選択",
 }
 
 // GetMessages returns the messages for the current UI language

@@ -12,19 +12,19 @@ import (
 )
 
 const (
-	SampleRate  = 44100
-	Channels    = 1
-	BufferSize  = 4096
+	SampleRate = 44100
+	Channels   = 1
+	BufferSize = 4096
 )
 
 type DeviceInfo struct {
-	ID           int
-	Name         string
-	IsDefault    bool
-	MaxChannels  int
-	HostAPI      string
-	IsVirtual    bool
-	VirtualType  string
+	ID          int
+	Name        string
+	IsDefault   bool
+	MaxChannels int
+	HostAPI     string
+	IsVirtual   bool
+	VirtualType string
 }
 
 type Recorder struct {
@@ -136,7 +136,7 @@ func (r *Recorder) Start() error {
 func (r *Recorder) recordCallback(in []int16) {
 	r.mutex.Lock()
 	defer r.mutex.Unlock()
-	
+
 	if r.recording {
 		r.samples = append(r.samples, in...)
 	}
@@ -185,7 +185,7 @@ func (r *Recorder) Close() error {
 			return err
 		}
 	}
-	
+
 	portaudio.Terminate()
 	return nil
 }
@@ -213,7 +213,7 @@ func (r *Recorder) GetElapsedTime() time.Duration {
 
 func detectVirtualDevice(device *portaudio.DeviceInfo) (bool, string) {
 	name := strings.ToLower(device.Name)
-	
+
 	switch runtime.GOOS {
 	case "darwin":
 		if strings.Contains(name, "blackhole") {
@@ -226,13 +226,13 @@ func detectVirtualDevice(device *portaudio.DeviceInfo) (bool, string) {
 			return true, "Multi-Output"
 		}
 	case "windows":
-		if strings.Contains(name, "stereo mix") || 
-		   strings.Contains(name, "what u hear") || 
-		   strings.Contains(name, "rec. playback") {
+		if strings.Contains(name, "stereo mix") ||
+			strings.Contains(name, "what u hear") ||
+			strings.Contains(name, "rec. playback") {
 			return true, "Stereo Mix"
 		}
 	}
-	
+
 	return false, ""
 }
 
@@ -258,7 +258,7 @@ func ListDevices() ([]DeviceInfo, error) {
 		if device.MaxInputChannels > 0 {
 			isVirtual, virtualType := detectVirtualDevice(device)
 			isDefault := defaultInput != nil && device.Index == defaultInput.Index
-			
+
 			deviceInfo := DeviceInfo{
 				ID:          device.Index,
 				Name:        device.Name,

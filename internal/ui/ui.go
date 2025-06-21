@@ -27,7 +27,8 @@ const (
 // UI functions
 func RefreshDisplay(config *config.Config, startTime, lastScanTime time.Time, logBuffer *[]logger.LogEntry,
 	logMutex *sync.RWMutex, inputCount, outputCount, archiveCount int, queuedFiles *[]string,
-	processingFile string, isProcessing bool, mu *sync.Mutex) {
+	processingFile string, isProcessing bool, mu *sync.Mutex,
+	isRecording bool, recordingStartTime time.Time) {
 
 	if config == nil {
 		return
@@ -37,13 +38,14 @@ func RefreshDisplay(config *config.Config, startTime, lastScanTime time.Time, lo
 	fmt.Print("\033[2J\033[H")
 
 	displayHeader(config, startTime, lastScanTime, inputCount, outputCount, archiveCount,
-		queuedFiles, processingFile, isProcessing, mu)
+		queuedFiles, processingFile, isProcessing, mu, isRecording, recordingStartTime)
 	displayRealtimeLogs(config, logBuffer, logMutex)
 	displayCommands(config)
 }
 
 func displayHeader(config *config.Config, startTime, lastScanTime time.Time, inputCount, outputCount, archiveCount int,
-	queuedFiles *[]string, processingFile string, isProcessing bool, mu *sync.Mutex) {
+	queuedFiles *[]string, processingFile string, isProcessing bool, mu *sync.Mutex,
+	isRecording bool, recordingStartTime time.Time) {
 
 	updateFileCounts(config, &inputCount, &outputCount, &archiveCount)
 	msg := GetMessages(config)
@@ -69,6 +71,12 @@ func displayHeader(config *config.Config, startTime, lastScanTime time.Time, inp
 		status, msg.Queue, queueCount, msg.Processing, processingDisplay)
 	fmt.Printf("📁 %s: %d → %s: %d → %s: %d\n",
 		msg.Input, inputCount, msg.Output, outputCount, msg.Archive, archiveCount)
+
+	// Recording status
+	if isRecording {
+		elapsed := time.Since(recordingStartTime)
+		fmt.Printf("🔴 %s - %s\n", msg.Recording, formatDuration(elapsed))
+	}
 
 	lastScanStr := msg.Never
 	nextScanStr := msg.Soon
@@ -122,7 +130,7 @@ func displayRealtimeLogs(config *config.Config, logBuffer *[]logger.LogEntry, lo
 
 func displayCommands(config *config.Config) {
 	msg := GetMessages(config)
-	fmt.Printf("c=%s l=%s s=%s i=%s o=%s a=%s q=%s\n", msg.ConfigCmd, msg.LogsCmd, msg.ScanCmd, msg.InputDirCmd, msg.OutputDirCmd, msg.AISummaryCmd, msg.QuitCmd)
+	fmt.Printf("c=%s l=%s s=%s i=%s o=%s a=%s r=%s q=%s\n", msg.ConfigCmd, msg.LogsCmd, msg.ScanCmd, msg.InputDirCmd, msg.OutputDirCmd, msg.AISummaryCmd, msg.RecordCmd, msg.QuitCmd)
 	fmt.Print("> ")
 }
 

@@ -8,6 +8,7 @@ import (
 	"log"
 	"os"
 	"os/signal"
+	"path/filepath"
 	"strings"
 	"sync"
 	"syscall"
@@ -17,6 +18,7 @@ import (
 	"github.com/hirokitakamura/koemoji-go/internal/gui"
 	"github.com/hirokitakamura/koemoji-go/internal/logger"
 	"github.com/hirokitakamura/koemoji-go/internal/processor"
+	"github.com/hirokitakamura/koemoji-go/internal/recorder"
 	"github.com/hirokitakamura/koemoji-go/internal/ui"
 	"github.com/hirokitakamura/koemoji-go/internal/whisper"
 )
@@ -55,6 +57,11 @@ type App struct {
 	queuedFiles    []string // 処理待ちファイルキュー
 	processingFile string   // 現在処理中のファイル名（表示用）
 	isProcessing   bool     // 処理中フラグ
+
+	// Recording related fields
+	recorder           *recorder.Recorder
+	isRecording        bool
+	recordingStartTime time.Time
 }
 
 func main() {
@@ -158,7 +165,8 @@ func (app *App) run() {
 	time.Sleep(100 * time.Millisecond)
 	ui.RefreshDisplay(app.Config, app.startTime, app.lastScanTime, &app.logBuffer,
 		&app.logMutex, app.inputCount, app.outputCount, app.archiveCount,
-		&app.queuedFiles, app.processingFile, app.isProcessing, &app.mu)
+		&app.queuedFiles, app.processingFile, app.isProcessing, &app.mu,
+		app.isRecording, app.recordingStartTime)
 
 	<-sigChan
 	logger.LogInfo(app.logger, &app.logBuffer, &app.logMutex, "Shutting down KoeMoji-Go...")
@@ -181,19 +189,22 @@ func (app *App) handleUserInput() {
 			// Empty Enter = manual refresh
 			ui.RefreshDisplay(app.Config, app.startTime, app.lastScanTime, &app.logBuffer,
 				&app.logMutex, app.inputCount, app.outputCount, app.archiveCount,
-				&app.queuedFiles, app.processingFile, app.isProcessing, &app.mu)
+				&app.queuedFiles, app.processingFile, app.isProcessing, &app.mu,
+				app.isRecording, app.recordingStartTime)
 		case "c":
 			config.ConfigureSettings(app.Config, app.configPath, app.logger)
 			ui.RefreshDisplay(app.Config, app.startTime, app.lastScanTime, &app.logBuffer,
 				&app.logMutex, app.inputCount, app.outputCount, app.archiveCount,
-				&app.queuedFiles, app.processingFile, app.isProcessing, &app.mu)
+				&app.queuedFiles, app.processingFile, app.isProcessing, &app.mu,
+				app.isRecording, app.recordingStartTime)
 		case "l":
 			ui.DisplayLogs(app.Config)
 			fmt.Print("Press Enter to continue...")
 			bufio.NewReader(os.Stdin).ReadString('\n')
 			ui.RefreshDisplay(app.Config, app.startTime, app.lastScanTime, &app.logBuffer,
 				&app.logMutex, app.inputCount, app.outputCount, app.archiveCount,
-				&app.queuedFiles, app.processingFile, app.isProcessing, &app.mu)
+				&app.queuedFiles, app.processingFile, app.isProcessing, &app.mu,
+				app.isRecording, app.recordingStartTime)
 		case "s":
 			logger.LogInfo(app.logger, &app.logBuffer, &app.logMutex, "Manual scan triggered")
 			go processor.ScanAndProcess(app.Config, app.logger, &app.logBuffer, &app.logMutex,
@@ -221,14 +232,97 @@ func (app *App) handleUserInput() {
 			}
 			ui.RefreshDisplay(app.Config, app.startTime, app.lastScanTime, &app.logBuffer,
 				&app.logMutex, app.inputCount, app.outputCount, app.archiveCount,
-				&app.queuedFiles, app.processingFile, app.isProcessing, &app.mu)
+				&app.queuedFiles, app.processingFile, app.isProcessing, &app.mu,
+				app.isRecording, app.recordingStartTime)
+		case "r":
+			app.handleRecordingToggle()
 		case "q":
 			logger.LogInfo(app.logger, &app.logBuffer, &app.logMutex, "Shutting down KoeMoji-Go...")
 			os.Exit(0)
 		default:
 			if strings.TrimSpace(input) != "" {
-				fmt.Printf("Invalid command '%s' (use c/l/s/i/o/a/q or Enter to refresh)\n", strings.TrimSpace(input))
+				fmt.Printf("Invalid command '%s' (use c/l/s/i/o/a/r/q or Enter to refresh)\n", strings.TrimSpace(input))
 			}
 		}
 	}
+}
+
+func (app *App) handleRecordingToggle() {
+	if app.isRecording {
+		// Stop recording
+		app.stopRecording()
+	} else {
+		// Start recording
+		app.startRecording()
+	}
+}
+
+func (app *App) startRecording() {
+	// Initialize recorder if not already done
+	if app.recorder == nil {
+		var err error
+		if app.Config.RecordingDeviceID == -1 {
+			app.recorder, err = recorder.NewRecorder()
+		} else {
+			app.recorder, err = recorder.NewRecorderWithDevice(app.Config.RecordingDeviceID)
+		}
+
+		if err != nil {
+			logger.LogError(app.logger, &app.logBuffer, &app.logMutex, "録音の初期化に失敗: %v", err)
+			return
+		}
+	}
+
+	// Start recording
+	err := app.recorder.Start()
+	if err != nil {
+		logger.LogError(app.logger, &app.logBuffer, &app.logMutex, "録音の開始に失敗: %v", err)
+		return
+	}
+
+	app.isRecording = true
+	app.recordingStartTime = time.Now()
+	logger.LogInfo(app.logger, &app.logBuffer, &app.logMutex, "録音を開始しました")
+
+	// Refresh display to show recording status
+	ui.RefreshDisplay(app.Config, app.startTime, app.lastScanTime, &app.logBuffer,
+		&app.logMutex, app.inputCount, app.outputCount, app.archiveCount,
+		&app.queuedFiles, app.processingFile, app.isProcessing, &app.mu,
+		app.isRecording, app.recordingStartTime)
+}
+
+func (app *App) stopRecording() {
+	if app.recorder == nil {
+		logger.LogError(app.logger, &app.logBuffer, &app.logMutex, "録音が初期化されていません")
+		return
+	}
+
+	// Stop recording
+	err := app.recorder.Stop()
+	if err != nil {
+		logger.LogError(app.logger, &app.logBuffer, &app.logMutex, "録音の停止に失敗: %v", err)
+		return
+	}
+
+	// Generate filename with current timestamp
+	now := time.Now()
+	filename := fmt.Sprintf("recording_%s.wav", now.Format("20060102_1504"))
+
+	// Save to input directory
+	outputPath := filepath.Join(app.Config.InputDir, filename)
+	err = app.recorder.SaveToFile(outputPath)
+	if err != nil {
+		logger.LogError(app.logger, &app.logBuffer, &app.logMutex, "録音ファイルの保存に失敗: %v", err)
+		return
+	}
+
+	app.isRecording = false
+	duration := time.Since(app.recordingStartTime)
+	logger.LogInfo(app.logger, &app.logBuffer, &app.logMutex, "録音を停止しました: %s (時間: %s)", filename, duration.Round(time.Second))
+
+	// Refresh display to remove recording status
+	ui.RefreshDisplay(app.Config, app.startTime, app.lastScanTime, &app.logBuffer,
+		&app.logMutex, app.inputCount, app.outputCount, app.archiveCount,
+		&app.queuedFiles, app.processingFile, app.isProcessing, &app.mu,
+		app.isRecording, app.recordingStartTime)
 }

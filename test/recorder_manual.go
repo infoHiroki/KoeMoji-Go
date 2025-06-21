@@ -41,7 +41,7 @@ func main() {
 	// Test 2: Select device
 	fmt.Println("\n2. Device selection...")
 	scanner := bufio.NewScanner(os.Stdin)
-	
+
 	fmt.Print("Select device (number) or press Enter for default: ")
 	scanner.Scan()
 	input := strings.TrimSpace(scanner.Text())
@@ -88,7 +88,7 @@ func main() {
 		}
 
 		input := strings.TrimSpace(scanner.Text())
-		
+
 		if input == "q" {
 			break
 		}
@@ -112,7 +112,7 @@ func main() {
 					log.Printf("Save failed: %v", err)
 					continue
 				}
-				
+
 				duration := rec.GetDuration()
 				fmt.Printf(" Done! (%.1fs)\n", duration)
 				recording = false
