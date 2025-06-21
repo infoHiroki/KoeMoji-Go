@@ -38,7 +38,8 @@ func (app *GUIApp) createWindow() {
 		app.fyneApp.Quit()
 	})
 
-	// Periodic updates are started in app.go after window creation
+	// Start periodic updates (5 seconds as per design)
+	app.startPeriodicUpdate()
 }
 
 // createComponents creates all UI components
@@ -117,7 +118,7 @@ func (app *GUIApp) createButtonPanel(msg *ui.Messages) fyne.CanvasObject {
 	scanBtn.Importance = widget.HighImportance
 
 	// Create recording button with dynamic text and importance
-	recordBtn := widget.NewButton("🎤 "+msg.RecordCmd, func() {
+	recordBtn := widget.NewButton(msg.RecordCmd, func() {
 		app.onRecordPressed()
 	})
 	recordBtn.Importance = widget.WarningImportance

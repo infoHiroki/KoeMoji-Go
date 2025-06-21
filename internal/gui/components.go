@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"fyne.io/fyne/v2"
-	"fyne.io/fyne/v2/canvas"
 	"fyne.io/fyne/v2/widget"
 	"github.com/hirokitakamura/koemoji-go/internal/logger"
 	"github.com/hirokitakamura/koemoji-go/internal/processor"
@@ -287,14 +286,17 @@ func (app *GUIApp) updateRecordingUI() {
 	}
 
 	msg := ui.GetMessages(app.Config)
-	if app.isRecording {
-		app.recordButton.SetText("🔴 停止")
-		app.recordButton.Importance = widget.DangerImportance
-	} else {
-		app.recordButton.SetText("🎤 " + msg.RecordCmd)
-		app.recordButton.Importance = widget.WarningImportance
-	}
-	app.recordButton.Refresh()
+	// Use fyne.Do to safely update UI
+	fyne.Do(func() {
+		if app.isRecording {
+			app.recordButton.SetText("停止")
+			app.recordButton.Importance = widget.DangerImportance
+		} else {
+			app.recordButton.SetText(msg.RecordCmd)
+			app.recordButton.Importance = widget.WarningImportance
+		}
+		app.recordButton.Refresh()
+	})
 }
 
 // onQuitPressed handles the quit button press

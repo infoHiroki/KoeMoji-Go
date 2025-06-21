@@ -79,13 +79,6 @@ func Run(configPath string, debugMode bool) {
 
 	// Create and show the main window
 	guiApp.createWindow()
-	
-	// Start periodic updates in a separate goroutine after ShowAndRun starts
-	go func() {
-		time.Sleep(100 * time.Millisecond) // Give window time to initialize
-		guiApp.startPeriodicUpdate()
-	}()
-	
 	guiApp.window.ShowAndRun()
 }
 
