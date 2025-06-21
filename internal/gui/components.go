@@ -40,6 +40,22 @@ func (app *GUIApp) startPeriodicUpdate() {
 	}()
 }
 
+// KISS Design: Helper methods for state management
+// These provide a simple, consistent interface to recording state
+
+// isRecording returns the current recording state from the single source of truth
+func (app *GUIApp) isRecording() bool {
+	return app.recorder != nil && app.recorder.IsRecording()
+}
+
+// getRecordingDuration returns the current recording duration
+func (app *GUIApp) getRecordingDuration() time.Duration {
+	if !app.isRecording() {
+		return 0
+	}
+	return app.recorder.GetElapsedTime()
+}
+
 // updateUI updates all UI components with current data
 func (app *GUIApp) updateUI() {
 	// Check if UI is ready for updates
@@ -47,12 +63,8 @@ func (app *GUIApp) updateUI() {
 		return
 	}
 
-	// Sync recording state with actual recorder
-	if app.recorder != nil {
-		app.isRecording = app.recorder.IsRecording()
-	} else {
-		app.isRecording = false
-	}
+	// KISS Design: Direct query, no synchronization needed
+	isCurrentlyRecording := app.isRecording()
 
 	msg := ui.GetMessages(app.Config)
 
@@ -94,8 +106,8 @@ func (app *GUIApp) updateUI() {
 		msg.Last, lastScanStr, msg.Next, nextScanStr, msg.Uptime, formatDuration(uptime))
 
 	// Add recording status if recording
-	if app.isRecording {
-		elapsed := time.Since(app.recordingStartTime)
+	if isCurrentlyRecording {
+		elapsed := app.getRecordingDuration()
 		timingText += fmt.Sprintf(" | 🔴 %s: %s", msg.Recording, formatDuration(elapsed))
 	}
 
@@ -211,10 +223,8 @@ func (app *GUIApp) onOutputDirPressed() {
 
 // onRecordPressed handles the record button press
 func (app *GUIApp) onRecordPressed() {
-	// Check actual recorder state for reliable decision making
-	isActuallyRecording := app.recorder != nil && app.recorder.IsRecording()
-
-	if isActuallyRecording {
+	// KISS Design: Simple toggle logic with single source of truth
+	if app.isRecording() {
 		// Stop recording
 		app.stopRecording()
 	} else {
@@ -247,10 +257,8 @@ func (app *GUIApp) startRecording() {
 		return
 	}
 
-	// Sync state with actual recorder
-	app.isRecording = app.recorder.IsRecording()
-	if app.isRecording {
-		app.recordingStartTime = time.Now()
+	// KISS Design: No state sync needed, query directly
+	if app.isRecording() {
 		logger.LogInfo(nil, &app.logBuffer, &app.logMutex, "録音を開始しました")
 	}
 
@@ -262,7 +270,6 @@ func (app *GUIApp) startRecording() {
 func (app *GUIApp) stopRecording() {
 	if app.recorder == nil {
 		logger.LogError(nil, &app.logBuffer, &app.logMutex, "録音が初期化されていません")
-		app.isRecording = false
 		app.updateRecordingUI()
 		return
 	}
@@ -271,7 +278,6 @@ func (app *GUIApp) stopRecording() {
 	err := app.recorder.Stop()
 	if err != nil {
 		logger.LogError(nil, &app.logBuffer, &app.logMutex, "録音の停止に失敗: %v", err)
-		app.isRecording = false
 		app.updateRecordingUI()
 		return
 	}
@@ -285,15 +291,12 @@ func (app *GUIApp) stopRecording() {
 	err = app.recorder.SaveToFile(outputPath)
 	if err != nil {
 		logger.LogError(nil, &app.logBuffer, &app.logMutex, "録音ファイルの保存に失敗: %v", err)
-		// Sync state with actual recorder (should be false after Stop())
-		app.isRecording = app.recorder.IsRecording()
 		app.updateRecordingUI()
 		return
 	}
 
-	// Sync state with actual recorder (should be false after Stop())
-	app.isRecording = app.recorder.IsRecording()
-	duration := time.Since(app.recordingStartTime)
+	// KISS Design: Get duration directly from recorder
+	duration := app.getRecordingDuration()
 	logger.LogInfo(nil, &app.logBuffer, &app.logMutex, "録音を停止しました: %s (時間: %s)", filename, duration.Round(time.Second))
 
 	// Update button appearance
@@ -308,9 +311,12 @@ func (app *GUIApp) updateRecordingUI() {
 	}
 
 	msg := ui.GetMessages(app.Config)
+	// KISS Design: Direct query for current state
+	isCurrentlyRecording := app.isRecording()
+	
 	// Use fyne.Do to safely update UI
 	fyne.Do(func() {
-		if app.isRecording {
+		if isCurrentlyRecording {
 			app.recordButton.SetText("停止")
 			app.recordButton.Importance = widget.DangerImportance
 		} else {
@@ -323,7 +329,8 @@ func (app *GUIApp) updateRecordingUI() {
 
 // onQuitPressed handles the quit button press
 func (app *GUIApp) onQuitPressed() {
-	if app.recorder != nil && app.recorder.IsRecording() {
+	// KISS Design: Simple, consistent state check
+	if app.isRecording() {
 		// Show warning dialog if recording is in progress
 		app.showRecordingExitWarning()
 		return

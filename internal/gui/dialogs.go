@@ -199,8 +199,8 @@ func (app *GUIApp) saveConfigFromDialog(whisperModel, language *widget.Entry,
 
 // showRecordingExitWarning shows a warning dialog when user tries to exit while recording
 func (app *GUIApp) showRecordingExitWarning() {
-	// Calculate recording duration
-	elapsed := time.Since(app.recordingStartTime)
+	// KISS Design: Get duration directly from recorder
+	elapsed := app.getRecordingDuration()
 
 	// Create warning message with elapsed time
 	warningMessage := fmt.Sprintf("録音中です（%s経過）\n録音データが失われますが終了しますか？",

@@ -54,8 +54,6 @@ type GUIApp struct {
 
 	// Recording related fields
 	recorder              *recorder.Recorder
-	isRecording           bool
-	recordingStartTime    time.Time
 	recordingDeviceSelect *widget.Select
 	recordingDeviceMap    map[string]int
 

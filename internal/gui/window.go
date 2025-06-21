@@ -35,7 +35,8 @@ func (app *GUIApp) createWindow() {
 
 	// Set up window close behavior with recording check
 	app.window.SetCloseIntercept(func() {
-		if app.recorder != nil && app.recorder.IsRecording() {
+		// KISS Design: Consistent state check across all exit points
+		if app.isRecording() {
 			// Show warning dialog if recording is in progress
 			app.showRecordingExitWarning()
 			return
