@@ -218,22 +218,6 @@ func (app *App) handleUserInput() {
 			if err := ui.OpenDirectory(app.Config.OutputDir); err != nil {
 				logger.LogError(app.logger, &app.logBuffer, &app.logMutex, "Failed to open output directory: %v", err)
 			}
-		case "a":
-			// Toggle AI summary
-			app.Config.LLMSummaryEnabled = !app.Config.LLMSummaryEnabled
-			status := "disabled"
-			if app.Config.LLMSummaryEnabled {
-				status = "enabled"
-			}
-			logger.LogInfo(app.logger, &app.logBuffer, &app.logMutex, "AI summary %s", status)
-			// Save the configuration change
-			if err := config.SaveConfig(app.Config, app.configPath); err != nil {
-				logger.LogError(app.logger, &app.logBuffer, &app.logMutex, "Failed to save config: %v", err)
-			}
-			ui.RefreshDisplay(app.Config, app.startTime, app.lastScanTime, &app.logBuffer,
-				&app.logMutex, app.inputCount, app.outputCount, app.archiveCount,
-				&app.queuedFiles, app.processingFile, app.isProcessing, &app.mu,
-				app.isRecording, app.recordingStartTime)
 		case "r":
 			app.handleRecordingToggle()
 		case "q":

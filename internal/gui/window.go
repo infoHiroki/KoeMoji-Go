@@ -125,9 +125,6 @@ func (app *GUIApp) createButtonPanel(msg *ui.Messages) fyne.CanvasObject {
 		app.onOutputDirPressed()
 	})
 
-	aiBtn := widget.NewButton(msg.AISummaryCmd, func() {
-		app.onAITogglePressed()
-	})
 
 	quitBtn := widget.NewButton(msg.QuitCmd, func() {
 		app.onQuitPressed()
@@ -143,8 +140,6 @@ func (app *GUIApp) createButtonPanel(msg *ui.Messages) fyne.CanvasObject {
 		widget.NewSeparator(),
 		inputBtn,
 		outputBtn,
-		widget.NewSeparator(),
-		aiBtn,
 		widget.NewSeparator(),
 		quitBtn,
 	)

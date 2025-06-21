@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"fyne.io/fyne/v2"
-	"github.com/hirokitakamura/koemoji-go/internal/config"
 	"github.com/hirokitakamura/koemoji-go/internal/logger"
 	"github.com/hirokitakamura/koemoji-go/internal/processor"
 	"github.com/hirokitakamura/koemoji-go/internal/ui"
@@ -201,21 +200,6 @@ func (app *GUIApp) onOutputDirPressed() {
 	}
 }
 
-// onAITogglePressed handles the AI summary toggle button press
-func (app *GUIApp) onAITogglePressed() {
-	// Toggle AI summary
-	app.Config.LLMSummaryEnabled = !app.Config.LLMSummaryEnabled
-	status := "disabled"
-	if app.Config.LLMSummaryEnabled {
-		status = "enabled"
-	}
-	logger.LogInfo(nil, &app.logBuffer, &app.logMutex, "AI summary %s", status)
-
-	// Save the configuration change
-	if err := config.SaveConfig(app.Config, app.configPath); err != nil {
-		logger.LogError(nil, &app.logBuffer, &app.logMutex, "Failed to save config: %v", err)
-	}
-}
 
 // onQuitPressed handles the quit button press
 func (app *GUIApp) onQuitPressed() {

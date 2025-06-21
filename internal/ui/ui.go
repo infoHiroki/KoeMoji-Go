@@ -130,7 +130,7 @@ func displayRealtimeLogs(config *config.Config, logBuffer *[]logger.LogEntry, lo
 
 func displayCommands(config *config.Config) {
 	msg := GetMessages(config)
-	fmt.Printf("c=%s l=%s s=%s i=%s o=%s a=%s r=%s q=%s\n", msg.ConfigCmd, msg.LogsCmd, msg.ScanCmd, msg.InputDirCmd, msg.OutputDirCmd, msg.AISummaryCmd, msg.RecordCmd, msg.QuitCmd)
+	fmt.Printf("c=%s l=%s s=%s i=%s o=%s r=%s q=%s\n", msg.ConfigCmd, msg.LogsCmd, msg.ScanCmd, msg.InputDirCmd, msg.OutputDirCmd, msg.RecordCmd, msg.QuitCmd)
 	fmt.Print("> ")
 }
 

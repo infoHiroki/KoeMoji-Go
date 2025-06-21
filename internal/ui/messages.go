@@ -25,7 +25,6 @@ type Messages struct {
 	QuitCmd      string
 	InputDirCmd  string
 	OutputDirCmd string
-	AISummaryCmd string
 	RecordCmd    string
 
 	// Log levels
@@ -87,7 +86,6 @@ var messagesEN = Messages{
 	QuitCmd:      "quit",
 	InputDirCmd:  "input",
 	OutputDirCmd: "output",
-	AISummaryCmd: "AI summary",
 	RecordCmd:    "record",
 
 	// Log levels
@@ -149,7 +147,6 @@ var messagesJA = Messages{
 	QuitCmd:      "終了",
 	InputDirCmd:  "入力",
 	OutputDirCmd: "出力",
-	AISummaryCmd: "AI要約",
 	RecordCmd:    "録音",
 
 	// Log levels
