@@ -32,6 +32,11 @@ type Config struct {
 	LLMMaxTokens          int    `json:"llm_max_tokens"`
 	SummaryPromptTemplate string `json:"summary_prompt_template"`
 	SummaryLanguage       string `json:"summary_language"`
+	// Recording settings
+	RecordingEnabled      bool   `json:"recording_enabled"`
+	RecordingDeviceID     int    `json:"recording_device_id"`
+	RecordingDeviceName   string `json:"recording_device_name"`
+	RecordingAutoStart    bool   `json:"recording_auto_start"`
 }
 
 func GetDefaultConfig() *Config {
@@ -55,6 +60,11 @@ func GetDefaultConfig() *Config {
 		LLMMaxTokens:          4096,
 		SummaryPromptTemplate: "以下の文字起こしテキストを{language}で要約してください。重要なポイントを箇条書きでまとめ、全体の概要も含めてください。\n\n{text}",
 		SummaryLanguage:       "auto",
+		// Recording defaults
+		RecordingEnabled:      true,
+		RecordingDeviceID:     -1, // -1 means use default device
+		RecordingDeviceName:   "",
+		RecordingAutoStart:    false,
 	}
 }
 
@@ -588,12 +598,17 @@ type Messages struct {
 	LLMMaxTokens      string
 	SummaryPrompt     string
 	EditablePrompt    string
-	ResetDefaults     string
-	SaveAndExit       string
-	QuitWithoutSave   string
-	SelectOption      string
-	Minutes           string
-	Current           string
+	// Recording Settings
+	RecordingEnabled    string
+	RecordingDeviceID   string
+	RecordingDeviceName string
+	RecordingAutoStart  string
+	ResetDefaults       string
+	SaveAndExit         string
+	QuitWithoutSave     string
+	SelectOption        string
+	Minutes             string
+	Current             string
 
 	// Config prompts
 	SelectModel    string
@@ -640,6 +655,12 @@ type Messages struct {
 	LLMModelSet           string
 	LLMMaxTokensSet       string
 	PromptSet             string
+	// Recording messages
+	RecordingEnabledMsg   string
+	RecordingDisabledMsg  string
+	RecordingDeviceSet    string
+	RecordingAutoStartEnabled  string
+	RecordingAutoStartDisabled string
 	ConfigReset           string
 	ConfigSaved           string
 	NoChanges             string
@@ -670,14 +691,19 @@ var messagesEN = Messages{
 	LLMAPIKey:         "LLM API Key",
 	LLMModel:          "LLM Model",
 	LLMMaxTokens:      "Max Tokens",
-	SummaryPrompt:     "Summary Prompt",
-	EditablePrompt:    "Editable",
-	ResetDefaults:     "Reset to defaults",
-	SaveAndExit:       "Save and exit",
-	QuitWithoutSave:   "Quit without saving",
-	SelectOption:      "Select option",
-	Minutes:           "minutes",
-	Current:           "current",
+	SummaryPrompt:      "Summary Prompt",
+	EditablePrompt:     "Editable",
+	// Recording Settings
+	RecordingEnabled:   "Recording Enabled",
+	RecordingDeviceID:  "Recording Device ID",
+	RecordingDeviceName: "Recording Device Name",
+	RecordingAutoStart: "Auto-start Recording",
+	ResetDefaults:      "Reset to defaults",
+	SaveAndExit:        "Save and exit",
+	QuitWithoutSave:    "Quit without saving",
+	SelectOption:       "Select option",
+	Minutes:            "minutes",
+	Current:            "current",
 
 	// Config prompts
 	SelectModel:    "Select model (1-%d) or press Enter to keep current:",
@@ -724,6 +750,12 @@ var messagesEN = Messages{
 	LLMModelSet:           "LLM model set to: %s",
 	LLMMaxTokensSet:       "Max tokens set to: %d",
 	PromptSet:             "Summary prompt updated",
+	// Recording messages
+	RecordingEnabledMsg:          "Recording enabled",
+	RecordingDisabledMsg:         "Recording disabled", 
+	RecordingDeviceSet:           "Recording device set to: %s",
+	RecordingAutoStartEnabled:    "Auto-start recording enabled",
+	RecordingAutoStartDisabled:   "Auto-start recording disabled",
 	ConfigReset:           "Configuration reset to defaults.",
 	ConfigSaved:           "Configuration saved successfully!",
 	NoChanges:             "No changes to save.",
@@ -754,14 +786,19 @@ var messagesJA = Messages{
 	LLMAPIKey:         "LLM APIキー",
 	LLMModel:          "LLMモデル",
 	LLMMaxTokens:      "最大トークン数",
-	SummaryPrompt:     "要約プロンプト",
-	EditablePrompt:    "編集可能",
-	ResetDefaults:     "デフォルトに戻す",
-	SaveAndExit:       "保存して終了",
-	QuitWithoutSave:   "保存せずに終了",
-	SelectOption:      "オプションを選択",
-	Minutes:           "分",
-	Current:           "現在",
+	SummaryPrompt:      "要約プロンプト",
+	EditablePrompt:     "編集可能",
+	// Recording Settings
+	RecordingEnabled:   "録音機能",
+	RecordingDeviceID:  "録音デバイスID",
+	RecordingDeviceName: "録音デバイス名",
+	RecordingAutoStart: "録音自動開始",
+	ResetDefaults:      "デフォルトに戻す",
+	SaveAndExit:        "保存して終了",
+	QuitWithoutSave:    "保存せずに終了",
+	SelectOption:       "オプションを選択",
+	Minutes:            "分",
+	Current:            "現在",
 
 	// Config prompts
 	SelectModel:    "モデルを選択 (1-%d) またはEnterで現在の設定を維持:",
@@ -808,6 +845,12 @@ var messagesJA = Messages{
 	LLMModelSet:           "LLMモデルを設定: %s",
 	LLMMaxTokensSet:       "最大トークン数を設定: %d",
 	PromptSet:             "要約プロンプトを更新しました",
+	// Recording messages
+	RecordingEnabledMsg:          "録音機能を有効にしました",
+	RecordingDisabledMsg:         "録音機能を無効にしました",
+	RecordingDeviceSet:           "録音デバイスを設定: %s",
+	RecordingAutoStartEnabled:    "録音自動開始を有効にしました",
+	RecordingAutoStartDisabled:   "録音自動開始を無効にしました",
 	ConfigReset:           "設定をデフォルトに戻しました。",
 	ConfigSaved:           "設定を保存しました！",
 	NoChanges:             "変更はありません。",
