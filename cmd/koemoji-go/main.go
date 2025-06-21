@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"context"
 	"flag"
 	"fmt"
 	"io"
@@ -149,13 +150,18 @@ func (app *App) initLogger() {
 }
 
 func (app *App) run() {
+	// Phase 2: Create context for graceful shutdown
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, os.Interrupt, syscall.SIGTERM)
+	defer signal.Stop(sigChan)
 
-	go processor.StartProcessing(app.Config, app.logger, &app.logBuffer, &app.logMutex,
+	go processor.StartProcessing(ctx, app.Config, app.logger, &app.logBuffer, &app.logMutex,
 		&app.lastScanTime, &app.queuedFiles, &app.processingFile, &app.isProcessing,
 		&app.processedFiles, &app.mu, &app.wg, app.debugMode)
-	go app.handleUserInput()
+	go app.handleUserInput(ctx)
 
 	logger.LogInfo(app.logger, &app.logBuffer, &app.logMutex, "KoeMoji-Go is running. Use commands below to interact.")
 	logger.LogInfo(app.logger, &app.logBuffer, &app.logMutex, "Monitoring %s directory every %d minutes", app.Config.InputDir, app.Config.ScanIntervalMinutes)
@@ -169,13 +175,35 @@ func (app *App) run() {
 		app.isRecording, app.recordingStartTime)
 
 	<-sigChan
-	logger.LogInfo(app.logger, &app.logBuffer, &app.logMutex, "Shutting down KoeMoji-Go...")
-	app.wg.Wait()
+	logger.LogInfo(app.logger, &app.logBuffer, &app.logMutex, "Graceful shutdown initiated...")
+	cancel() // Signal all goroutines to stop
+	
+	// Wait for graceful shutdown with timeout
+	done := make(chan bool, 1)
+	go func() {
+		app.wg.Wait()
+		done <- true
+	}()
+	
+	select {
+	case <-done:
+		logger.LogInfo(app.logger, &app.logBuffer, &app.logMutex, "Shutdown completed successfully")
+	case <-time.After(10 * time.Second):
+		logger.LogInfo(app.logger, &app.logBuffer, &app.logMutex, "Shutdown timeout, forcing exit")
+	}
 }
 
-func (app *App) handleUserInput() {
+func (app *App) handleUserInput(ctx context.Context) {
 	reader := bufio.NewReader(os.Stdin)
 	for {
+		select {
+		case <-ctx.Done():
+			logger.LogInfo(app.logger, &app.logBuffer, &app.logMutex, "User input handler stopped")
+			return
+		default:
+			// Non-blocking input check would be complex, so we keep the blocking read
+			// The context cancellation will be handled when the process exits
+		}
 		input, err := reader.ReadString('\n')
 		if err != nil {
 			if err == io.EOF {

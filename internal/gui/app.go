@@ -1,6 +1,7 @@
 package gui
 
 import (
+	"context"
 	"sync"
 	"time"
 
@@ -59,10 +60,17 @@ type GUIApp struct {
 
 	// UI safety fields
 	uiInitialized bool
+	
+	// Phase 2: Context cancellation for goroutines
+	ctx        context.Context
+	cancelFunc context.CancelFunc
 }
 
 // Run starts the GUI application
 func Run(configPath string, debugMode bool) {
+	// Phase 2: Create context for goroutine management
+	ctx, cancel := context.WithCancel(context.Background())
+	
 	guiApp := &GUIApp{
 		configPath:     configPath,
 		debugMode:      debugMode,
@@ -70,6 +78,8 @@ func Run(configPath string, debugMode bool) {
 		startTime:      time.Now(),
 		logBuffer:      make([]logger.LogEntry, 0, 12),
 		queuedFiles:    make([]string, 0),
+		ctx:            ctx,
+		cancelFunc:     cancel,
 	}
 
 	// Initialize the application
@@ -102,6 +112,11 @@ func (app *GUIApp) initLogger() {
 
 // ForceCleanup performs immediate resource cleanup for application exit
 func (app *GUIApp) ForceCleanup() {
+	// Phase 2: Cancel all goroutines
+	if app.cancelFunc != nil {
+		app.cancelFunc()
+	}
+	
 	// Clean up recorder resources (PortAudio)
 	if app.recorder != nil {
 		app.recorder.Close()

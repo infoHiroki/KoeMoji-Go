@@ -21,21 +21,27 @@ func (app *GUIApp) startPeriodicUpdate() {
 	processor.EnsureDirectories(app.Config, nil)
 	whisper.EnsureDependencies(app.Config, nil, &app.logBuffer, &app.logMutex, app.debugMode)
 
-	// Start file processing
-	go processor.StartProcessing(app.Config, nil, &app.logBuffer, &app.logMutex,
+	// Phase 2: Start file processing with context
+	go processor.StartProcessing(app.ctx, app.Config, nil, &app.logBuffer, &app.logMutex,
 		&app.lastScanTime, &app.queuedFiles, &app.processingFile, &app.isProcessing,
 		&app.processedFiles, &app.mu, nil, app.debugMode)
 
-	// Start periodic updates in a goroutine
+	// Start periodic updates in a goroutine with context cancellation
 	go func() {
 		ticker := time.NewTicker(5 * time.Second)
 		defer ticker.Stop()
 
-		for range ticker.C {
-			// Use fyne.Do to safely update UI from goroutine
-			fyne.Do(func() {
-				app.updateUI()
-			})
+		for {
+			select {
+			case <-app.ctx.Done():
+				logger.LogInfo(nil, &app.logBuffer, &app.logMutex, "GUI periodic update stopped")
+				return
+			case <-ticker.C:
+				// Use fyne.Do to safely update UI from goroutine
+				fyne.Do(func() {
+					app.updateUI()
+				})
+			}
 		}
 	}()
 }

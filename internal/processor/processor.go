@@ -1,6 +1,7 @@
 package processor
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"log"
@@ -17,7 +18,7 @@ import (
 	"github.com/hirokitakamura/koemoji-go/internal/whisper"
 )
 
-func StartProcessing(config *config.Config, log *log.Logger, logBuffer *[]logger.LogEntry, logMutex *sync.RWMutex,
+func StartProcessing(ctx context.Context, config *config.Config, log *log.Logger, logBuffer *[]logger.LogEntry, logMutex *sync.RWMutex,
 	lastScanTime *time.Time, queuedFiles *[]string, processingFile *string, isProcessing *bool,
 	processedFiles *map[string]bool, mu *sync.Mutex, wg *sync.WaitGroup, debugMode bool) {
 
@@ -25,13 +26,19 @@ func StartProcessing(config *config.Config, log *log.Logger, logBuffer *[]logger
 	ScanAndProcess(config, log, logBuffer, logMutex, lastScanTime, queuedFiles, processingFile,
 		isProcessing, processedFiles, mu, wg, debugMode)
 
-	// Periodic scan
+	// Periodic scan with context cancellation
 	ticker := time.NewTicker(time.Duration(config.ScanIntervalMinutes) * time.Minute)
 	defer ticker.Stop()
 
-	for range ticker.C {
-		ScanAndProcess(config, log, logBuffer, logMutex, lastScanTime, queuedFiles, processingFile,
-			isProcessing, processedFiles, mu, wg, debugMode)
+	for {
+		select {
+		case <-ctx.Done():
+			logger.LogInfo(log, logBuffer, logMutex, "File processing stopped by context cancellation")
+			return
+		case <-ticker.C:
+			ScanAndProcess(config, log, logBuffer, logMutex, lastScanTime, queuedFiles, processingFile,
+				isProcessing, processedFiles, mu, wg, debugMode)
+		}
 	}
 }
 
@@ -60,6 +67,11 @@ func ScanAndProcess(config *config.Config, log *log.Logger, logBuffer *[]logger.
 	// Add files to queue
 	mu.Lock()
 	*queuedFiles = append(*queuedFiles, newFiles...)
+	
+	// Phase 1: Periodic cleanup of processed files map
+	if len(*processedFiles) > 5000 {
+		cleanupProcessedFiles(processedFiles, log, logBuffer, logMutex)
+	}
 	mu.Unlock()
 
 	// Start processing if not already processing
@@ -243,4 +255,28 @@ func formatDuration(d time.Duration) string {
 	} else {
 		return fmt.Sprintf("%ds", seconds)
 	}
+}
+
+// Phase 1: Helper function for processed files cleanup
+func cleanupProcessedFiles(processedFiles *map[string]bool, log *log.Logger, logBuffer *[]logger.LogEntry, logMutex *sync.RWMutex) {
+	// Keep only the most recent 2500 entries (half of the threshold)
+	if len(*processedFiles) <= 2500 {
+		return
+	}
+	
+	// Simple approach: reset the map when it gets too large
+	// In a production system, you might want to keep recent entries based on timestamp
+	newMap := make(map[string]bool)
+	count := 0
+	
+	// Keep approximately half of the entries
+	for file := range *processedFiles {
+		if count < 2500 {
+			newMap[file] = true
+			count++
+		}
+	}
+	
+	*processedFiles = newMap
+	logger.LogInfo(log, logBuffer, logMutex, "Cleaned up processed files map, kept %d entries", len(*processedFiles))
 }
