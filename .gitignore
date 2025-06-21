@@ -6,6 +6,7 @@ build/dist/
 
 # 実行時生成ファイル
 koemoji-go
+koemoji-go-debug
 cmd/koemoji-go/koemoji-go
 koemoji.log
 config.json
@@ -15,14 +16,36 @@ input/
 output/
 archive/
 
+# テスト・録音ファイル
+test_recording_*.wav
+recording_*.wav
+*.m4a
+*.mp3
+*.flac
+*.ogg
+*.aac
+*.mp4
+*.mov
+*.avi
+
 # 開発環境固有
 .DS_Store
 .vscode/
 .idea/
+*.swp
+*.swo
+*~
+
+# Go特有
+*.test
+*.prof
+coverage.out
 
 # 不要ファイル
 OLD/
+tmp/
+temp/
 
 # 学習用ドキュメント（オプション）
-# docs/LYNCH_NARRATIVE.md
-# docs/GO_LANGUAGE_ESSAY.md
+# docs/creative/LYNCH_NARRATIVE.md
+# docs/creative/GO_LANGUAGE_ESSAY.md
