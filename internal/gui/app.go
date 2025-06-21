@@ -46,18 +46,21 @@ type GUIApp struct {
 	buttonWidget fyne.CanvasObject
 
 	// UI component references for updates
-	statusLabel *widget.Label
-	filesLabel  *widget.Label
-	timingLabel *widget.Label
-	logText     *widget.RichText
+	statusLabel  *widget.Label
+	filesLabel   *widget.Label
+	timingLabel  *widget.Label
+	logText      *widget.RichText
 	recordButton *widget.Button
 
 	// Recording related fields
-	recorder               *recorder.Recorder
-	isRecording            bool
-	recordingStartTime     time.Time
-	recordingDeviceSelect  *widget.Select
-	recordingDeviceMap     map[string]int
+	recorder              *recorder.Recorder
+	isRecording           bool
+	recordingStartTime    time.Time
+	recordingDeviceSelect *widget.Select
+	recordingDeviceMap    map[string]int
+
+	// UI safety fields
+	uiInitialized bool
 }
 
 // Run starts the GUI application
@@ -97,4 +100,26 @@ func (app *GUIApp) initLogger() {
 	// For GUI mode, we'll use in-memory logging only
 	// The log buffer will be displayed in the GUI
 	logger.LogInfo(nil, &app.logBuffer, &app.logMutex, "KoeMoji-Go v1.3.0 started")
+}
+
+// ForceCleanup performs immediate resource cleanup for application exit
+func (app *GUIApp) ForceCleanup() {
+	// Clean up recorder resources (PortAudio)
+	if app.recorder != nil {
+		app.recorder.Close()
+		app.recorder = nil
+	}
+
+	// Log cleanup action
+	logger.LogInfo(nil, &app.logBuffer, &app.logMutex, "Application resources cleaned up")
+}
+
+// isUIReady checks if all essential UI components are initialized
+func (app *GUIApp) isUIReady() bool {
+	return app.uiInitialized &&
+		app.statusLabel != nil &&
+		app.filesLabel != nil &&
+		app.timingLabel != nil &&
+		app.logText != nil &&
+		app.recordButton != nil
 }

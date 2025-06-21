@@ -1,7 +1,9 @@
 package gui
 
 import (
+	"fmt"
 	"strconv"
+	"time"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
@@ -192,5 +194,54 @@ func (app *GUIApp) saveConfigFromDialog(whisperModel, language *widget.Entry,
 	} else {
 		logger.LogInfo(nil, &app.logBuffer, &app.logMutex, "Configuration saved successfully")
 		dialog.ShowInformation("Success", "Configuration saved successfully!", app.window)
+	}
+}
+
+// showRecordingExitWarning shows a warning dialog when user tries to exit while recording
+func (app *GUIApp) showRecordingExitWarning() {
+	// Calculate recording duration
+	elapsed := time.Since(app.recordingStartTime)
+
+	// Create warning message with elapsed time
+	warningMessage := fmt.Sprintf("録音中です（%s経過）\n録音データが失われますが終了しますか？",
+		formatRecordingDuration(elapsed))
+
+	// Create warning dialog
+	confirmDialog := dialog.NewConfirm(
+		"録音中",
+		warningMessage,
+		func(confirmed bool) {
+			if confirmed {
+				// User confirmed exit - force quit
+				app.forceQuit()
+			}
+			// If not confirmed, dialog just closes and continues
+		},
+		app.window)
+
+	confirmDialog.Show()
+}
+
+// forceQuit performs immediate application exit with cleanup
+func (app *GUIApp) forceQuit() {
+	// Perform cleanup
+	app.ForceCleanup()
+
+	// Immediate exit - OS will handle whisper process termination
+	app.fyneApp.Quit()
+}
+
+// formatRecordingDuration formats a duration for display in recording dialog
+func formatRecordingDuration(d time.Duration) string {
+	hours := int(d.Hours())
+	minutes := int(d.Minutes()) % 60
+	seconds := int(d.Seconds()) % 60
+
+	if hours > 0 {
+		return fmt.Sprintf("%dh%dm%ds", hours, minutes, seconds)
+	} else if minutes > 0 {
+		return fmt.Sprintf("%dm%ds", minutes, seconds)
+	} else {
+		return fmt.Sprintf("%ds", seconds)
 	}
 }

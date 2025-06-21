@@ -42,8 +42,16 @@ func (app *GUIApp) startPeriodicUpdate() {
 
 // updateUI updates all UI components with current data
 func (app *GUIApp) updateUI() {
-	if app.statusLabel == nil || app.filesLabel == nil || app.timingLabel == nil || app.logText == nil {
+	// Check if UI is ready for updates
+	if !app.isUIReady() {
 		return
+	}
+
+	// Sync recording state with actual recorder
+	if app.recorder != nil {
+		app.isRecording = app.recorder.IsRecording()
+	} else {
+		app.isRecording = false
 	}
 
 	msg := ui.GetMessages(app.Config)
@@ -201,10 +209,12 @@ func (app *GUIApp) onOutputDirPressed() {
 	}
 }
 
-
 // onRecordPressed handles the record button press
 func (app *GUIApp) onRecordPressed() {
-	if app.isRecording {
+	// Check actual recorder state for reliable decision making
+	isActuallyRecording := app.recorder != nil && app.recorder.IsRecording()
+
+	if isActuallyRecording {
 		// Stop recording
 		app.stopRecording()
 	} else {
@@ -237,9 +247,12 @@ func (app *GUIApp) startRecording() {
 		return
 	}
 
-	app.isRecording = true
-	app.recordingStartTime = time.Now()
-	logger.LogInfo(nil, &app.logBuffer, &app.logMutex, "録音を開始しました")
+	// Sync state with actual recorder
+	app.isRecording = app.recorder.IsRecording()
+	if app.isRecording {
+		app.recordingStartTime = time.Now()
+		logger.LogInfo(nil, &app.logBuffer, &app.logMutex, "録音を開始しました")
+	}
 
 	// Update button appearance
 	app.updateRecordingUI()
@@ -249,6 +262,8 @@ func (app *GUIApp) startRecording() {
 func (app *GUIApp) stopRecording() {
 	if app.recorder == nil {
 		logger.LogError(nil, &app.logBuffer, &app.logMutex, "録音が初期化されていません")
+		app.isRecording = false
+		app.updateRecordingUI()
 		return
 	}
 
@@ -256,6 +271,8 @@ func (app *GUIApp) stopRecording() {
 	err := app.recorder.Stop()
 	if err != nil {
 		logger.LogError(nil, &app.logBuffer, &app.logMutex, "録音の停止に失敗: %v", err)
+		app.isRecording = false
+		app.updateRecordingUI()
 		return
 	}
 
@@ -268,10 +285,14 @@ func (app *GUIApp) stopRecording() {
 	err = app.recorder.SaveToFile(outputPath)
 	if err != nil {
 		logger.LogError(nil, &app.logBuffer, &app.logMutex, "録音ファイルの保存に失敗: %v", err)
+		// Sync state with actual recorder (should be false after Stop())
+		app.isRecording = app.recorder.IsRecording()
+		app.updateRecordingUI()
 		return
 	}
 
-	app.isRecording = false
+	// Sync state with actual recorder (should be false after Stop())
+	app.isRecording = app.recorder.IsRecording()
 	duration := time.Since(app.recordingStartTime)
 	logger.LogInfo(nil, &app.logBuffer, &app.logMutex, "録音を停止しました: %s (時間: %s)", filename, duration.Round(time.Second))
 
@@ -281,7 +302,8 @@ func (app *GUIApp) stopRecording() {
 
 // updateRecordingUI updates the recording-related UI elements
 func (app *GUIApp) updateRecordingUI() {
-	if app.recordButton == nil {
+	// Check if UI is ready and record button exists
+	if !app.isUIReady() {
 		return
 	}
 
@@ -301,10 +323,11 @@ func (app *GUIApp) updateRecordingUI() {
 
 // onQuitPressed handles the quit button press
 func (app *GUIApp) onQuitPressed() {
-	// Stop recording if in progress before quitting
-	if app.isRecording {
-		app.stopRecording()
+	if app.recorder != nil && app.recorder.IsRecording() {
+		// Show warning dialog if recording is in progress
+		app.showRecordingExitWarning()
+		return
 	}
-	// Immediate exit as per design document
-	app.fyneApp.Quit()
+	// Immediate exit if not recording
+	app.forceQuit()
 }

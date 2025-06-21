@@ -33,9 +33,15 @@ func (app *GUIApp) createWindow() {
 
 	app.window.SetContent(content)
 
-	// Set up window close behavior (immediate exit as per design)
+	// Set up window close behavior with recording check
 	app.window.SetCloseIntercept(func() {
-		app.fyneApp.Quit()
+		if app.recorder != nil && app.recorder.IsRecording() {
+			// Show warning dialog if recording is in progress
+			app.showRecordingExitWarning()
+			return
+		}
+		// Immediate exit if not recording
+		app.forceQuit()
 	})
 
 	// Start periodic updates (5 seconds as per design)
@@ -55,6 +61,9 @@ func (app *GUIApp) createComponents() {
 
 	// Create button panel (bottom)
 	app.buttonWidget = app.createButtonPanel(msg)
+
+	// Mark UI as initialized
+	app.uiInitialized = true
 }
 
 // createStatusPanel creates the status display panel
