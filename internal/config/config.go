@@ -35,8 +35,11 @@ type Config struct {
 	SummaryPromptTemplate string `json:"summary_prompt_template"`
 	SummaryLanguage       string `json:"summary_language"`
 	// Recording settings
-	RecordingDeviceID   int    `json:"recording_device_id"`
-	RecordingDeviceName string `json:"recording_device_name"`
+	RecordingDeviceID     int `json:"recording_device_id"`
+	RecordingDeviceName   string `json:"recording_device_name"`
+	// Phase 1: Memory-efficient recording limits
+	RecordingMaxHours     int `json:"recording_max_hours"`      // 0 = unlimited
+	RecordingMaxFileMB    int `json:"recording_max_file_mb"`    // 0 = unlimited
 }
 
 func GetDefaultConfig() *Config {
@@ -61,8 +64,10 @@ func GetDefaultConfig() *Config {
 		SummaryPromptTemplate: "以下の文字起こしテキストを{language}で要約してください。重要なポイントを箇条書きでまとめ、全体の概要も含めてください。\n\n{text}",
 		SummaryLanguage:       "auto",
 		// Recording defaults
-		RecordingDeviceID:   -1, // -1 means use default device
-		RecordingDeviceName: "既定のマイク",
+		RecordingDeviceID:     -1, // -1 means use default device
+		RecordingDeviceName:   "既定のマイク",
+		RecordingMaxHours:     0,  // Unlimited by default
+		RecordingMaxFileMB:    0,  // Unlimited by default
 	}
 }
 

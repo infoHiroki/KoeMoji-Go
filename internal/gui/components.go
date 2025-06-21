@@ -248,6 +248,20 @@ func (app *GUIApp) startRecording() {
 			logger.LogError(nil, &app.logBuffer, &app.logMutex, "録音の初期化に失敗: %v", err)
 			return
 		}
+		
+		// Phase 1: Set recording limits
+		var maxDuration time.Duration
+		var maxFileSize int64
+		
+		if app.Config.RecordingMaxHours > 0 {
+			maxDuration = time.Duration(app.Config.RecordingMaxHours) * time.Hour
+		}
+		
+		if app.Config.RecordingMaxFileMB > 0 {
+			maxFileSize = int64(app.Config.RecordingMaxFileMB) * 1024 * 1024 // Convert MB to bytes
+		}
+		
+		app.recorder.SetLimits(maxDuration, maxFileSize)
 	}
 
 	// Start recording
