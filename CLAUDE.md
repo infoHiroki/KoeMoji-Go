@@ -25,10 +25,30 @@ cd build && ./build.sh
 ./koemoji-go --gui
 ```
 
+### Testing & Quality
+```bash
+# Run all tests
+go test ./... -v
+
+# Run specific package tests
+go test ./internal/config -v
+go test ./internal/whisper -v
+
+# Run tests with coverage
+go test ./... -cover
+
+# Lint code
+go vet ./...
+
+# Check formatting
+gofmt -l .
+```
+
 ### Dependencies
 - Go 1.21+ required
 - Python 3.8+ with FasterWhisper (auto-installed on first run)
 - Manual installation: `pip install faster-whisper whisper-ctranslate2`
+- Recording feature (macOS): `brew install portaudio pkg-config`
 
 ## Architecture
 
@@ -43,6 +63,7 @@ The project follows Go's standard internal package layout:
 - **`internal/whisper/`** - FasterWhisper integration and audio transcription
 - **`internal/llm/`** - LLM integration for AI summarization (v1.2.0+)
 - **`internal/gui/`** - Fyne-based GUI implementation (v1.3.0+)
+- **`internal/recorder/`** - Audio recording with PortAudio (development branch)
 
 ### Core Processing Flow
 1. **File Monitoring**: Periodic directory scanning (`input/`) with configurable intervals
@@ -104,7 +125,11 @@ The application supports English and Japanese UI languages. Messages are central
   "output_format": "txt",
   "input_dir": "./input",
   "output_dir": "./output", 
-  "archive_dir": "./archive"
+  "archive_dir": "./archive",
+  "recording_enabled": true,
+  "recording_device_id": -1,
+  "recording_device_name": "",
+  "recording_auto_start": false
 }
 ```
 
@@ -142,6 +167,12 @@ Supported formats: MP3, WAV, M4A, FLAC, OGG, AAC, MP4, MOV, AVI
 - **Features**: Automatic summarization post-transcription
 - **API Support**: OpenAI GPT models (gpt-4o, gpt-4-turbo, gpt-3.5-turbo)
 - **Error Handling**: Retry logic, rate limit handling, API validation
+
+### Recording Integration (Development)
+- **Package**: `internal/recorder/` - PortAudio-based recording
+- **Dependencies**: github.com/gordonklaus/portaudio
+- **Features**: Device selection, WAV output (44.1kHz, 16bit, mono)
+- **UI Integration**: 'r' key for record start/stop (planned)
 
 ## Development Notes
 
