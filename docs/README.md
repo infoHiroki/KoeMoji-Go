@@ -19,8 +19,10 @@
 ### 📐 [design/](./design/) - 設計ドキュメント
 システム設計と仕様に関する詳細な設計書。
 
-- **[GUI_DESIGN.md](./design/GUI_DESIGN.md)** - GUI設計仕様、ユーザーインターフェース設計原則
+- **[DASHBOARD_GUI_DESIGN.md](./design/DASHBOARD_GUI_DESIGN.md)** - GUI設計仕様、ユーザーインターフェース設計原則
 - **[SoundRecorderDesign.md](./design/SoundRecorderDesign.md)** - 音声録音システム設計書（v3.0完全実装版）
+- **[KISS-Design-Principles.md](./design/KISS-Design-Principles.md)** - シンプル設計原則
+- **[SoundRecorderIntegrationPlan.md](./design/SoundRecorderIntegrationPlan.md)** - 録音機能統合計画
 
 ### 🔧 [technical/](./technical/) - 技術ノート
 実装時の技術的課題と解決策を記録したテクニカルノート。
@@ -37,15 +39,19 @@
 
 プロジェクトルートには以下の重要なドキュメントがあります：
 
-- **[README.md](../README.md)** - プロジェクト概要とクイックスタートガイド（日本語）
-- **[README_EN.md](../README_EN.md)** - プロジェクト概要とクイックスタートガイド（英語）
+- **[README.md](../README.md)** - プロジェクト概要（日本語）
+- **[README_EN.md](../README_EN.md)** - プロジェクト概要（英語）
+- **[QUICKSTART.md](../QUICKSTART.md)** - 5分で始める簡潔ガイド
+- **[TROUBLESHOOTING.md](../TROUBLESHOOTING.md)** - 問題解決とFAQ
 - **[CLAUDE.md](../CLAUDE.md)** - AI開発アシスタント向けプロジェクト情報
 
 ## 📝 ドキュメント利用ガイド
 
 ### 初めてのユーザー
-1. [README.md](../README.md) でプロジェクト概要を理解
-2. [user/USAGE.md](./user/USAGE.md) で詳細な使用方法を学習
+1. [QUICKSTART.md](../QUICKSTART.md) で5分クイックスタート
+2. [README.md](../README.md) でプロジェクト概要を理解
+3. [user/USAGE.md](./user/USAGE.md) で詳細な使用方法を学習
+4. 問題が発生したら [TROUBLESHOOTING.md](../TROUBLESHOOTING.md) を確認
 
 ### 開発者・コントリビューター
 1. [developer/ARCHITECTURE.md](./developer/ARCHITECTURE.md) でシステム構成を理解
@@ -53,7 +59,7 @@
 3. [technical/fyne-implementation.md](./technical/fyne-implementation.md) で実装課題を確認
 
 ### システム設計者
-1. [design/GUI_DESIGN.md](./design/GUI_DESIGN.md) でUI設計を確認
+1. [design/DASHBOARD_GUI_DESIGN.md](./design/DASHBOARD_GUI_DESIGN.md) でGUI設計を確認
 2. [design/SoundRecorderDesign.md](./design/SoundRecorderDesign.md) で音声システム設計を理解
 
 ## 🔄 ドキュメント更新方針

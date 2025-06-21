@@ -174,8 +174,16 @@ Supported formats: MP3, WAV, M4A, FLAC, OGG, AAC, MP4, MOV, AVI
 - **UI Integration**: 'r' key for record start/stop, real-time duration display
 - **Device Support**: Default/specific device selection, BlackHole/Stereo Mix detection
 - **File Management**: Automatic saving to input directory with timestamp naming
+- **State Management**: KISS design principles applied - single source of truth for recording state
 
 ## Development Notes
+
+### KISS Design Principles (v1.4.1+)
+- **Single Source of Truth**: Recording state managed only in `recorder.Recorder`
+- **Direct Query Pattern**: No state caching or synchronization needed
+- **Simplified State Management**: Eliminated redundant `isRecording` and `recordingStartTime` fields
+- **Problem Elimination**: Recording exit warning issue resolved by design
+- **Documentation**: See `docs/design/KISS-Design-Principles.md`
 
 ### Error Handling
 - Comprehensive error logging with UI feedback
