@@ -118,26 +118,33 @@ func (app *GUIApp) createLogViewer(msg *ui.Messages) fyne.CanvasObject {
 
 // createButtonPanel creates the action buttons panel
 func (app *GUIApp) createButtonPanel(msg *ui.Messages) fyne.CanvasObject {
+	// Define button size
+	buttonSize := fyne.NewSize(80, 40) // Width: 80, Height: 40
+	
 	// Create buttons with localized labels
 	configBtn := widget.NewButton(msg.ConfigCmd, func() {
 		app.onConfigPressed()
 	})
 	configBtn.Importance = widget.MediumImportance
+	configBtn.Resize(buttonSize)
 
 	logsBtn := widget.NewButton(msg.LogsCmd, func() {
 		app.onLogsPressed()
 	})
+	logsBtn.Resize(buttonSize)
 
 	scanBtn := widget.NewButton(msg.ScanCmd, func() {
 		app.onScanPressed()
 	})
 	scanBtn.Importance = widget.HighImportance
+	scanBtn.Resize(buttonSize)
 
 	// Create recording button with dynamic text and importance
 	recordBtn := widget.NewButton(msg.RecordCmd, func() {
 		app.onRecordPressed()
 	})
 	recordBtn.Importance = widget.WarningImportance
+	recordBtn.Resize(buttonSize)
 
 	// Store reference for updating button text and appearance
 	app.recordButton = recordBtn
@@ -145,15 +152,18 @@ func (app *GUIApp) createButtonPanel(msg *ui.Messages) fyne.CanvasObject {
 	inputBtn := widget.NewButton(msg.InputDirCmd, func() {
 		app.onInputDirPressed()
 	})
+	inputBtn.Resize(buttonSize)
 
 	outputBtn := widget.NewButton(msg.OutputDirCmd, func() {
 		app.onOutputDirPressed()
 	})
+	outputBtn.Resize(buttonSize)
 
 	quitBtn := widget.NewButton(msg.QuitCmd, func() {
 		app.onQuitPressed()
 	})
 	quitBtn.Importance = widget.DangerImportance
+	quitBtn.Resize(buttonSize)
 
 	// Create primary and secondary button groups for better organization
 	primaryButtons := container.NewHBox(

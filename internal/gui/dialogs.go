@@ -13,10 +13,14 @@ import (
 	"github.com/hirokitakamura/koemoji-go/internal/config"
 	"github.com/hirokitakamura/koemoji-go/internal/logger"
 	"github.com/hirokitakamura/koemoji-go/internal/recorder"
+	"github.com/hirokitakamura/koemoji-go/internal/ui"
 )
 
 // showConfigDialog displays the configuration dialog with tabbed interface
 func (app *GUIApp) showConfigDialog() {
+	// Get messages for the current language
+	msg := ui.GetMessages(app.Config)
+	
 	// Create form entries for basic settings
 	// UI Language first - most important setting
 	// UI Language options with display names
@@ -91,16 +95,12 @@ func (app *GUIApp) showConfigDialog() {
 	scanIntervalEntry := widget.NewEntry()
 	scanIntervalEntry.SetText(strconv.Itoa(app.Config.ScanIntervalMinutes))
 
-	colorsCheck := widget.NewCheck("", nil)
-	colorsCheck.SetChecked(app.Config.UseColors)
-
 	// Basic settings form
 	basicForm := widget.NewForm(
-		widget.NewFormItem("言語", uiLanguageSelect),
-		widget.NewFormItem("Whisperモデル", whisperModelSelect),
-		widget.NewFormItem("音声認識言語", languageSelect),
-		widget.NewFormItem("スキャン間隔（分）", scanIntervalEntry),
-		widget.NewFormItem("色を使用", colorsCheck),
+		widget.NewFormItem(msg.LanguageLabel, uiLanguageSelect),
+		widget.NewFormItem(msg.WhisperModelLabel, whisperModelSelect),
+		widget.NewFormItem(msg.SpeechLanguageLabel, languageSelect),
+		widget.NewFormItem(msg.ScanIntervalLabel, scanIntervalEntry),
 	)
 
 	// Directory settings
@@ -114,9 +114,9 @@ func (app *GUIApp) showConfigDialog() {
 	archiveDirEntry.SetText(app.Config.ArchiveDir)
 
 	dirForm := widget.NewForm(
-		widget.NewFormItem("入力フォルダ", inputDirEntry),
-		widget.NewFormItem("出力フォルダ", outputDirEntry),
-		widget.NewFormItem("アーカイブフォルダ", archiveDirEntry),
+		widget.NewFormItem(msg.InputDirLabel, inputDirEntry),
+		widget.NewFormItem(msg.OutputDirLabel, outputDirEntry),
+		widget.NewFormItem(msg.ArchiveDirLabel, archiveDirEntry),
 	)
 
 	// LLM settings
@@ -130,9 +130,9 @@ func (app *GUIApp) showConfigDialog() {
 	llmModelSelect.SetSelected(app.Config.LLMModel)
 
 	llmForm := widget.NewForm(
-		widget.NewFormItem("AI要約を有効化", llmEnabledCheck),
-		widget.NewFormItem("APIキー", llmAPIKeyEntry),
-		widget.NewFormItem("モデル", llmModelSelect),
+		widget.NewFormItem(msg.LLMEnabledLabel, llmEnabledCheck),
+		widget.NewFormItem(msg.APIKeyLabel, llmAPIKeyEntry),
+		widget.NewFormItem(msg.ModelLabel, llmModelSelect),
 	)
 
 	// Recording settings
@@ -140,25 +140,25 @@ func (app *GUIApp) showConfigDialog() {
 
 	// Create tabs
 	tabs := container.NewAppTabs(
-		container.NewTabItem("基本設定", basicForm),
-		container.NewTabItem("フォルダ設定", dirForm),
-		container.NewTabItem("AI要約", llmForm),
-		container.NewTabItem("録音設定", recordingForm),
+		container.NewTabItem(msg.BasicTab, basicForm),
+		container.NewTabItem(msg.DirectoriesTab, dirForm),
+		container.NewTabItem(msg.LLMTab, llmForm),
+		container.NewTabItem(msg.RecordingTab, recordingForm),
 	)
 
 	// Create dialog content
 	content := container.NewVBox(
-		widget.NewLabel("KoeMoji-Go 設定"),
+		widget.NewLabel(msg.SettingsTitle),
 		tabs,
 	)
 
 	// Create dialog with Save/Cancel buttons
-	configDialog := dialog.NewCustomConfirm("設定", "保存", "キャンセル", content,
+	configDialog := dialog.NewCustomConfirm(msg.SettingsTitle, msg.SaveBtn, msg.CancelBtn, content,
 		func(save bool) {
 			if save {
 				// Save configuration changes only when Save is clicked
 				app.saveConfigFromDialog(whisperModelSelect, languageSelect, uiLanguageSelect,
-					scanIntervalEntry, colorsCheck, inputDirEntry, outputDirEntry,
+					scanIntervalEntry, inputDirEntry, outputDirEntry,
 					archiveDirEntry, llmEnabledCheck, llmAPIKeyEntry, llmModelSelect)
 			}
 			// If Cancel is clicked, changes are discarded automatically
@@ -209,8 +209,9 @@ func (app *GUIApp) createRecordingForm() *widget.Form {
 	app.recordingDeviceSelect = deviceSelect
 	app.recordingDeviceMap = deviceMap
 
+	msg := ui.GetMessages(app.Config)
 	return widget.NewForm(
-		widget.NewFormItem("録音デバイス", deviceSelect),
+		widget.NewFormItem(msg.RecordingDeviceLabel, deviceSelect),
 	)
 }
 

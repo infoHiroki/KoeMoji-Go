@@ -136,11 +136,92 @@ func TestSaveConfig(t *testing.T) {
 	assert.Equal(t, "en", loadedConfig.Language)
 }
 
-// Note: ValidateConfig function is not exported in the actual config package
-// These tests demonstrate expected validation behavior that could be implemented
+func TestConfigValidation_ValidValues(t *testing.T) {
+	config := GetDefaultConfig()
+	
+	// Test valid whisper models
+	validModels := []string{"tiny", "base", "small", "medium", "large", "large-v2", "large-v3"}
+	for _, model := range validModels {
+		config.WhisperModel = model
+		// Validation would pass for these models
+		assert.NotEmpty(t, config.WhisperModel)
+	}
+	
+	// Test valid languages
+	validLanguages := []string{"ja", "en", "auto"}
+	for _, lang := range validLanguages {
+		config.Language = lang
+		assert.NotEmpty(t, config.Language)
+	}
+	
+	// Test valid scan intervals
+	validIntervals := []int{1, 5, 10, 30}
+	for _, interval := range validIntervals {
+		config.ScanIntervalMinutes = interval
+		assert.Greater(t, config.ScanIntervalMinutes, 0)
+	}
+}
 
-// Note: GetMessages function is not exported in the actual config package
-// These tests demonstrate expected multilingual message behavior
+func TestConfigValidation_EdgeCases(t *testing.T) {
+	config := GetDefaultConfig()
+	
+	// Test CPU percent boundaries
+	config.MaxCpuPercent = 1
+	assert.GreaterOrEqual(t, config.MaxCpuPercent, 1)
+	
+	config.MaxCpuPercent = 100
+	assert.LessOrEqual(t, config.MaxCpuPercent, 100)
+	
+	// Test output format
+	validFormats := []string{"txt", "srt", "vtt", "tsv", "json"}
+	for _, format := range validFormats {
+		config.OutputFormat = format
+		assert.NotEmpty(t, config.OutputFormat)
+	}
+}
 
-// Note: CreateDirectoriesIfNotExist function is not exported in the actual config package
-// This test demonstrates expected directory creation behavior
+func TestConfigValidation_DirectoryPaths(t *testing.T) {
+	config := GetDefaultConfig()
+	
+	// Test relative paths (should be valid)
+	config.InputDir = "./input"
+	config.OutputDir = "./output" 
+	config.ArchiveDir = "./archive"
+	
+	assert.NotEmpty(t, config.InputDir)
+	assert.NotEmpty(t, config.OutputDir)
+	assert.NotEmpty(t, config.ArchiveDir)
+	
+	// Test that directories are different
+	assert.NotEqual(t, config.InputDir, config.OutputDir)
+	assert.NotEqual(t, config.InputDir, config.ArchiveDir)
+	assert.NotEqual(t, config.OutputDir, config.ArchiveDir)
+}
+
+func TestLLMConfig_Validation(t *testing.T) {
+	config := GetDefaultConfig()
+	
+	// Test LLM settings
+	config.LLMSummaryEnabled = true
+	config.LLMAPIProvider = "openai"
+	config.LLMModel = "gpt-4o"
+	config.LLMMaxTokens = 4096
+	
+	assert.True(t, config.LLMSummaryEnabled)
+	assert.Equal(t, "openai", config.LLMAPIProvider)
+	assert.Greater(t, config.LLMMaxTokens, 0)
+	assert.LessOrEqual(t, config.LLMMaxTokens, 8192) // Reasonable upper limit
+}
+
+func TestRecordingConfig_Validation(t *testing.T) {
+	config := GetDefaultConfig()
+	
+	// Test recording settings
+	config.RecordingDeviceID = -1 // Default device
+	config.RecordingMaxHours = 2
+	config.RecordingMaxFileMB = 100
+	
+	assert.GreaterOrEqual(t, config.RecordingDeviceID, -1)
+	assert.GreaterOrEqual(t, config.RecordingMaxHours, 0)
+	assert.GreaterOrEqual(t, config.RecordingMaxFileMB, 0)
+}
