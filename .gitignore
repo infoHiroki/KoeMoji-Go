@@ -28,6 +28,14 @@ recording_*.wav
 *.mov
 *.avi
 
+# テスト関連ファイル
+test/coverage*.out
+test/coverage*.html
+test/koemoji-go*
+test/testdata/*.wav
+test/testdata/*.mp3
+test/testdata/*.m4a
+
 # 開発環境固有
 .DS_Store
 .vscode/

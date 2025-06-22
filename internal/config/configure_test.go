@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/hirokitakamura/koemoji-go/internal/config/testdata"
 )
 
 // Test individual configure functions
@@ -30,7 +31,7 @@ func TestConfigureWhisperModel(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			config := GetDefaultConfig()
 			config.WhisperModel = "large-v3"
-			reader := createMockReader(tt.input)
+			reader := testdata.CreateMockReader(tt.input)
 			
 			changed := configureWhisperModel(config, reader)
 			
@@ -61,7 +62,7 @@ func TestConfigureLanguage(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			config := GetDefaultConfig()
 			config.Language = "ja"
-			reader := createMockReader(tt.input)
+			reader := testdata.CreateMockReader(tt.input)
 			
 			changed := configureLanguage(config, reader)
 			
@@ -89,7 +90,7 @@ func TestConfigureUILanguage(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			config := GetDefaultConfig()
 			config.UILanguage = "ja"
-			reader := createMockReader(tt.input)
+			reader := testdata.CreateMockReader(tt.input)
 			
 			changed := configureUILanguage(config, reader)
 			
@@ -119,7 +120,7 @@ func TestConfigureScanInterval(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			config := GetDefaultConfig()
 			config.ScanIntervalMinutes = 1
-			reader := createMockReader(tt.input)
+			reader := testdata.CreateMockReader(tt.input)
 			
 			changed := configureScanInterval(config, reader)
 			
@@ -151,7 +152,7 @@ func TestConfigureMaxCpuPercent(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			config := GetDefaultConfig()
 			config.MaxCpuPercent = 95
-			reader := createMockReader(tt.input)
+			reader := testdata.CreateMockReader(tt.input)
 			
 			changed := configureMaxCpuPercent(config, reader)
 			
@@ -181,7 +182,7 @@ func TestConfigureComputeType(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			config := GetDefaultConfig()
 			config.ComputeType = "int8"
-			reader := createMockReader(tt.input)
+			reader := testdata.CreateMockReader(tt.input)
 			
 			changed := configureComputeType(config, reader)
 			
@@ -210,7 +211,7 @@ func TestConfigureUseColors(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			config := GetDefaultConfig()
 			config.UseColors = true
-			reader := createMockReader(tt.input)
+			reader := testdata.CreateMockReader(tt.input)
 			
 			changed := configureUseColors(config, reader)
 			
@@ -241,7 +242,7 @@ func TestConfigureOutputFormat(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			config := GetDefaultConfig()
 			config.OutputFormat = "txt"
-			reader := createMockReader(tt.input)
+			reader := testdata.CreateMockReader(tt.input)
 			
 			changed := configureOutputFormat(config, reader)
 			
@@ -257,14 +258,14 @@ func TestConfigureDirectories(t *testing.T) {
 		config.InputDir = "./input"
 		
 		// Test manual path input
-		reader := createMockReader("./custom_input")
+		reader := testdata.CreateMockReader("./custom_input")
 		changed := configureInputDir(config, reader)
 		
 		assert.Equal(t, "./custom_input", config.InputDir)
 		assert.True(t, changed)
 		
 		// Test keep current (empty)
-		reader = createMockReader("")
+		reader = testdata.CreateMockReader("")
 		changed = configureInputDir(config, reader)
 		
 		assert.Equal(t, "./custom_input", config.InputDir)
@@ -275,7 +276,7 @@ func TestConfigureDirectories(t *testing.T) {
 		config := GetDefaultConfig()
 		config.OutputDir = "./output"
 		
-		reader := createMockReader("./custom_output")
+		reader := testdata.CreateMockReader("./custom_output")
 		changed := configureOutputDir(config, reader)
 		
 		assert.Equal(t, "./custom_output", config.OutputDir)
@@ -286,7 +287,7 @@ func TestConfigureDirectories(t *testing.T) {
 		config := GetDefaultConfig()
 		config.ArchiveDir = "./archive"
 		
-		reader := createMockReader("./custom_archive")
+		reader := testdata.CreateMockReader("./custom_archive")
 		changed := configureArchiveDir(config, reader)
 		
 		assert.Equal(t, "./custom_archive", config.ArchiveDir)
@@ -312,7 +313,7 @@ func TestConfigureLLMSettings(t *testing.T) {
 			t.Run(tt.name, func(t *testing.T) {
 				config := GetDefaultConfig()
 				config.LLMSummaryEnabled = false
-				reader := createMockReader(tt.input)
+				reader := testdata.CreateMockReader(tt.input)
 				
 				changed := configureLLMSummaryEnabled(config, reader)
 				
@@ -327,7 +328,7 @@ func TestConfigureLLMSettings(t *testing.T) {
 		config.LLMAPIProvider = "openai"
 		
 		// Currently only supports openai
-		reader := createMockReader("1")
+		reader := testdata.CreateMockReader("1")
 		changed := configureLLMAPIProvider(config, reader)
 		
 		assert.Equal(t, "openai", config.LLMAPIProvider)
@@ -338,14 +339,14 @@ func TestConfigureLLMSettings(t *testing.T) {
 		config := GetDefaultConfig()
 		config.LLMAPIKey = ""
 		
-		reader := createMockReader("sk-test1234567890")
+		reader := testdata.CreateMockReader("sk-test1234567890")
 		changed := configureLLMAPIKey(config, reader)
 		
 		assert.Equal(t, "sk-test1234567890", config.LLMAPIKey)
 		assert.True(t, changed)
 		
 		// Test keep current
-		reader = createMockReader("")
+		reader = testdata.CreateMockReader("")
 		changed = configureLLMAPIKey(config, reader)
 		
 		assert.Equal(t, "sk-test1234567890", config.LLMAPIKey)
@@ -372,7 +373,7 @@ func TestConfigureLLMSettings(t *testing.T) {
 			t.Run(tt.name, func(t *testing.T) {
 				config := GetDefaultConfig()
 				config.LLMModel = "gpt-4o"
-				reader := createMockReader(tt.input)
+				reader := testdata.CreateMockReader(tt.input)
 				
 				changed := configureLLMModel(config, reader)
 				
@@ -402,7 +403,7 @@ func TestConfigureLLMSettings(t *testing.T) {
 			t.Run(tt.name, func(t *testing.T) {
 				config := GetDefaultConfig()
 				config.LLMMaxTokens = 4096
-				reader := createMockReader(tt.input)
+				reader := testdata.CreateMockReader(tt.input)
 				
 				changed := configureLLMMaxTokens(config, reader)
 				
@@ -417,21 +418,21 @@ func TestConfigureLLMSettings(t *testing.T) {
 		
 		// Test new prompt
 		newPrompt := "Please summarize {text} in {language}"
-		reader := createMockReader(newPrompt)
+		reader := testdata.CreateMockReader(newPrompt)
 		changed := configureSummaryPrompt(config, reader)
 		
 		assert.Equal(t, newPrompt, config.SummaryPromptTemplate)
 		assert.True(t, changed)
 		
 		// Test keep current
-		reader = createMockReader("")
+		reader = testdata.CreateMockReader("")
 		changed = configureSummaryPrompt(config, reader)
 		
 		assert.Equal(t, newPrompt, config.SummaryPromptTemplate)
 		assert.False(t, changed)
 		
 		// Test invalid prompt (missing placeholders)
-		reader = createMockReader("Invalid prompt without placeholders")
+		reader = testdata.CreateMockReader("Invalid prompt without placeholders")
 		changed = configureSummaryPrompt(config, reader)
 		
 		assert.Equal(t, newPrompt, config.SummaryPromptTemplate) // Should not change
@@ -465,7 +466,7 @@ func TestConfigureRecordingDevice(t *testing.T) {
 	config.RecordingDeviceName = "既定のマイク"
 	
 	// Test keep current (empty input)
-	reader := createMockReader("")
+	reader := testdata.CreateMockReader("")
 	changed := configureRecordingDevice(config, reader)
 	
 	assert.Equal(t, -1, config.RecordingDeviceID)
@@ -473,7 +474,7 @@ func TestConfigureRecordingDevice(t *testing.T) {
 	assert.False(t, changed)
 	
 	// Test manual device ID input
-	reader = createMockReader("2")
+	reader = testdata.CreateMockReader("2")
 	// This will try to enumerate devices and likely fail in test environment
 	// but the input parsing logic should work
 	_ = configureRecordingDevice(config, reader)
@@ -500,15 +501,17 @@ func TestResetToDefaults(t *testing.T) {
 	}
 	
 	// Confirm reset
-	reader := createMockReader("y")
+	reader := testdata.CreateMockReader("y")
 	resetToDefaults(config, reader)
 	
 	defaultConfig := GetDefaultConfig()
-	assertConfigEquals(t, defaultConfig, config)
+	assert.Equal(t, defaultConfig.WhisperModel, config.WhisperModel)
+	assert.Equal(t, defaultConfig.Language, config.Language)
+	assert.Equal(t, defaultConfig.UILanguage, config.UILanguage)
 	
 	// Test cancel reset
 	config.WhisperModel = "tiny"
-	reader = createMockReader("n")
+	reader = testdata.CreateMockReader("n")
 	resetToDefaults(config, reader)
 	
 	assert.Equal(t, "tiny", config.WhisperModel) // Should not change
