@@ -7,8 +7,18 @@ This directory contains organized test files and utilities for the KoeMoji-Go pr
 ```
 test/
 ├── README.md                    # This file
+├── coverage.out                 # Coverage data files
+├── coverage.html               # Coverage reports  
+├── integration_test.go         # Integration tests
+├── koemoji-go-debug           # Debug binaries
+├── koemoji-go-test            # Test binaries
 ├── shared/                      # Shared test utilities
-│   └── common.go               # Common test functions and config
+│   ├── common.go               # Common test functions and config
+│   ├── helpers.go              # Additional test helpers
+│   ├── performance.go          # Performance testing utilities
+│   └── testutil.go             # Test utilities
+├── testdata/                   # Test data files
+│   └── test_recording_1.wav    # Sample audio files
 ├── manual-test-commands.md     # Manual testing commands
 └── recorder_manual.go          # Manual recorder testing
 

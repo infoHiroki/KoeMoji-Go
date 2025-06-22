@@ -48,6 +48,7 @@ test/testdata/*.m4a
 *.test
 *.prof
 coverage.out
+coverage_*.out
 
 # 不要ファイル
 OLD/
