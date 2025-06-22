@@ -7,7 +7,7 @@ on:
     branches: [ main ]
 
 jobs:
-  build:
+  build-unix:
     runs-on: ubuntu-latest
     
     env:
@@ -26,25 +26,15 @@ jobs:
         sudo apt-get update
         sudo apt-get install -y \
           libportaudio2 \
-          libportaudio-dev \
+          portaudio19-dev \
           libgl1-mesa-dev \
           xorg-dev \
           pkg-config \
-          gcc-mingw-w64
     
-    - name: Install goversioninfo
-      run: go install github.com/josephspurrier/goversioninfo/cmd/goversioninfo@latest
-    
-    - name: Build Windows
-      env:
-        CC: x86_64-w64-mingw32-gcc
-        CXX: x86_64-w64-mingw32-g++
+    - name: Build Linux
       run: |
         cd build
-        goversioninfo -o resource_windows_amd64.syso versioninfo.json
-        cp resource_windows_amd64.syso ../cmd/koemoji-go/
-        GOOS=windows GOARCH=amd64 go build -ldflags="-s -w" -o koemoji-go.exe ../cmd/koemoji-go
-        rm -f resource_windows_amd64.syso ../cmd/koemoji-go/resource_windows_amd64.syso
+        GOOS=linux GOARCH=amd64 go build -ldflags="-s -w" -o koemoji-go-linux-amd64 ../cmd/koemoji-go
     
     - name: Build macOS Intel
       run: |
@@ -56,11 +46,49 @@ jobs:
         cd build
         GOOS=darwin GOARCH=arm64 go build -ldflags="-s -w" -o koemoji-go-darwin-arm64 ../cmd/koemoji-go
     
-    - name: Upload artifacts
+    - name: Upload Unix artifacts
       uses: actions/upload-artifact@v4
       with:
-        name: koemoji-go-binaries
+        name: koemoji-go-unix-binaries
         path: |
-          build/koemoji-go.exe
+          build/koemoji-go-linux-amd64
           build/koemoji-go-darwin-amd64
           build/koemoji-go-darwin-arm64
+
+  build-windows:
+    runs-on: windows-latest
+    
+    env:
+      CGO_ENABLED: 1
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: '1.21'
+    
+    - name: Setup Windows build environment
+      run: |
+        # Windows環境では、gordonklaus/portaudioパッケージが
+        # 必要なDLLを含む可能性があるため、追加のインストールは不要
+        echo "Windows build environment ready"
+    
+    - name: Install goversioninfo
+      run: go install github.com/josephspurrier/goversioninfo/cmd/goversioninfo@latest
+    
+    - name: Build Windows
+      run: |
+        cd build
+        goversioninfo -o resource_windows_amd64.syso versioninfo.json
+        Copy-Item resource_windows_amd64.syso ../cmd/koemoji-go/
+        go build -ldflags="-s -w" -o koemoji-go.exe ../cmd/koemoji-go
+        Remove-Item resource_windows_amd64.syso, ../cmd/koemoji-go/resource_windows_amd64.syso -ErrorAction SilentlyContinue
+    
+    - name: Upload Windows artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: koemoji-go-windows-binaries
+        path: |
+          build/koemoji-go.exe
