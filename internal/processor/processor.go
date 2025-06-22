@@ -70,7 +70,7 @@ func ScanAndProcess(config *config.Config, log *log.Logger, logBuffer *[]logger.
 	
 	// Phase 1: Periodic cleanup of processed files map
 	if len(*processedFiles) > 5000 {
-		cleanupProcessedFiles(processedFiles, log, logBuffer, logMutex)
+		cleanupProcessedFiles(processedFiles, mu, log, logBuffer, logMutex)
 	}
 	mu.Unlock()
 
@@ -263,11 +263,14 @@ func formatDuration(d time.Duration) string {
 }
 
 // Phase 1: Helper function for processed files cleanup
-func cleanupProcessedFiles(processedFiles *map[string]bool, log *log.Logger, logBuffer *[]logger.LogEntry, logMutex *sync.RWMutex) {
+func cleanupProcessedFiles(processedFiles *map[string]bool, mu *sync.Mutex, log *log.Logger, logBuffer *[]logger.LogEntry, logMutex *sync.RWMutex) {
 	// Keep only the most recent 2500 entries (half of the threshold)
 	if len(*processedFiles) <= 2500 {
 		return
 	}
+	
+	// Note: This function is called while mu is already locked in ScanAndProcess
+	// No additional locking needed here as the caller already holds the lock
 	
 	// Simple approach: reset the map when it gets too large
 	// In a production system, you might want to keep recent entries based on timestamp

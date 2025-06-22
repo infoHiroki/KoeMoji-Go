@@ -173,7 +173,7 @@ func (app *GUIApp) createRecordingForm() *widget.Form {
 	// Get available recording devices
 	devices, err := recorder.ListDevices()
 	if err != nil {
-		logger.LogError(nil, &app.logBuffer, &app.logMutex, "Failed to list recording devices: %v", err)
+		logger.LogError(app.logger, &app.logBuffer, &app.logMutex, "Failed to list recording devices: %v", err)
 		return widget.NewForm(
 			widget.NewFormItem("Error", widget.NewLabel("Failed to load recording devices")),
 		)
@@ -283,10 +283,10 @@ func (app *GUIApp) saveConfigFromDialog(whisperModel, language *widget.Select,
 
 	// Save to file
 	if err := config.SaveConfig(app.Config, app.configPath); err != nil {
-		logger.LogError(nil, &app.logBuffer, &app.logMutex, "Failed to save config: %v", err)
+		logger.LogError(app.logger, &app.logBuffer, &app.logMutex, "Failed to save config: %v", err)
 		dialog.ShowError(err, app.window)
 	} else {
-		logger.LogInfo(nil, &app.logBuffer, &app.logMutex, "Configuration saved successfully")
+		logger.LogInfo(app.logger, &app.logBuffer, &app.logMutex, "Configuration saved successfully")
 		dialog.ShowInformation("Success", "Configuration saved successfully!", app.window)
 	}
 }

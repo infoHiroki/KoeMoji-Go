@@ -34,7 +34,7 @@ func (app *GUIApp) startPeriodicUpdate() {
 		for {
 			select {
 			case <-app.ctx.Done():
-				logger.LogInfo(nil, &app.logBuffer, &app.logMutex, "GUI periodic update stopped")
+				logger.LogInfo(app.logger, &app.logBuffer, &app.logMutex, "GUI periodic update stopped")
 				return
 			case <-ticker.C:
 				// Use fyne.Do to safely update UI from goroutine
@@ -191,7 +191,7 @@ func (app *GUIApp) onConfigPressed() {
 	app.showConfigDialog()
 
 	// Log the action
-	logger.LogInfo(nil, &app.logBuffer, &app.logMutex, "Configuration dialog opened")
+	logger.LogInfo(app.logger, &app.logBuffer, &app.logMutex, "Configuration dialog opened")
 }
 
 // onLogsPressed handles the logs button press
@@ -200,12 +200,12 @@ func (app *GUIApp) onLogsPressed() {
 	ui.DisplayLogs(app.Config)
 
 	// Log the action
-	logger.LogInfo(nil, &app.logBuffer, &app.logMutex, "Log file opened")
+	logger.LogInfo(app.logger, &app.logBuffer, &app.logMutex, "Log file opened")
 }
 
 // onScanPressed handles the scan button press
 func (app *GUIApp) onScanPressed() {
-	logger.LogInfo(nil, &app.logBuffer, &app.logMutex, "Manual scan triggered")
+	logger.LogInfo(app.logger, &app.logBuffer, &app.logMutex, "Manual scan triggered")
 
 	// Use existing sync.WaitGroup reference if available, or create minimal scan
 	processor.ScanAndProcess(app.Config, nil, &app.logBuffer, &app.logMutex,
@@ -216,14 +216,14 @@ func (app *GUIApp) onScanPressed() {
 // onInputDirPressed handles the input directory button press
 func (app *GUIApp) onInputDirPressed() {
 	if err := ui.OpenDirectory(app.Config.InputDir); err != nil {
-		logger.LogError(nil, &app.logBuffer, &app.logMutex, "Failed to open input directory: %v", err)
+		logger.LogError(app.logger, &app.logBuffer, &app.logMutex, "Failed to open input directory: %v", err)
 	}
 }
 
 // onOutputDirPressed handles the output directory button press
 func (app *GUIApp) onOutputDirPressed() {
 	if err := ui.OpenDirectory(app.Config.OutputDir); err != nil {
-		logger.LogError(nil, &app.logBuffer, &app.logMutex, "Failed to open output directory: %v", err)
+		logger.LogError(app.logger, &app.logBuffer, &app.logMutex, "Failed to open output directory: %v", err)
 	}
 }
 
@@ -251,7 +251,7 @@ func (app *GUIApp) startRecording() {
 		}
 
 		if err != nil {
-			logger.LogError(nil, &app.logBuffer, &app.logMutex, "録音の初期化に失敗: %v", err)
+			logger.LogError(app.logger, &app.logBuffer, &app.logMutex, "録音の初期化に失敗: %v", err)
 			return
 		}
 		
@@ -273,13 +273,13 @@ func (app *GUIApp) startRecording() {
 	// Start recording
 	err := app.recorder.Start()
 	if err != nil {
-		logger.LogError(nil, &app.logBuffer, &app.logMutex, "録音の開始に失敗: %v", err)
+		logger.LogError(app.logger, &app.logBuffer, &app.logMutex, "録音の開始に失敗: %v", err)
 		return
 	}
 
 	// KISS Design: No state sync needed, query directly
 	if app.isRecording() {
-		logger.LogInfo(nil, &app.logBuffer, &app.logMutex, "録音を開始しました")
+		logger.LogInfo(app.logger, &app.logBuffer, &app.logMutex, "録音を開始しました")
 	}
 
 	// Update button appearance
@@ -289,7 +289,7 @@ func (app *GUIApp) startRecording() {
 // stopRecording stops audio recording
 func (app *GUIApp) stopRecording() {
 	if app.recorder == nil {
-		logger.LogError(nil, &app.logBuffer, &app.logMutex, "録音が初期化されていません")
+		logger.LogError(app.logger, &app.logBuffer, &app.logMutex, "録音が初期化されていません")
 		app.updateRecordingUI()
 		return
 	}
@@ -297,7 +297,7 @@ func (app *GUIApp) stopRecording() {
 	// Stop recording
 	err := app.recorder.Stop()
 	if err != nil {
-		logger.LogError(nil, &app.logBuffer, &app.logMutex, "録音の停止に失敗: %v", err)
+		logger.LogError(app.logger, &app.logBuffer, &app.logMutex, "録音の停止に失敗: %v", err)
 		app.updateRecordingUI()
 		return
 	}
@@ -310,14 +310,14 @@ func (app *GUIApp) stopRecording() {
 	outputPath := filepath.Join(app.Config.InputDir, filename)
 	err = app.recorder.SaveToFile(outputPath)
 	if err != nil {
-		logger.LogError(nil, &app.logBuffer, &app.logMutex, "録音ファイルの保存に失敗: %v", err)
+		logger.LogError(app.logger, &app.logBuffer, &app.logMutex, "録音ファイルの保存に失敗: %v", err)
 		app.updateRecordingUI()
 		return
 	}
 
 	// KISS Design: Get duration directly from recorder
 	duration := app.getRecordingDuration()
-	logger.LogInfo(nil, &app.logBuffer, &app.logMutex, "録音を停止しました: %s (時間: %s)", filename, duration.Round(time.Second))
+	logger.LogInfo(app.logger, &app.logBuffer, &app.logMutex, "録音を停止しました: %s (時間: %s)", filename, duration.Round(time.Second))
 
 	// Update button appearance
 	app.updateRecordingUI()

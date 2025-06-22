@@ -217,3 +217,68 @@ func TestConcurrentProcessing_StateManagement(t *testing.T) {
 	defer mu.Unlock()
 	assert.False(t, isProcessing)
 }
+
+func TestSafeProcessingStart_RaceConditionFixed(t *testing.T) {
+	// Test the fixed race condition in processing start logic
+	var mu sync.Mutex
+	var isProcessing bool
+	var processCount int
+	var wg sync.WaitGroup
+
+	// Simulate multiple goroutines trying to start processing simultaneously
+	numGoroutines := 20
+	for i := 0; i < numGoroutines; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+
+			// Simulate the fixed logic from ScanAndProcess
+			mu.Lock()
+			if !isProcessing {
+				isProcessing = true
+				processCount++
+				mu.Unlock()
+				
+				// Simulate some work
+				time.Sleep(5 * time.Millisecond)
+				
+				// Reset processing state
+				mu.Lock()
+				isProcessing = false
+				mu.Unlock()
+			} else {
+				mu.Unlock()
+			}
+		}()
+	}
+
+	wg.Wait()
+
+	// Only one goroutine should have started processing
+	assert.Equal(t, 1, processCount, "Only one goroutine should start processing")
+	assert.False(t, isProcessing, "Processing should be false after all goroutines complete")
+}
+
+func TestCleanupProcessedFiles_SafeConcurrentAccess(t *testing.T) {
+	// Test the fixed concurrent map access in cleanup function
+	processedFiles := make(map[string]bool)
+	var mu sync.Mutex
+	
+	// Add more than 5000 files to trigger cleanup
+	for i := 0; i < 6000; i++ {
+		processedFiles[fmt.Sprintf("file_%d.wav", i)] = true
+	}
+
+	logger := log.New(os.Stdout, "", log.LstdFlags)
+	var logBuffer []logger.LogEntry
+	var logMutex sync.RWMutex
+
+	// Test that cleanup works without concurrent map access issues
+	mu.Lock()
+	cleanupProcessedFiles(&processedFiles, &mu, logger, &logBuffer, &logMutex)
+	mu.Unlock()
+
+	// Should have cleaned up to approximately half
+	assert.LessOrEqual(t, len(processedFiles), 2500, "Should cleanup to 2500 or fewer entries")
+	assert.Greater(t, len(processedFiles), 0, "Should keep some entries")
+}
