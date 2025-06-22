@@ -153,7 +153,7 @@ func (app *App) run() {
 	// Phase 2: Create context for graceful shutdown
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	
+
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, os.Interrupt, syscall.SIGTERM)
 	defer signal.Stop(sigChan)
@@ -177,14 +177,14 @@ func (app *App) run() {
 	<-sigChan
 	logger.LogInfo(app.logger, &app.logBuffer, &app.logMutex, "Graceful shutdown initiated...")
 	cancel() // Signal all goroutines to stop
-	
+
 	// Wait for graceful shutdown with timeout
 	done := make(chan bool, 1)
 	go func() {
 		app.wg.Wait()
 		done <- true
 	}()
-	
+
 	select {
 	case <-done:
 		logger.LogInfo(app.logger, &app.logBuffer, &app.logMutex, "Shutdown completed successfully")
@@ -283,19 +283,19 @@ func (app *App) startRecording() {
 			logger.LogError(app.logger, &app.logBuffer, &app.logMutex, "録音の初期化に失敗: %v", err)
 			return
 		}
-		
+
 		// Phase 1: Set recording limits
 		var maxDuration time.Duration
 		var maxFileSize int64
-		
+
 		if app.Config.RecordingMaxHours > 0 {
 			maxDuration = time.Duration(app.Config.RecordingMaxHours) * time.Hour
 		}
-		
+
 		if app.Config.RecordingMaxFileMB > 0 {
 			maxFileSize = int64(app.Config.RecordingMaxFileMB) * 1024 * 1024 // Convert MB to bytes
 		}
-		
+
 		app.recorder.SetLimits(maxDuration, maxFileSize)
 	}
 

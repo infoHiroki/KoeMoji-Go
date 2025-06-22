@@ -14,9 +14,9 @@ import (
 // CreateTestConfig creates a test configuration
 func CreateTestConfig(t *testing.T) *config.Config {
 	t.Helper()
-	
+
 	tempDir := t.TempDir()
-	
+
 	return &config.Config{
 		WhisperModel:        "base",
 		Language:            "ja",
@@ -43,14 +43,14 @@ func CreateTestLogger() (*log.Logger, *[]logger.LogEntry, *sync.RWMutex) {
 // CreateTestAudioFile creates a test audio file
 func CreateTestAudioFile(t *testing.T, inputDir string, filename string) string {
 	t.Helper()
-	
+
 	err := os.MkdirAll(inputDir, 0755)
 	if err != nil {
 		t.Fatalf("Failed to create input directory: %v", err)
 	}
-	
+
 	audioFile := filepath.Join(inputDir, filename)
-	
+
 	// Create a dummy audio file with WAVE header
 	waveHeader := []byte{
 		0x52, 0x49, 0x46, 0x46, // "RIFF"
@@ -58,28 +58,28 @@ func CreateTestAudioFile(t *testing.T, inputDir string, filename string) string 
 		0x57, 0x41, 0x56, 0x45, // "WAVE"
 		0x66, 0x6d, 0x74, 0x20, // "fmt "
 		0x10, 0x00, 0x00, 0x00, // Subchunk1Size
-		0x01, 0x00,             // AudioFormat (PCM)
-		0x01, 0x00,             // NumChannels (Mono)
+		0x01, 0x00, // AudioFormat (PCM)
+		0x01, 0x00, // NumChannels (Mono)
 		0x44, 0xAC, 0x00, 0x00, // SampleRate (44100)
 		0x88, 0x58, 0x01, 0x00, // ByteRate
-		0x02, 0x00,             // BlockAlign
-		0x10, 0x00,             // BitsPerSample
+		0x02, 0x00, // BlockAlign
+		0x10, 0x00, // BitsPerSample
 		0x64, 0x61, 0x74, 0x61, // "data"
 		0x00, 0x00, 0x00, 0x00, // Subchunk2Size
 	}
-	
+
 	err = os.WriteFile(audioFile, waveHeader, 0644)
 	if err != nil {
 		t.Fatalf("Failed to create test audio file: %v", err)
 	}
-	
+
 	return audioFile
 }
 
 // AssertFileExists checks if a file exists
 func AssertFileExists(t *testing.T, path string) {
 	t.Helper()
-	
+
 	if _, err := os.Stat(path); os.IsNotExist(err) {
 		t.Errorf("Expected file %s to exist, but it doesn't", path)
 	}
@@ -88,7 +88,7 @@ func AssertFileExists(t *testing.T, path string) {
 // AssertFileNotExists checks if a file does not exist
 func AssertFileNotExists(t *testing.T, path string) {
 	t.Helper()
-	
+
 	if _, err := os.Stat(path); err == nil {
 		t.Errorf("Expected file %s to not exist, but it does", path)
 	}
@@ -97,7 +97,7 @@ func AssertFileNotExists(t *testing.T, path string) {
 // CreateDirectories creates test directories
 func CreateDirectories(t *testing.T, dirs ...string) {
 	t.Helper()
-	
+
 	for _, dir := range dirs {
 		err := os.MkdirAll(dir, 0755)
 		if err != nil {
@@ -109,7 +109,7 @@ func CreateDirectories(t *testing.T, dirs ...string) {
 // CleanupTestFiles removes test files and directories
 func CleanupTestFiles(t *testing.T, paths ...string) {
 	t.Helper()
-	
+
 	for _, path := range paths {
 		if err := os.RemoveAll(path); err != nil {
 			t.Logf("Warning: Failed to cleanup %s: %v", path, err)

@@ -20,7 +20,7 @@ import (
 func (app *GUIApp) showConfigDialog() {
 	// Get messages for the current language
 	msg := ui.GetMessages(app.Config)
-	
+
 	// Create form entries for basic settings
 	// UI Language first - most important setting
 	// UI Language options with display names
@@ -29,11 +29,11 @@ func (app *GUIApp) showConfigDialog() {
 		"en": "English",
 		"ja": "日本語",
 	}
-	
+
 	uiLanguageSelect := widget.NewSelect(uiLanguageOptions, func(value string) {
 		// Handle UI language selection
 	})
-	
+
 	// Set current selection based on config
 	if displayName, exists := uiCodeToDisplayMap[app.Config.UILanguage]; exists {
 		uiLanguageSelect.SetSelected(displayName)
@@ -54,11 +54,11 @@ func (app *GUIApp) showConfigDialog() {
 	languageOptions := []string{
 		"Auto（自動検出）",
 		"日本語",
-		"English", 
+		"English",
 		"中文（简体）",
 		"한국어",
 		"Español",
-		"Français", 
+		"Français",
 		"Deutsch",
 		"Русский",
 		"العربية",
@@ -66,25 +66,24 @@ func (app *GUIApp) showConfigDialog() {
 		"Italiano",
 		"Português",
 	}
-	
-	
+
 	// Reverse map for setting current selection
 	codeToDisplayMap := map[string]string{
 		"auto": "Auto（自動検出）",
-		"ja": "日本語",
-		"en": "English",
-		"zh": "中文（简体）",
-		"ko": "한국어", 
-		"es": "Español",
-		"fr": "Français",
-		"de": "Deutsch",
-		"ru": "Русский",
-		"ar": "العربية",
-		"hi": "हिन्दी",
-		"it": "Italiano",
-		"pt": "Português",
+		"ja":   "日本語",
+		"en":   "English",
+		"zh":   "中文（简体）",
+		"ko":   "한국어",
+		"es":   "Español",
+		"fr":   "Français",
+		"de":   "Deutsch",
+		"ru":   "Русский",
+		"ar":   "العربية",
+		"hi":   "हिन्दी",
+		"it":   "Italiano",
+		"pt":   "Português",
 	}
-	
+
 	languageSelect := widget.NewSelect(languageOptions, nil)
 	if displayName, exists := codeToDisplayMap[app.Config.Language]; exists {
 		languageSelect.SetSelected(displayName)
@@ -224,36 +223,36 @@ func (app *GUIApp) saveConfigFromDialog(whisperModel, language *widget.Select,
 	// Language code mapping for saving to config
 	languageCodeMap := map[string]string{
 		"Auto（自動検出）": "auto",
-		"日本語": "ja",
-		"English": "en",
-		"中文（简体）": "zh", 
-		"한국어": "ko",
-		"Español": "es",
-		"Français": "fr",
-		"Deutsch": "de", 
-		"Русский": "ru",
-		"العربية": "ar",
-		"हिन्दी": "hi",
-		"Italiano": "it",
-		"Português": "pt",
+		"日本語":        "ja",
+		"English":    "en",
+		"中文（简体）":     "zh",
+		"한국어":        "ko",
+		"Español":    "es",
+		"Français":   "fr",
+		"Deutsch":    "de",
+		"Русский":    "ru",
+		"العربية":    "ar",
+		"हिन्दी":     "hi",
+		"Italiano":   "it",
+		"Português":  "pt",
 	}
-	
+
 	// UI Language code mapping
 	uiLanguageCodeMap := map[string]string{
 		"English": "en",
-		"日本語": "ja",
+		"日本語":     "ja",
 	}
 
 	// Update configuration
 	app.Config.WhisperModel = whisperModel.Selected
-	
+
 	// Convert display name back to language code
 	if languageCode, exists := languageCodeMap[language.Selected]; exists {
 		app.Config.Language = languageCode
 	} else {
 		app.Config.Language = "ja" // Default fallback
 	}
-	
+
 	// Convert UI language display name back to code
 	if uiLangCode, exists := uiLanguageCodeMap[uiLanguage.Selected]; exists {
 		app.Config.UILanguage = uiLangCode

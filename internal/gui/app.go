@@ -64,7 +64,7 @@ type GUIApp struct {
 
 	// UI safety fields
 	uiInitialized bool
-	
+
 	// Phase 2: Context cancellation for goroutines
 	ctx        context.Context
 	cancelFunc context.CancelFunc
@@ -74,7 +74,7 @@ type GUIApp struct {
 func Run(configPath string, debugMode bool) {
 	// Phase 2: Create context for goroutine management
 	ctx, cancel := context.WithCancel(context.Background())
-	
+
 	guiApp := &GUIApp{
 		configPath:     configPath,
 		debugMode:      debugMode,
@@ -125,7 +125,7 @@ func (app *GUIApp) ForceCleanup() {
 	if app.cancelFunc != nil {
 		app.cancelFunc()
 	}
-	
+
 	// Clean up recorder resources (PortAudio)
 	if app.recorder != nil {
 		app.recorder.Close()

@@ -14,7 +14,7 @@ func TestValidateAPIKey_ValidKey(t *testing.T) {
 	cfg := &config.Config{LLMAPIKey: "invalid-key-format"}
 	err := ValidateAPIKey(cfg)
 	assert.Error(t, err)
-	
+
 	// Test with valid format but fake key (will fail on API call)
 	cfg2 := &config.Config{LLMAPIKey: "sk-test1234567890abcdef1234567890abcdef12345678"}
 	err = ValidateAPIKey(cfg2)
@@ -31,12 +31,12 @@ func TestValidateAPIKey_EmptyKey(t *testing.T) {
 
 func TestPreparePrompt(t *testing.T) {
 	tests := []struct {
-		name           string
-		language       string
-		summaryLang    string
-		template       string
-		text           string
-		expectedLang   string
+		name         string
+		language     string
+		summaryLang  string
+		template     string
+		text         string
+		expectedLang string
 	}{
 		{
 			name:         "Japanese auto",
@@ -81,7 +81,7 @@ func TestPreparePrompt(t *testing.T) {
 			}
 
 			result := preparePrompt(config, tt.text)
-			
+
 			assert.Contains(t, result, tt.text)
 			assert.Contains(t, result, tt.expectedLang)
 			assert.NotContains(t, result, "{text}")
@@ -92,10 +92,10 @@ func TestPreparePrompt(t *testing.T) {
 
 func TestGetSummaryLanguage(t *testing.T) {
 	tests := []struct {
-		name         string
-		language     string
-		summaryLang  string
-		expected     string
+		name        string
+		language    string
+		summaryLang string
+		expected    string
 	}{
 		{"Auto Japanese", "ja", "auto", "日本語"},
 		{"Auto English", "en", "auto", "英語"},
@@ -123,9 +123,9 @@ func TestSummarizeText_ConfigValidation(t *testing.T) {
 
 	t.Run("LLM disabled", func(t *testing.T) {
 		config := testdata.CreateTestConfigWithCustomValues(false, "sk-test123", "openai", "gpt-4o", 4096)
-		
+
 		summary, err := SummarizeText(config, logger, logBuffer, logMutex, false, "test text")
-		
+
 		assert.Error(t, err)
 		assert.Empty(t, summary)
 		assert.Contains(t, err.Error(), "disabled")
@@ -133,9 +133,9 @@ func TestSummarizeText_ConfigValidation(t *testing.T) {
 
 	t.Run("Empty API key", func(t *testing.T) {
 		config := testdata.CreateTestConfigWithCustomValues(true, "", "openai", "gpt-4o", 4096)
-		
+
 		summary, err := SummarizeText(config, logger, logBuffer, logMutex, false, "test text")
-		
+
 		assert.Error(t, err)
 		assert.Empty(t, summary)
 		assert.Contains(t, err.Error(), "not configured")
@@ -143,9 +143,9 @@ func TestSummarizeText_ConfigValidation(t *testing.T) {
 
 	t.Run("Unsupported provider", func(t *testing.T) {
 		config := testdata.CreateTestConfigWithCustomValues(true, "sk-test123", "claude", "claude-v1", 4096)
-		
+
 		summary, err := SummarizeText(config, logger, logBuffer, logMutex, false, "test text")
-		
+
 		assert.Error(t, err)
 		assert.Empty(t, summary)
 		assert.Contains(t, err.Error(), "unsupported LLM provider")
@@ -269,33 +269,33 @@ func TestTextInputValidation(t *testing.T) {
 	logger, logBuffer, logMutex := testdata.CreateTestLogger()
 
 	tests := []struct {
-		name     string
-		text     string
+		name      string
+		text      string
 		expectErr bool
 	}{
 		{
-			name:     "Normal text",
-			text:     testdata.GetTestText(),
+			name:      "Normal text",
+			text:      testdata.GetTestText(),
 			expectErr: true, // Will fail due to fake API key
 		},
 		{
-			name:     "Empty text",
-			text:     "",
+			name:      "Empty text",
+			text:      "",
 			expectErr: true,
 		},
 		{
-			name:     "Very long text",
-			text:     testdata.GetLongTestText(),
+			name:      "Very long text",
+			text:      testdata.GetLongTestText(),
 			expectErr: true, // Will fail due to fake API key
 		},
 		{
-			name:     "Text with special characters",
-			text:     "Special chars: @#$%^&*()_+{}|:<>?[]\\",
+			name:      "Text with special characters",
+			text:      "Special chars: @#$%^&*()_+{}|:<>?[]\\",
 			expectErr: true, // Will fail due to fake API key
 		},
 		{
-			name:     "Mixed language text",
-			text:     "Hello こんにちは 你好 안녕하세요",
+			name:      "Mixed language text",
+			text:      "Hello こんにちは 你好 안녕하세요",
 			expectErr: true, // Will fail due to fake API key
 		},
 	}

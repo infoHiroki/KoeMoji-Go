@@ -63,10 +63,10 @@ func TestLogDebug_EnabledAndDisabled(t *testing.T) {
 
 	// Debug enabled
 	LogDebug(logger, &logBuffer, &logMutex, true, "debug message")
-	
+
 	logMutex.RLock()
 	defer logMutex.RUnlock()
-	
+
 	assert.Len(t, logBuffer, 1)
 	assert.Equal(t, "DEBUG", logBuffer[0].Level)
 	assert.Equal(t, "debug message", logBuffer[0].Message)
@@ -117,10 +117,10 @@ func TestCircularBuffer_12EntryLimit(t *testing.T) {
 
 	// Should only keep latest 12 entries
 	assert.Len(t, logBuffer, 12)
-	
+
 	// First entry should be message 3 (0, 1, 2 were removed)
 	assert.Equal(t, "message 3", logBuffer[0].Message)
-	
+
 	// Last entry should be message 14
 	assert.Equal(t, "message 14", logBuffer[11].Message)
 }
@@ -147,7 +147,7 @@ func TestLogBuffer_ConcurrentAccess(t *testing.T) {
 
 	// Test concurrent logging
 	var wg sync.WaitGroup
-	
+
 	for i := 0; i < 10; i++ {
 		wg.Add(1)
 		go func(id int) {
@@ -163,7 +163,7 @@ func TestLogBuffer_ConcurrentAccess(t *testing.T) {
 
 	// All messages should be logged
 	assert.Len(t, logBuffer, 10)
-	
+
 	// All entries should have INFO level
 	for _, entry := range logBuffer {
 		assert.Equal(t, "INFO", entry.Level)
@@ -183,7 +183,7 @@ func TestAddToLogBuffer_Timestamp(t *testing.T) {
 	defer logMutex.RUnlock()
 
 	assert.Len(t, logBuffer, 1)
-	
+
 	timestamp := logBuffer[0].Timestamp
 	assert.True(t, timestamp.After(before) || timestamp.Equal(before))
 	assert.True(t, timestamp.Before(after) || timestamp.Equal(after))

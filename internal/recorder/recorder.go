@@ -19,8 +19,8 @@ const (
 	Channels   = 1
 	BufferSize = 4096
 	// Phase 1: Memory-efficient recording with buffering
-	MemoryBufferSize = 88200 * 5  // 5 seconds worth of samples (44.1kHz * 2bytes * 5sec)
-	FlushThreshold   = 88200 * 2  // Flush every 2 seconds
+	MemoryBufferSize = 88200 * 5 // 5 seconds worth of samples (44.1kHz * 2bytes * 5sec)
+	FlushThreshold   = 88200 * 2 // Flush every 2 seconds
 )
 
 type DeviceInfo struct {
@@ -35,19 +35,19 @@ type DeviceInfo struct {
 
 type Recorder struct {
 	stream     *portaudio.Stream
-	samples    []int16          // Memory buffer (limited size)
+	samples    []int16 // Memory buffer (limited size)
 	recording  bool
 	sampleRate float64
 	deviceInfo *portaudio.DeviceInfo
 	mutex      sync.Mutex
 	startTime  time.Time
-	
+
 	// Phase 1: Memory-efficient recording
-	tempFile     *os.File        // Temporary file for overflow
-	totalSamples int64           // Total samples written
-	lastFlush    time.Time       // Last flush time
-	maxDuration  time.Duration   // Maximum recording duration (0 = unlimited)
-	maxFileSize  int64          // Maximum file size in bytes (0 = unlimited)
+	tempFile     *os.File      // Temporary file for overflow
+	totalSamples int64         // Total samples written
+	lastFlush    time.Time     // Last flush time
+	maxDuration  time.Duration // Maximum recording duration (0 = unlimited)
+	maxFileSize  int64         // Maximum file size in bytes (0 = unlimited)
 }
 
 func NewRecorder() (*Recorder, error) {
@@ -57,11 +57,11 @@ func NewRecorder() (*Recorder, error) {
 	}
 
 	return &Recorder{
-		samples:      make([]int16, 0, MemoryBufferSize),
-		recording:    false,
-		sampleRate:   SampleRate,
-		maxDuration:  0,  // Unlimited by default
-		maxFileSize:  0,  // Unlimited by default
+		samples:     make([]int16, 0, MemoryBufferSize),
+		recording:   false,
+		sampleRate:  SampleRate,
+		maxDuration: 0, // Unlimited by default
+		maxFileSize: 0, // Unlimited by default
 	}, nil
 }
 
@@ -91,12 +91,12 @@ func NewRecorderWithDevice(deviceID int) (*Recorder, error) {
 	}
 
 	return &Recorder{
-		samples:      make([]int16, 0, MemoryBufferSize),
-		recording:    false,
-		sampleRate:   SampleRate,
-		deviceInfo:   selectedDevice,
-		maxDuration:  0,  // Unlimited by default
-		maxFileSize:  0,  // Unlimited by default
+		samples:     make([]int16, 0, MemoryBufferSize),
+		recording:   false,
+		sampleRate:  SampleRate,
+		deviceInfo:  selectedDevice,
+		maxDuration: 0, // Unlimited by default
+		maxFileSize: 0, // Unlimited by default
 	}, nil
 }
 
@@ -112,7 +112,7 @@ func (r *Recorder) Start() error {
 	r.startTime = time.Now()
 	r.lastFlush = time.Now()
 	r.totalSamples = 0
-	
+
 	// Create temporary file for overflow data
 	if r.tempFile != nil {
 		r.tempFile.Close()
@@ -165,17 +165,17 @@ func (r *Recorder) recordCallback(in []int16) {
 	if !r.recording {
 		return
 	}
-	
+
 	// Check recording limits
 	if r.exceedsLimits() {
 		r.recording = false
 		return
 	}
-	
+
 	// Add samples to memory buffer
 	r.samples = append(r.samples, in...)
 	r.totalSamples += int64(len(in))
-	
+
 	// Check if buffer needs flushing
 	if len(r.samples) >= FlushThreshold || time.Since(r.lastFlush) > 2*time.Second {
 		r.flushToTempFile()
@@ -222,7 +222,7 @@ func (r *Recorder) SaveToFile(filename string) error {
 	if r.tempFile != nil {
 		return r.consolidateToFile(filename)
 	}
-	
+
 	// If only memory samples, use existing method
 	if len(r.samples) == 0 {
 		return errors.New("no audio data to save")
@@ -238,11 +238,11 @@ func (r *Recorder) Close() error {
 			return err
 		}
 	}
-	
+
 	// Clean up temp file
 	if r.tempFile != nil {
 		r.tempFile.Close()
-		os.Remove(r.tempFile.Name())  // Remove temp file
+		os.Remove(r.tempFile.Name()) // Remove temp file
 		r.tempFile = nil
 	}
 
@@ -343,15 +343,15 @@ func (r *Recorder) exceedsLimits() bool {
 	if r.maxDuration > 0 && time.Since(r.startTime) >= r.maxDuration {
 		return true
 	}
-	
+
 	// Check file size limit (approximate)
 	if r.maxFileSize > 0 {
-		estimatedSize := r.totalSamples * 2 + 44 // 2 bytes per sample + WAV header
+		estimatedSize := r.totalSamples*2 + 44 // 2 bytes per sample + WAV header
 		if estimatedSize >= r.maxFileSize {
 			return true
 		}
 	}
-	
+
 	return false
 }
 
@@ -360,7 +360,7 @@ func (r *Recorder) flushToTempFile() error {
 	if len(r.samples) == 0 {
 		return nil
 	}
-	
+
 	// Create temp file if it doesn't exist
 	if r.tempFile == nil {
 		tempFile, err := os.CreateTemp("", "koemoji_recording_*.raw")
@@ -369,17 +369,17 @@ func (r *Recorder) flushToTempFile() error {
 		}
 		r.tempFile = tempFile
 	}
-	
+
 	// Write samples to temp file as raw bytes
 	err := binary.Write(r.tempFile, binary.LittleEndian, r.samples)
 	if err != nil {
 		return err
 	}
-	
+
 	// Clear memory buffer but preserve capacity
 	r.samples = r.samples[:0]
 	r.lastFlush = time.Now()
-	
+
 	return nil
 }
 
@@ -391,11 +391,11 @@ func (r *Recorder) consolidateToFile(filename string) error {
 		return err
 	}
 	defer outFile.Close()
-	
+
 	// Calculate total data size
 	dataSize := r.totalSamples * 2 // 2 bytes per sample
 	fileSize := 36 + dataSize
-	
+
 	// Write WAV header
 	header := WAVHeader{
 		ChunkID:       [4]byte{'R', 'I', 'F', 'F'},
@@ -412,12 +412,12 @@ func (r *Recorder) consolidateToFile(filename string) error {
 		Subchunk2ID:   [4]byte{'d', 'a', 't', 'a'},
 		Subchunk2Size: uint32(dataSize),
 	}
-	
+
 	err = binary.Write(outFile, binary.LittleEndian, header)
 	if err != nil {
 		return err
 	}
-	
+
 	// Copy temp file data if it exists
 	if r.tempFile != nil {
 		r.tempFile.Seek(0, 0) // Seek to beginning
@@ -426,7 +426,7 @@ func (r *Recorder) consolidateToFile(filename string) error {
 			return err
 		}
 	}
-	
+
 	// Write remaining memory samples
 	if len(r.samples) > 0 {
 		err = binary.Write(outFile, binary.LittleEndian, r.samples)
@@ -434,7 +434,7 @@ func (r *Recorder) consolidateToFile(filename string) error {
 			return err
 		}
 	}
-	
+
 	return nil
 }
 

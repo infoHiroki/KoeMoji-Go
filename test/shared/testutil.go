@@ -47,18 +47,18 @@ func NewTestEnvironment(t *testing.T) *TestEnvironment {
 
 	// Create test configuration
 	cfg := &config.Config{
-		WhisperModel:       "tiny",
-		Language:           "ja",
-		UILanguage:         "ja",
+		WhisperModel:        "tiny",
+		Language:            "ja",
+		UILanguage:          "ja",
 		ScanIntervalMinutes: 1,
 		MaxCpuPercent:       50, // Lower for tests
-		ComputeType:        "int8",
-		UseColors:          false, // Disable for consistent test output
-		OutputFormat:       "txt",
-		InputDir:           inputDir,
-		OutputDir:          outputDir,
-		ArchiveDir:         archiveDir,
-		RecordingDeviceID:  -1,
+		ComputeType:         "int8",
+		UseColors:           false, // Disable for consistent test output
+		OutputFormat:        "txt",
+		InputDir:            inputDir,
+		OutputDir:           outputDir,
+		ArchiveDir:          archiveDir,
+		RecordingDeviceID:   -1,
 		RecordingDeviceName: "Test Device",
 	}
 
@@ -82,15 +82,15 @@ func (env *TestEnvironment) CreateTestAudioFile(t *testing.T, filename string, d
 	t.Helper()
 
 	filePath := filepath.Join(env.InputDir, filename)
-	
+
 	// Create a simple WAV file for testing
 	// This is a minimal WAV file with silence
 	wavData := createSilentWAV(durationSec)
-	
+
 	if err := os.WriteFile(filePath, wavData, 0644); err != nil {
 		t.Fatalf("Failed to create test audio file %s: %v", filePath, err)
 	}
-	
+
 	return filePath
 }
 
@@ -99,43 +99,43 @@ func createSilentWAV(durationSec int) []byte {
 	sampleRate := 44100
 	samples := sampleRate * durationSec
 	dataSize := samples * 2 // 16-bit mono
-	
+
 	header := []byte{
 		// RIFF header
 		'R', 'I', 'F', 'F',
 		0, 0, 0, 0, // File size (will be filled)
 		'W', 'A', 'V', 'E',
-		
+
 		// fmt chunk
 		'f', 'm', 't', ' ',
 		16, 0, 0, 0, // fmt chunk size
-		1, 0,        // PCM format
-		1, 0,        // mono
+		1, 0, // PCM format
+		1, 0, // mono
 		0x44, 0xAC, 0, 0, // sample rate (44100)
 		0x88, 0x58, 1, 0, // byte rate
-		2, 0,        // block align
-		16, 0,       // bits per sample
-		
+		2, 0, // block align
+		16, 0, // bits per sample
+
 		// data chunk
 		'd', 'a', 't', 'a',
 		0, 0, 0, 0, // data size (will be filled)
 	}
-	
+
 	// Fill in sizes
 	fileSize := len(header) + dataSize - 8
 	header[4] = byte(fileSize)
 	header[5] = byte(fileSize >> 8)
 	header[6] = byte(fileSize >> 16)
 	header[7] = byte(fileSize >> 24)
-	
+
 	header[40] = byte(dataSize)
 	header[41] = byte(dataSize >> 8)
 	header[42] = byte(dataSize >> 16)
 	header[43] = byte(dataSize >> 24)
-	
+
 	// Create silent data
 	data := make([]byte, dataSize)
-	
+
 	return append(header, data...)
 }
 
@@ -201,7 +201,7 @@ func (env *TestEnvironment) Cleanup(t *testing.T) {
 	t.Helper()
 	env.mu.Lock()
 	defer env.mu.Unlock()
-	
+
 	if env.cleanup != nil {
 		env.cleanup()
 	}
@@ -240,11 +240,11 @@ func MeasurePerformance(b *testing.B, fn func()) *BenchmarkMetrics {
 	runtime.GC()
 	runtime.ReadMemStats(&startMem)
 	startGoroutines = runtime.NumGoroutine()
-	
+
 	start := time.Now()
 	fn()
 	duration := time.Since(start)
-	
+
 	runtime.GC()
 	runtime.ReadMemStats(&endMem)
 	endGoroutines = runtime.NumGoroutine()
@@ -283,16 +283,16 @@ func CreateLargeTestFileForBenchmark(t *testing.T, dir, filename string, sizeMB 
 	t.Helper()
 
 	filePath := filepath.Join(dir, filename)
-	
+
 	// Create a large WAV file
 	sampleRate := 44100
 	durationSec := int(math.Ceil(float64(sizeMB) * 1024 * 1024 / (float64(sampleRate) * 2)))
 	wavData := createSilentWAV(durationSec)
-	
+
 	if err := os.WriteFile(filePath, wavData, 0644); err != nil {
 		t.Fatalf("Failed to create large test file %s: %v", filePath, err)
 	}
-	
+
 	return filePath
 }
 

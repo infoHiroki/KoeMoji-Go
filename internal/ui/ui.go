@@ -145,7 +145,7 @@ func DisplayLogs(config *config.Config) {
 	switch runtime.GOOS {
 	case "windows":
 		// Try to open with PowerShell to jump to end, fallback to regular notepad
-		powershellCmd := exec.Command("powershell", "-Command", 
+		powershellCmd := exec.Command("powershell", "-Command",
 			`notepad koemoji.log; Start-Sleep -Milliseconds 500; Add-Type -AssemblyName System.Windows.Forms; [System.Windows.Forms.SendKeys]::SendWait("^{END}")`)
 		if err := powershellCmd.Run(); err != nil {
 			// Fallback to regular notepad if PowerShell fails
@@ -160,9 +160,9 @@ func DisplayLogs(config *config.Config) {
 		if err != nil {
 			absPath = "koemoji.log"
 		}
-		
+
 		// Try to open with AppleScript to jump to end, fallback to regular open
-		appleScriptCmd := exec.Command("osascript", "-e", 
+		appleScriptCmd := exec.Command("osascript", "-e",
 			fmt.Sprintf(`tell application "TextEdit" to open POSIX file "%s"`, absPath),
 			"-e", `tell application "TextEdit" to goto paragraph -1`)
 		if err := appleScriptCmd.Run(); err != nil {

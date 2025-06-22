@@ -140,7 +140,7 @@ func TestSaveConfig(t *testing.T) {
 
 func TestConfigValidation_ValidValues(t *testing.T) {
 	config := GetDefaultConfig()
-	
+
 	// Test valid whisper models
 	validModels := []string{"tiny", "base", "small", "medium", "large", "large-v2", "large-v3"}
 	for _, model := range validModels {
@@ -148,14 +148,14 @@ func TestConfigValidation_ValidValues(t *testing.T) {
 		// Validation would pass for these models
 		assert.NotEmpty(t, config.WhisperModel)
 	}
-	
+
 	// Test valid languages
 	validLanguages := []string{"ja", "en", "auto"}
 	for _, lang := range validLanguages {
 		config.Language = lang
 		assert.NotEmpty(t, config.Language)
 	}
-	
+
 	// Test valid scan intervals
 	validIntervals := []int{1, 5, 10, 30}
 	for _, interval := range validIntervals {
@@ -166,14 +166,14 @@ func TestConfigValidation_ValidValues(t *testing.T) {
 
 func TestConfigValidation_EdgeCases(t *testing.T) {
 	config := GetDefaultConfig()
-	
+
 	// Test CPU percent boundaries
 	config.MaxCpuPercent = 1
 	assert.GreaterOrEqual(t, config.MaxCpuPercent, 1)
-	
+
 	config.MaxCpuPercent = 100
 	assert.LessOrEqual(t, config.MaxCpuPercent, 100)
-	
+
 	// Test output format
 	validFormats := []string{"txt", "srt", "vtt", "tsv", "json"}
 	for _, format := range validFormats {
@@ -184,16 +184,16 @@ func TestConfigValidation_EdgeCases(t *testing.T) {
 
 func TestConfigValidation_DirectoryPaths(t *testing.T) {
 	config := GetDefaultConfig()
-	
+
 	// Test relative paths (should be valid)
 	config.InputDir = "./input"
-	config.OutputDir = "./output" 
+	config.OutputDir = "./output"
 	config.ArchiveDir = "./archive"
-	
+
 	assert.NotEmpty(t, config.InputDir)
 	assert.NotEmpty(t, config.OutputDir)
 	assert.NotEmpty(t, config.ArchiveDir)
-	
+
 	// Test that directories are different
 	assert.NotEqual(t, config.InputDir, config.OutputDir)
 	assert.NotEqual(t, config.InputDir, config.ArchiveDir)
@@ -202,13 +202,13 @@ func TestConfigValidation_DirectoryPaths(t *testing.T) {
 
 func TestLLMConfig_Validation(t *testing.T) {
 	config := GetDefaultConfig()
-	
+
 	// Test LLM settings
 	config.LLMSummaryEnabled = true
 	config.LLMAPIProvider = "openai"
 	config.LLMModel = "gpt-4o"
 	config.LLMMaxTokens = 4096
-	
+
 	assert.True(t, config.LLMSummaryEnabled)
 	assert.Equal(t, "openai", config.LLMAPIProvider)
 	assert.Greater(t, config.LLMMaxTokens, 0)
@@ -217,12 +217,12 @@ func TestLLMConfig_Validation(t *testing.T) {
 
 func TestRecordingConfig_Validation(t *testing.T) {
 	config := GetDefaultConfig()
-	
+
 	// Test recording settings
 	config.RecordingDeviceID = -1 // Default device
 	config.RecordingMaxHours = 2
 	config.RecordingMaxFileMB = 100
-	
+
 	assert.GreaterOrEqual(t, config.RecordingDeviceID, -1)
 	assert.GreaterOrEqual(t, config.RecordingMaxHours, 0)
 	assert.GreaterOrEqual(t, config.RecordingMaxFileMB, 0)
@@ -235,13 +235,13 @@ func TestGetMessages(t *testing.T) {
 	messagesEN := getMessages(configEN)
 	assert.Equal(t, "KoeMoji-Go Configuration", messagesEN.ConfigTitle)
 	assert.Equal(t, "Whisper Model", messagesEN.WhisperModel)
-	
+
 	// Test Japanese messages
 	configJA := &Config{UILanguage: "ja"}
 	messagesJA := getMessages(configJA)
 	assert.Equal(t, "KoeMoji-Go 設定", messagesJA.ConfigTitle)
 	assert.Equal(t, "Whisperモデル", messagesJA.WhisperModel)
-	
+
 	// Test nil config defaults to English
 	messagesDefault := getMessages(nil)
 	assert.Equal(t, "KoeMoji-Go Configuration", messagesDefault.ConfigTitle)
@@ -254,12 +254,12 @@ func TestGetAPIKeyDisplay(t *testing.T) {
 		expected string
 	}{
 		{"", "[未設定]"},
-		{"sk-123456", "[設定済み]"},  // 10 characters or less
-		{"sk-1234567890", "sk-1...7890"},  // 11+ characters
-		{"sk-1234567890123456789012345", "sk-1...2345"},  // Long key
-		{"very-long-api-key-that-exceeds-ten-characters", "very...ters"},  // Very long key
+		{"sk-123456", "[設定済み]"},                                          // 10 characters or less
+		{"sk-1234567890", "sk-1...7890"},                                 // 11+ characters
+		{"sk-1234567890123456789012345", "sk-1...2345"},                  // Long key
+		{"very-long-api-key-that-exceeds-ten-characters", "very...ters"}, // Very long key
 	}
-	
+
 	for _, tt := range tests {
 		t.Run(fmt.Sprintf("apiKey=%s", tt.apiKey), func(t *testing.T) {
 			result := getAPIKeyDisplay(tt.apiKey)
@@ -273,17 +273,17 @@ func TestConfigureSettings_Navigation(t *testing.T) {
 	// Note: ConfigureSettings is an interactive function that reads from stdin
 	// It's difficult to unit test without refactoring to accept a reader parameter
 	// This test documents the expected behavior
-	
+
 	t.Run("DocumentedBehavior", func(t *testing.T) {
 		config := GetDefaultConfig()
-		
+
 		// ConfigureSettings should:
 		// 1. Display current configuration
 		// 2. Accept user input for modifications
 		// 3. Allow quit without save (q)
 		// 4. Allow save and exit (s)
 		// 5. Allow reset to defaults (r)
-		
+
 		// Verify default config is valid
 		assert.NotEmpty(t, config.WhisperModel)
 		assert.NotEmpty(t, config.Language)
@@ -294,7 +294,7 @@ func TestConfigureSettings_Navigation(t *testing.T) {
 // Test individual configuration functions
 func TestConfigurationFunctions(t *testing.T) {
 	config := GetDefaultConfig()
-	
+
 	t.Run("ValidateWhisperModel", func(t *testing.T) {
 		validModels := []string{"tiny", "base", "small", "medium", "large", "large-v2", "large-v3"}
 		for _, model := range validModels {
@@ -303,7 +303,7 @@ func TestConfigurationFunctions(t *testing.T) {
 			assert.Contains(t, validModels, config.WhisperModel)
 		}
 	})
-	
+
 	t.Run("ValidateLanguage", func(t *testing.T) {
 		validLanguages := []string{"ja", "en", "zh", "ko", "es", "fr", "de", "ru", "ar", "hi", "auto"}
 		for _, lang := range validLanguages {
@@ -311,7 +311,7 @@ func TestConfigurationFunctions(t *testing.T) {
 			assert.Contains(t, validLanguages, config.Language)
 		}
 	})
-	
+
 	t.Run("ValidateScanInterval", func(t *testing.T) {
 		validIntervals := []int{1, 2, 3, 5, 10, 15, 30, 60}
 		for _, interval := range validIntervals {
@@ -319,22 +319,22 @@ func TestConfigurationFunctions(t *testing.T) {
 			assert.Greater(t, config.ScanIntervalMinutes, 0)
 		}
 	})
-	
+
 	t.Run("ValidateMaxCpuPercent", func(t *testing.T) {
 		// Valid range: 1-100
 		config.MaxCpuPercent = 1
 		assert.GreaterOrEqual(t, config.MaxCpuPercent, 1)
 		assert.LessOrEqual(t, config.MaxCpuPercent, 100)
-		
+
 		config.MaxCpuPercent = 100
 		assert.GreaterOrEqual(t, config.MaxCpuPercent, 1)
 		assert.LessOrEqual(t, config.MaxCpuPercent, 100)
-		
+
 		config.MaxCpuPercent = 50
 		assert.GreaterOrEqual(t, config.MaxCpuPercent, 1)
 		assert.LessOrEqual(t, config.MaxCpuPercent, 100)
 	})
-	
+
 	t.Run("ValidateComputeType", func(t *testing.T) {
 		validTypes := []string{"int8", "int16", "float16", "float32"}
 		for _, computeType := range validTypes {
@@ -342,7 +342,7 @@ func TestConfigurationFunctions(t *testing.T) {
 			assert.Contains(t, validTypes, config.ComputeType)
 		}
 	})
-	
+
 	t.Run("ValidateOutputFormat", func(t *testing.T) {
 		validFormats := []string{"txt", "srt", "vtt", "tsv", "json"}
 		for _, format := range validFormats {
@@ -350,7 +350,7 @@ func TestConfigurationFunctions(t *testing.T) {
 			assert.Contains(t, validFormats, config.OutputFormat)
 		}
 	})
-	
+
 	t.Run("ValidateLLMModel", func(t *testing.T) {
 		validModels := []string{"gpt-4o", "gpt-4o-mini", "gpt-4-turbo", "gpt-4", "gpt-3.5-turbo"}
 		for _, model := range validModels {
@@ -358,20 +358,20 @@ func TestConfigurationFunctions(t *testing.T) {
 			assert.NotEmpty(t, config.LLMModel)
 		}
 	})
-	
+
 	t.Run("ValidateLLMMaxTokens", func(t *testing.T) {
 		// Valid range typically 1-8192
 		config.LLMMaxTokens = 1
 		assert.Greater(t, config.LLMMaxTokens, 0)
-		
+
 		config.LLMMaxTokens = 8192
 		assert.LessOrEqual(t, config.LLMMaxTokens, 8192)
-		
+
 		config.LLMMaxTokens = 4096
 		assert.Greater(t, config.LLMMaxTokens, 0)
 		assert.LessOrEqual(t, config.LLMMaxTokens, 8192)
 	})
-	
+
 	t.Run("ValidateSummaryLanguage", func(t *testing.T) {
 		validOptions := []string{"auto", "ja", "en"}
 		for _, lang := range validOptions {
@@ -384,18 +384,18 @@ func TestConfigurationFunctions(t *testing.T) {
 // Test configuration validation with invalid values
 func TestConfigValidation_InvalidValues(t *testing.T) {
 	config := GetDefaultConfig()
-	
+
 	// Test invalid CPU percent (should be caught by validation)
 	config.MaxCpuPercent = 0
 	assert.Equal(t, 0, config.MaxCpuPercent) // Structure allows it, validation should catch
-	
+
 	config.MaxCpuPercent = 101
 	assert.Equal(t, 101, config.MaxCpuPercent) // Structure allows it, validation should catch
-	
+
 	// Test negative scan interval
 	config.ScanIntervalMinutes = -1
 	assert.Equal(t, -1, config.ScanIntervalMinutes) // Structure allows it, validation should catch
-	
+
 	// Test invalid LLM max tokens
 	config.LLMMaxTokens = -100
 	assert.Equal(t, -100, config.LLMMaxTokens) // Structure allows it, validation should catch
@@ -404,7 +404,7 @@ func TestConfigValidation_InvalidValues(t *testing.T) {
 // Test SaveConfig with invalid directory permissions
 func TestSaveConfig_InvalidPermissions(t *testing.T) {
 	config := GetDefaultConfig()
-	
+
 	// Try to save to a non-existent directory
 	invalidPath := "/non/existent/directory/config.json"
 	err := SaveConfig(config, invalidPath)
@@ -417,10 +417,10 @@ func TestLoadConfig_PermissionError(t *testing.T) {
 	if os.Geteuid() == 0 {
 		t.Skip("Running as root, permission test not applicable")
 	}
-	
+
 	tempDir := t.TempDir()
 	configFile := filepath.Join(tempDir, "no_read.json")
-	
+
 	// Create file and write valid config
 	testConfig := map[string]interface{}{
 		"whisper_model": "base",
@@ -429,7 +429,7 @@ func TestLoadConfig_PermissionError(t *testing.T) {
 	data, _ := json.Marshal(testConfig)
 	err := os.WriteFile(configFile, data, 0000) // No read permissions
 	require.NoError(t, err)
-	
+
 	// LoadConfig calls os.Exit(1) on permission errors
 	// This is documented behavior - we can't test the return value
 	// In production, this is the intended behavior for config errors
@@ -440,11 +440,11 @@ func TestLoadConfig_PermissionError(t *testing.T) {
 func TestCompleteConfigRoundTrip(t *testing.T) {
 	tempDir := t.TempDir()
 	configFile := filepath.Join(tempDir, "complete_config.json")
-	
+
 	originalConfig := &Config{
 		WhisperModel:          "large-v2",
 		Language:              "en",
-		UILanguage:            "en", 
+		UILanguage:            "en",
 		ScanIntervalMinutes:   3,
 		MaxCpuPercent:         85,
 		ComputeType:           "float16",
@@ -465,15 +465,15 @@ func TestCompleteConfigRoundTrip(t *testing.T) {
 		RecordingMaxHours:     3,
 		RecordingMaxFileMB:    200,
 	}
-	
+
 	// Save the config
 	err := SaveConfig(originalConfig, configFile)
 	require.NoError(t, err)
-	
+
 	// Load it back
 	logger := log.New(os.Stdout, "", log.LstdFlags)
 	loadedConfig := LoadConfig(configFile, logger)
-	
+
 	// Verify all fields match
 	assert.Equal(t, originalConfig.WhisperModel, loadedConfig.WhisperModel)
 	assert.Equal(t, originalConfig.Language, loadedConfig.Language)
@@ -503,22 +503,22 @@ func TestCompleteConfigRoundTrip(t *testing.T) {
 func TestSaveConfig_SpecialCharacters(t *testing.T) {
 	tempDir := t.TempDir()
 	configFile := filepath.Join(tempDir, "special_chars.json")
-	
+
 	config := GetDefaultConfig()
-	config.RecordingDeviceName = "マイク デバイス"  // Japanese characters
-	config.SummaryPromptTemplate = "テスト: {text} を {language} で要約してください。"  // Japanese with placeholders
-	
+	config.RecordingDeviceName = "マイク デバイス"                              // Japanese characters
+	config.SummaryPromptTemplate = "テスト: {text} を {language} で要約してください。" // Japanese with placeholders
+
 	err := SaveConfig(config, configFile)
 	require.NoError(t, err)
-	
+
 	// Verify the file contains proper JSON
 	data, err := os.ReadFile(configFile)
 	require.NoError(t, err)
-	
+
 	var loadedData map[string]interface{}
 	err = json.Unmarshal(data, &loadedData)
 	require.NoError(t, err)
-	
+
 	assert.Equal(t, "マイク デバイス", loadedData["recording_device_name"])
 	assert.Contains(t, loadedData["summary_prompt_template"].(string), "テスト")
 }
@@ -526,18 +526,18 @@ func TestSaveConfig_SpecialCharacters(t *testing.T) {
 // Test directory validation
 func TestDirectoryValidation(t *testing.T) {
 	config := GetDefaultConfig()
-	
+
 	t.Run("SameDirectories", func(t *testing.T) {
 		// Test that input, output, and archive directories should be different
 		config.InputDir = "./data"
 		config.OutputDir = "./data"
 		config.ArchiveDir = "./data"
-		
+
 		// In actual validation, this should fail
 		assert.Equal(t, config.InputDir, config.OutputDir)
 		assert.Equal(t, config.InputDir, config.ArchiveDir)
 	})
-	
+
 	t.Run("InvalidPaths", func(t *testing.T) {
 		// Test invalid directory paths
 		invalidPaths := []string{
@@ -545,18 +545,18 @@ func TestDirectoryValidation(t *testing.T) {
 			" ",          // Whitespace only
 			"./\x00test", // Null character
 		}
-		
+
 		for _, path := range invalidPaths {
 			// In actual validation, these should be rejected
 			assert.NotEqual(t, "./input", path)
 		}
 	})
-	
+
 	t.Run("RelativeVsAbsolutePaths", func(t *testing.T) {
 		// Both relative and absolute paths should be accepted
 		config.InputDir = "./input"
 		assert.NotEmpty(t, config.InputDir)
-		
+
 		config.InputDir = "/absolute/path/input"
 		assert.NotEmpty(t, config.InputDir)
 	})
@@ -565,14 +565,14 @@ func TestDirectoryValidation(t *testing.T) {
 // Test prompt template validation
 func TestPromptTemplateValidation(t *testing.T) {
 	config := GetDefaultConfig()
-	
+
 	t.Run("ValidTemplates", func(t *testing.T) {
 		validTemplates := []string{
 			"Summarize: {text} in {language}",
 			"{text}を{language}で要約してください",
 			"Please provide a {language} summary of the following: {text}",
 		}
-		
+
 		for _, template := range validTemplates {
 			config.SummaryPromptTemplate = template
 			// Should contain required placeholders
@@ -580,7 +580,7 @@ func TestPromptTemplateValidation(t *testing.T) {
 			assert.Contains(t, config.SummaryPromptTemplate, "{language}")
 		}
 	})
-	
+
 	t.Run("InvalidTemplates", func(t *testing.T) {
 		invalidTemplates := []string{
 			"Missing placeholders",
@@ -588,7 +588,7 @@ func TestPromptTemplateValidation(t *testing.T) {
 			"Only {language} placeholder",
 			"", // Empty template
 		}
-		
+
 		for _, template := range invalidTemplates {
 			// In actual validation, these should be rejected
 			if template != "" {
@@ -601,33 +601,33 @@ func TestPromptTemplateValidation(t *testing.T) {
 // Test recording configuration validation
 func TestRecordingConfigurationValidation(t *testing.T) {
 	config := GetDefaultConfig()
-	
+
 	t.Run("DeviceIDValidation", func(t *testing.T) {
 		// -1 means default device
 		config.RecordingDeviceID = -1
 		assert.Equal(t, -1, config.RecordingDeviceID)
-		
+
 		// Valid device IDs should be >= 0
 		config.RecordingDeviceID = 0
 		assert.GreaterOrEqual(t, config.RecordingDeviceID, -1)
-		
+
 		config.RecordingDeviceID = 5
 		assert.GreaterOrEqual(t, config.RecordingDeviceID, -1)
 	})
-	
+
 	t.Run("RecordingLimitsValidation", func(t *testing.T) {
 		// Test max hours (0 = unlimited)
 		config.RecordingMaxHours = 0
 		assert.GreaterOrEqual(t, config.RecordingMaxHours, 0)
-		
+
 		config.RecordingMaxHours = 24
 		assert.GreaterOrEqual(t, config.RecordingMaxHours, 0)
 		assert.LessOrEqual(t, config.RecordingMaxHours, 24) // Reasonable limit
-		
+
 		// Test max file size (0 = unlimited)
 		config.RecordingMaxFileMB = 0
 		assert.GreaterOrEqual(t, config.RecordingMaxFileMB, 0)
-		
+
 		config.RecordingMaxFileMB = 1000
 		assert.GreaterOrEqual(t, config.RecordingMaxFileMB, 0)
 		assert.LessOrEqual(t, config.RecordingMaxFileMB, 10000) // 10GB reasonable limit
@@ -638,7 +638,7 @@ func TestRecordingConfigurationValidation(t *testing.T) {
 func TestConfigMigration(t *testing.T) {
 	tempDir := t.TempDir()
 	configFile := filepath.Join(tempDir, "legacy_config.json")
-	
+
 	t.Run("LegacyConfigWithMissingFields", func(t *testing.T) {
 		// Simulate old config without new fields
 		legacyConfig := map[string]interface{}{
@@ -654,27 +654,27 @@ func TestConfigMigration(t *testing.T) {
 			"archive_dir":           "./archive",
 			// Missing: ui_language, llm_*, recording_* fields
 		}
-		
+
 		data, err := json.Marshal(legacyConfig)
 		require.NoError(t, err)
-		
+
 		err = os.WriteFile(configFile, data, 0644)
 		require.NoError(t, err)
-		
+
 		logger := log.New(os.Stdout, "", log.LstdFlags)
 		config := LoadConfig(configFile, logger)
-		
+
 		// Should load legacy fields
 		assert.Equal(t, "large-v2", config.WhisperModel)
 		assert.Equal(t, "ja", config.Language)
-		
+
 		// Should use defaults for missing fields
-		assert.Equal(t, "ja", config.UILanguage) // Default
-		assert.False(t, config.LLMSummaryEnabled) // Default
+		assert.Equal(t, "ja", config.UILanguage)         // Default
+		assert.False(t, config.LLMSummaryEnabled)        // Default
 		assert.Equal(t, "openai", config.LLMAPIProvider) // Default
-		assert.Equal(t, -1, config.RecordingDeviceID) // Default
+		assert.Equal(t, -1, config.RecordingDeviceID)    // Default
 	})
-	
+
 	t.Run("FutureConfigWithExtraFields", func(t *testing.T) {
 		// Simulate future config with unknown fields
 		futureConfig := map[string]interface{}{
@@ -692,16 +692,16 @@ func TestConfigMigration(t *testing.T) {
 			"future_feature":        "some_value", // Unknown field
 			"experimental_mode":     true,         // Unknown field
 		}
-		
+
 		data, err := json.Marshal(futureConfig)
 		require.NoError(t, err)
-		
+
 		err = os.WriteFile(configFile, data, 0644)
 		require.NoError(t, err)
-		
+
 		logger := log.New(os.Stdout, "", log.LstdFlags)
 		config := LoadConfig(configFile, logger)
-		
+
 		// Should load known fields
 		assert.Equal(t, "large-v3", config.WhisperModel)
 		assert.Equal(t, "en", config.Language)

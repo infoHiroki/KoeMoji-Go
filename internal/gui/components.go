@@ -254,19 +254,19 @@ func (app *GUIApp) startRecording() {
 			logger.LogError(app.logger, &app.logBuffer, &app.logMutex, "録音の初期化に失敗: %v", err)
 			return
 		}
-		
+
 		// Phase 1: Set recording limits
 		var maxDuration time.Duration
 		var maxFileSize int64
-		
+
 		if app.Config.RecordingMaxHours > 0 {
 			maxDuration = time.Duration(app.Config.RecordingMaxHours) * time.Hour
 		}
-		
+
 		if app.Config.RecordingMaxFileMB > 0 {
 			maxFileSize = int64(app.Config.RecordingMaxFileMB) * 1024 * 1024 // Convert MB to bytes
 		}
-		
+
 		app.recorder.SetLimits(maxDuration, maxFileSize)
 	}
 
@@ -333,7 +333,7 @@ func (app *GUIApp) updateRecordingUI() {
 	msg := ui.GetMessages(app.Config)
 	// KISS Design: Direct query for current state
 	isCurrentlyRecording := app.isRecording()
-	
+
 	// Use fyne.Do to safely update UI
 	fyne.Do(func() {
 		if isCurrentlyRecording {

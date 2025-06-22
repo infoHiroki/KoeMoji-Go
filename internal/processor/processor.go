@@ -67,7 +67,7 @@ func ScanAndProcess(config *config.Config, log *log.Logger, logBuffer *[]logger.
 	// Add files to queue
 	mu.Lock()
 	*queuedFiles = append(*queuedFiles, newFiles...)
-	
+
 	// Phase 1: Periodic cleanup of processed files map
 	if len(*processedFiles) > 5000 {
 		cleanupProcessedFiles(processedFiles, mu, log, logBuffer, logMutex)
@@ -268,15 +268,15 @@ func cleanupProcessedFiles(processedFiles *map[string]bool, mu *sync.Mutex, log 
 	if len(*processedFiles) <= 2500 {
 		return
 	}
-	
+
 	// Note: This function is called while mu is already locked in ScanAndProcess
 	// No additional locking needed here as the caller already holds the lock
-	
+
 	// Simple approach: reset the map when it gets too large
 	// In a production system, you might want to keep recent entries based on timestamp
 	newMap := make(map[string]bool)
 	count := 0
-	
+
 	// Keep approximately half of the entries
 	for file := range *processedFiles {
 		if count < 2500 {
@@ -284,7 +284,7 @@ func cleanupProcessedFiles(processedFiles *map[string]bool, mu *sync.Mutex, log 
 			count++
 		}
 	}
-	
+
 	*processedFiles = newMap
 	logger.LogInfo(log, logBuffer, logMutex, "Cleaned up processed files map, kept %d entries", len(*processedFiles))
 }

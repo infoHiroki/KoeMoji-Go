@@ -238,10 +238,10 @@ func TestSafeProcessingStart_RaceConditionFixed(t *testing.T) {
 				isProcessing = true
 				processCount++
 				mu.Unlock()
-				
+
 				// Simulate some work
 				time.Sleep(5 * time.Millisecond)
-				
+
 				// Reset processing state
 				mu.Lock()
 				isProcessing = false
@@ -263,7 +263,7 @@ func TestCleanupProcessedFiles_SafeConcurrentAccess(t *testing.T) {
 	// Test the fixed concurrent map access in cleanup function
 	processedFiles := make(map[string]bool)
 	var mu sync.Mutex
-	
+
 	// Add more than 5000 files to trigger cleanup
 	for i := 0; i < 6000; i++ {
 		processedFiles[fmt.Sprintf("file_%d.wav", i)] = true

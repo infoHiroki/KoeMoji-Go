@@ -64,27 +64,27 @@ type Messages struct {
 	SelectDevice    string
 
 	// Settings dialog messages
-	SettingsTitle     string
-	BasicTab          string
-	DirectoriesTab    string
-	LLMTab            string
-	RecordingTab      string
-	SaveBtn           string
-	CancelBtn         string
-	
+	SettingsTitle  string
+	BasicTab       string
+	DirectoriesTab string
+	LLMTab         string
+	RecordingTab   string
+	SaveBtn        string
+	CancelBtn      string
+
 	// Settings form labels
-	LanguageLabel         string
-	WhisperModelLabel     string
-	SpeechLanguageLabel   string
-	ScanIntervalLabel     string
-	UseColorsLabel        string
-	InputDirLabel         string
-	OutputDirLabel        string
-	ArchiveDirLabel       string
-	LLMEnabledLabel       string
-	APIKeyLabel           string
-	ModelLabel            string
-	RecordingDeviceLabel  string
+	LanguageLabel        string
+	WhisperModelLabel    string
+	SpeechLanguageLabel  string
+	ScanIntervalLabel    string
+	UseColorsLabel       string
+	InputDirLabel        string
+	OutputDirLabel       string
+	ArchiveDirLabel      string
+	LLMEnabledLabel      string
+	APIKeyLabel          string
+	ModelLabel           string
+	RecordingDeviceLabel string
 }
 
 var messagesEN = Messages{
@@ -148,27 +148,27 @@ var messagesEN = Messages{
 	SelectDevice:    "Select recording device",
 
 	// Settings dialog messages
-	SettingsTitle:     "KoeMoji-Go Settings",
-	BasicTab:          "Basic",
-	DirectoriesTab:    "Directories",
-	LLMTab:            "AI Summary",
-	RecordingTab:      "Recording",
-	SaveBtn:           "Save",
-	CancelBtn:         "Cancel",
-	
+	SettingsTitle:  "KoeMoji-Go Settings",
+	BasicTab:       "Basic",
+	DirectoriesTab: "Directories",
+	LLMTab:         "AI Summary",
+	RecordingTab:   "Recording",
+	SaveBtn:        "Save",
+	CancelBtn:      "Cancel",
+
 	// Settings form labels
-	LanguageLabel:         "Language",
-	WhisperModelLabel:     "Whisper Model",
-	SpeechLanguageLabel:   "Speech Recognition Language",
-	ScanIntervalLabel:     "Scan Interval (min)",
-	UseColorsLabel:        "Use Colors",
-	InputDirLabel:         "Input Folder",
-	OutputDirLabel:        "Output Folder",
-	ArchiveDirLabel:       "Archive Folder",
-	LLMEnabledLabel:       "Enable AI Summary",
-	APIKeyLabel:           "API Key",
-	ModelLabel:            "Model",
-	RecordingDeviceLabel:  "Recording Device",
+	LanguageLabel:        "Language",
+	WhisperModelLabel:    "Whisper Model",
+	SpeechLanguageLabel:  "Speech Recognition Language",
+	ScanIntervalLabel:    "Scan Interval (min)",
+	UseColorsLabel:       "Use Colors",
+	InputDirLabel:        "Input Folder",
+	OutputDirLabel:       "Output Folder",
+	ArchiveDirLabel:      "Archive Folder",
+	LLMEnabledLabel:      "Enable AI Summary",
+	APIKeyLabel:          "API Key",
+	ModelLabel:           "Model",
+	RecordingDeviceLabel: "Recording Device",
 }
 
 var messagesJA = Messages{
@@ -232,27 +232,27 @@ var messagesJA = Messages{
 	SelectDevice:    "録音デバイスを選択",
 
 	// Settings dialog messages
-	SettingsTitle:     "KoeMoji-Go 設定",
-	BasicTab:          "基本設定",
-	DirectoriesTab:    "フォルダ設定",
-	LLMTab:            "AI要約",
-	RecordingTab:      "録音設定",
-	SaveBtn:           "保存",
-	CancelBtn:         "キャンセル",
-	
+	SettingsTitle:  "KoeMoji-Go 設定",
+	BasicTab:       "基本設定",
+	DirectoriesTab: "フォルダ設定",
+	LLMTab:         "AI要約",
+	RecordingTab:   "録音設定",
+	SaveBtn:        "保存",
+	CancelBtn:      "キャンセル",
+
 	// Settings form labels
-	LanguageLabel:         "言語",
-	WhisperModelLabel:     "Whisperモデル",
-	SpeechLanguageLabel:   "音声認識言語",
-	ScanIntervalLabel:     "スキャン間隔（分）",
-	UseColorsLabel:        "色を使用",
-	InputDirLabel:         "入力フォルダ",
-	OutputDirLabel:        "出力フォルダ",
-	ArchiveDirLabel:       "アーカイブフォルダ",
-	LLMEnabledLabel:       "AI要約を有効化",
-	APIKeyLabel:           "APIキー",
-	ModelLabel:            "モデル",
-	RecordingDeviceLabel:  "録音デバイス",
+	LanguageLabel:        "言語",
+	WhisperModelLabel:    "Whisperモデル",
+	SpeechLanguageLabel:  "音声認識言語",
+	ScanIntervalLabel:    "スキャン間隔（分）",
+	UseColorsLabel:       "色を使用",
+	InputDirLabel:        "入力フォルダ",
+	OutputDirLabel:       "出力フォルダ",
+	ArchiveDirLabel:      "アーカイブフォルダ",
+	LLMEnabledLabel:      "AI要約を有効化",
+	APIKeyLabel:          "APIキー",
+	ModelLabel:           "モデル",
+	RecordingDeviceLabel: "録音デバイス",
 }
 
 // GetMessages returns the messages for the current UI language

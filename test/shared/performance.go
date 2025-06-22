@@ -43,7 +43,7 @@ type MemoryStats struct {
 func GetMemoryStats() MemoryStats {
 	var m runtime.MemStats
 	runtime.ReadMemStats(&m)
-	
+
 	return MemoryStats{
 		AllocMB:      bToMB(m.Alloc),
 		TotalAllocMB: bToMB(m.TotalAlloc),
@@ -62,19 +62,19 @@ func StartCPUProfile(config *BenchmarkConfig) func() {
 	if config.CPUProfilePath == "" {
 		return func() {} // No-op if not configured
 	}
-	
+
 	f, err := os.Create(config.CPUProfilePath)
 	if err != nil {
 		fmt.Printf("Could not create CPU profile: %v\n", err)
 		return func() {}
 	}
-	
+
 	if err := pprof.StartCPUProfile(f); err != nil {
 		f.Close()
 		fmt.Printf("Could not start CPU profile: %v\n", err)
 		return func() {}
 	}
-	
+
 	return func() {
 		pprof.StopCPUProfile()
 		f.Close()
@@ -87,20 +87,20 @@ func WriteMemoryProfile(config *BenchmarkConfig) {
 	if config.MemoryProfilePath == "" {
 		return
 	}
-	
+
 	f, err := os.Create(config.MemoryProfilePath)
 	if err != nil {
 		fmt.Printf("Could not create memory profile: %v\n", err)
 		return
 	}
 	defer f.Close()
-	
+
 	runtime.GC() // Force GC before profiling
 	if err := pprof.WriteHeapProfile(f); err != nil {
 		fmt.Printf("Could not write memory profile: %v\n", err)
 		return
 	}
-	
+
 	fmt.Printf("Memory profile saved to %s\n", config.MemoryProfilePath)
 }
 
@@ -116,7 +116,7 @@ func NewBenchmarkRunner(config *BenchmarkConfig) *BenchmarkRunner {
 	if config == nil {
 		config = DefaultBenchmarkConfig()
 	}
-	
+
 	return &BenchmarkRunner{
 		config: config,
 	}
@@ -126,10 +126,10 @@ func NewBenchmarkRunner(config *BenchmarkConfig) *BenchmarkRunner {
 func (br *BenchmarkRunner) Start() func() {
 	br.startTime = time.Now()
 	br.startMem = GetMemoryStats()
-	
+
 	// Start CPU profiling if configured
 	stopCPUProfile := StartCPUProfile(br.config)
-	
+
 	return func() {
 		stopCPUProfile()
 		WriteMemoryProfile(br.config)
@@ -141,7 +141,7 @@ func (br *BenchmarkRunner) Start() func() {
 func (br *BenchmarkRunner) printResults() {
 	duration := time.Since(br.startTime)
 	endMem := GetMemoryStats()
-	
+
 	fmt.Printf("\n=== Benchmark Results ===\n")
 	fmt.Printf("Duration: %v\n", duration)
 	fmt.Printf("Memory Usage:\n")
@@ -156,14 +156,14 @@ func (br *BenchmarkRunner) printResults() {
 // AssertMemoryUsage validates memory usage against limits
 func (br *BenchmarkRunner) AssertMemoryUsage(t *testing.T) {
 	stats := GetMemoryStats()
-	
+
 	if br.config.MaxMemoryMB > 0 && stats.AllocMB > float64(br.config.MaxMemoryMB) {
-		t.Errorf("Memory usage %.2f MB exceeds limit %d MB", 
+		t.Errorf("Memory usage %.2f MB exceeds limit %d MB",
 			stats.AllocMB, br.config.MaxMemoryMB)
 	}
-	
+
 	if br.config.MaxAllocMB > 0 && stats.TotalAllocMB > float64(br.config.MaxAllocMB) {
-		t.Errorf("Total allocation %.2f MB exceeds limit %d MB", 
+		t.Errorf("Total allocation %.2f MB exceeds limit %d MB",
 			stats.TotalAllocMB, br.config.MaxAllocMB)
 	}
 }
@@ -186,14 +186,14 @@ func NewLeakDetector(thresholdMB float64) *LeakDetector {
 func (ld *LeakDetector) Check(t *testing.T, description string) {
 	runtime.GC() // Force GC to clean up
 	runtime.GC() // Run twice to ensure cleanup
-	
+
 	currentStats := GetMemoryStats()
 	increase := currentStats.AllocMB - ld.initialStats.AllocMB
-	
+
 	if increase > ld.threshold {
-		t.Errorf("Memory leak detected in %s: increased by %.2f MB (threshold: %.2f MB)", 
+		t.Errorf("Memory leak detected in %s: increased by %.2f MB (threshold: %.2f MB)",
 			description, increase, ld.threshold)
-		
+
 		t.Logf("Initial memory: %.2f MB", ld.initialStats.AllocMB)
 		t.Logf("Current memory: %.2f MB", currentStats.AllocMB)
 		t.Logf("GC runs: %d", currentStats.NumGC)
@@ -203,12 +203,12 @@ func (ld *LeakDetector) Check(t *testing.T, description string) {
 // BenchmarkWithTimeout runs a benchmark function with timeout
 func BenchmarkWithTimeout(b *testing.B, timeout time.Duration, fn func()) {
 	done := make(chan bool, 1)
-	
+
 	go func() {
 		fn()
 		done <- true
 	}()
-	
+
 	select {
 	case <-done:
 		// Completed successfully
@@ -228,30 +228,30 @@ func MeasureLatency(fn func()) time.Duration {
 func ConcurrencyTest(t *testing.T, concurrency int, iterations int, fn func(workerID int)) {
 	results := make(chan time.Duration, concurrency)
 	start := time.Now()
-	
+
 	// Start workers
 	for i := 0; i < concurrency; i++ {
 		go func(workerID int) {
 			workerStart := time.Now()
-			
+
 			for j := 0; j < iterations; j++ {
 				fn(workerID)
 			}
-			
+
 			results <- time.Since(workerStart)
 		}(i)
 	}
-	
+
 	// Collect results
 	var totalWorkerTime time.Duration
 	for i := 0; i < concurrency; i++ {
 		workerTime := <-results
 		totalWorkerTime += workerTime
 	}
-	
+
 	totalTime := time.Since(start)
 	avgWorkerTime := totalWorkerTime / time.Duration(concurrency)
-	
+
 	t.Logf("Concurrency test results:")
 	t.Logf("  Workers: %d", concurrency)
 	t.Logf("  Iterations per worker: %d", iterations)
@@ -264,9 +264,9 @@ func ConcurrencyTest(t *testing.T, concurrency int, iterations int, fn func(work
 func RequireNoGoroutineLeaks(t *testing.T, initialCount int, description string) {
 	runtime.GC()
 	time.Sleep(100 * time.Millisecond) // Allow goroutines to finish
-	
+
 	currentCount := runtime.NumGoroutine()
-	
+
 	if currentCount > initialCount {
 		require.Equal(t, initialCount, currentCount,
 			"Goroutine leak detected in %s: started with %d, ended with %d",

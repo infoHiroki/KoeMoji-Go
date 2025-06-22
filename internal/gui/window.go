@@ -28,13 +28,13 @@ func (app *GUIApp) createWindow() {
 		app.buttonWidget,
 		widget.NewLabel(""), // Small spacer for bottom margin
 	)
-	
+
 	content := container.NewBorder(
-		app.statusWidget, // top
+		app.statusWidget,  // top
 		bottomWithPadding, // bottom with padding
-		nil,              // left
-		nil,              // right
-		app.logWidget,    // center
+		nil,               // left
+		nil,               // right
+		app.logWidget,     // center
 	)
 
 	app.window.SetContent(content)
@@ -120,7 +120,7 @@ func (app *GUIApp) createLogViewer(msg *ui.Messages) fyne.CanvasObject {
 func (app *GUIApp) createButtonPanel(msg *ui.Messages) fyne.CanvasObject {
 	// Define button size
 	buttonSize := fyne.NewSize(80, 40) // Width: 80, Height: 40
-	
+
 	// Create buttons with localized labels
 	configBtn := widget.NewButton(msg.ConfigCmd, func() {
 		app.onConfigPressed()
@@ -187,7 +187,7 @@ func (app *GUIApp) createButtonPanel(msg *ui.Messages) fyne.CanvasObject {
 		primaryButtons,
 		widget.NewLabel("   "), // Fixed spacing between groups
 		configButtons,
-		widget.NewLabel("   "), // Fixed spacing between groups  
+		widget.NewLabel("   "), // Fixed spacing between groups
 		directoryButtons,
 		widget.NewLabel("   "), // Fixed spacing between groups
 		quitBtn,

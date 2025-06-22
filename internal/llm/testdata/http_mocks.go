@@ -16,9 +16,9 @@ type MockHTTPClient struct {
 }
 
 type MockRequest struct {
-	Method string
-	URL    string
-	Body   string
+	Method  string
+	URL     string
+	Body    string
 	Headers map[string]string
 }
 
@@ -54,21 +54,21 @@ func (m *MockHTTPClient) Do(req *http.Request) (*http.Response, error) {
 		bodyBytes, _ = io.ReadAll(req.Body)
 		req.Body = io.NopCloser(bytes.NewReader(bodyBytes))
 	}
-	
+
 	headers := make(map[string]string)
 	for k, v := range req.Header {
 		if len(v) > 0 {
 			headers[k] = v[0]
 		}
 	}
-	
+
 	m.Requests = append(m.Requests, MockRequest{
 		Method:  req.Method,
 		URL:     req.URL.String(),
 		Body:    string(bodyBytes),
 		Headers: headers,
 	})
-	
+
 	// Return mock response
 	if m.Index >= len(m.Responses) {
 		// Default response if no more mocked responses
@@ -78,15 +78,15 @@ func (m *MockHTTPClient) Do(req *http.Request) (*http.Response, error) {
 			Header:     make(http.Header),
 		}, nil
 	}
-	
+
 	resp := m.Responses[m.Index]
 	m.Index++
-	
+
 	header := make(http.Header)
 	for k, v := range resp.Headers {
 		header.Set(k, v)
 	}
-	
+
 	return &http.Response{
 		StatusCode: resp.StatusCode,
 		Body:       io.NopCloser(strings.NewReader(resp.Body)),

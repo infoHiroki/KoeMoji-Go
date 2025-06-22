@@ -8,15 +8,15 @@ import (
 	"testing"
 
 	"github.com/hirokitakamura/koemoji-go/internal/config"
-	customLogger "github.com/hirokitakamura/koemoji-go/internal/logger"
+	"github.com/hirokitakamura/koemoji-go/internal/logger"
 )
 
 // CreateTestConfig creates a basic test configuration
 func CreateTestConfig(t *testing.T) *config.Config {
 	t.Helper()
-	
+
 	tempDir := t.TempDir()
-	
+
 	return &config.Config{
 		WhisperModel:        "base",
 		Language:            "ja",
@@ -43,9 +43,9 @@ func CreateTestConfig(t *testing.T) *config.Config {
 }
 
 // CreateTestLogger creates a test logger with buffer
-func CreateTestLogger() (*log.Logger, *[]customLogger.LogEntry, *sync.RWMutex) {
+func CreateTestLogger() (*log.Logger, *[]logger.LogEntry, *sync.RWMutex) {
 	testLogger := log.New(os.Stdout, "", log.LstdFlags)
-	logBuffer := &[]customLogger.LogEntry{}
+	logBuffer := &[]logger.LogEntry{}
 	logMutex := &sync.RWMutex{}
 	return testLogger, logBuffer, logMutex
 }
@@ -53,7 +53,7 @@ func CreateTestLogger() (*log.Logger, *[]customLogger.LogEntry, *sync.RWMutex) {
 // CreateTestDirectories creates test directories
 func CreateTestDirectories(t *testing.T, dirs ...string) {
 	t.Helper()
-	
+
 	for _, dir := range dirs {
 		err := os.MkdirAll(dir, 0755)
 		if err != nil {
@@ -65,7 +65,7 @@ func CreateTestDirectories(t *testing.T, dirs ...string) {
 // AssertFileNotExists checks if a file does not exist
 func AssertFileNotExists(t *testing.T, path string) {
 	t.Helper()
-	
+
 	if _, err := os.Stat(path); err == nil {
 		t.Errorf("Expected file %s to not exist, but it does", path)
 	}

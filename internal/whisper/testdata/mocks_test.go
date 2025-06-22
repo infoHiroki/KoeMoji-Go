@@ -43,18 +43,18 @@ func (m *MockCommandExecutor) Execute(name string, args ...string) error {
 	if m.Index >= len(m.Commands) {
 		return fmt.Errorf("unexpected command: %s %s", name, strings.Join(args, " "))
 	}
-	
+
 	cmd := m.Commands[m.Index]
 	m.Index++
-	
+
 	if cmd.Name != name {
 		return fmt.Errorf("expected command %s, got %s", cmd.Name, name)
 	}
-	
+
 	if cmd.ExitCode != 0 {
 		return fmt.Errorf("exit status %d", cmd.ExitCode)
 	}
-	
+
 	return nil
 }
 
@@ -120,12 +120,12 @@ func NewMockFileInfo(name string, size int64, isDir bool) *MockFileInfo {
 	}
 }
 
-func (m *MockFileInfo) Name() string       { return m.name }
-func (m *MockFileInfo) Size() int64        { return m.size }
-func (m *MockFileInfo) Mode() os.FileMode  { return m.mode }
-func (m *MockFileInfo) ModTime() string    { return m.modTime }
-func (m *MockFileInfo) IsDir() bool        { return m.isDir }
-func (m *MockFileInfo) Sys() interface{}   { return nil }
+func (m *MockFileInfo) Name() string      { return m.name }
+func (m *MockFileInfo) Size() int64       { return m.size }
+func (m *MockFileInfo) Mode() os.FileMode { return m.mode }
+func (m *MockFileInfo) ModTime() string   { return m.modTime }
+func (m *MockFileInfo) IsDir() bool       { return m.isDir }
+func (m *MockFileInfo) Sys() interface{}  { return nil }
 
 // MockCmd implements a testable version of exec.Cmd
 type MockCmd struct {

@@ -14,7 +14,7 @@ import (
 // CreateTestConfig creates a test configuration for LLM testing
 func CreateTestConfig(t *testing.T) *config.Config {
 	t.Helper()
-	
+
 	return &config.Config{
 		WhisperModel:          "base",
 		Language:              "ja",
@@ -74,12 +74,12 @@ func GetTestText() string {
 func GetLongTestText() string {
 	baseText := GetTestText()
 	longText := ""
-	
+
 	// Repeat the text multiple times to create a long text
 	for i := 0; i < 20; i++ {
 		longText += baseText + "\n\n"
 	}
-	
+
 	return longText
 }
 
@@ -103,17 +103,17 @@ and each team's timeline was confirmed.`
 // AssertContainsJapanese checks if the text contains Japanese characters
 func AssertContainsJapanese(t *testing.T, text string) {
 	t.Helper()
-	
+
 	hasJapanese := false
 	for _, r := range text {
 		if (r >= 0x3040 && r <= 0x309F) || // Hiragana
 			(r >= 0x30A0 && r <= 0x30FF) || // Katakana
-			(r >= 0x4E00 && r <= 0x9FAF) {  // Kanji
+			(r >= 0x4E00 && r <= 0x9FAF) { // Kanji
 			hasJapanese = true
 			break
 		}
 	}
-	
+
 	if !hasJapanese {
 		t.Errorf("Expected text to contain Japanese characters, but got: %s", text)
 	}
@@ -122,12 +122,12 @@ func AssertContainsJapanese(t *testing.T, text string) {
 // AssertValidSummaryFormat checks if the summary has the expected format
 func AssertValidSummaryFormat(t *testing.T, summary string) {
 	t.Helper()
-	
+
 	if len(summary) == 0 {
 		t.Error("Summary should not be empty")
 		return
 	}
-	
+
 	// Check for bullet points or structured content
 	hasBulletPoints := false
 	lines := []string{"•", "・", "-", "*", "1.", "2.", "3."}
@@ -137,7 +137,7 @@ func AssertValidSummaryFormat(t *testing.T, summary string) {
 			break
 		}
 	}
-	
+
 	if !hasBulletPoints {
 		t.Logf("Warning: Summary might not contain bullet points: %s", summary)
 	}

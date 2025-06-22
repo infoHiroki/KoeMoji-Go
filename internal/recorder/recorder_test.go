@@ -139,7 +139,7 @@ func TestRecorder_SaveToFileWithoutData(t *testing.T) {
 // TestListDevices tests device enumeration
 func TestListDevices(t *testing.T) {
 	devices, err := ListDevices()
-	
+
 	// On systems without audio devices, this might fail
 	if err != nil {
 		t.Skipf("Audio device enumeration failed: %v", err)
@@ -148,7 +148,7 @@ func TestListDevices(t *testing.T) {
 
 	// Should return at least some information
 	assert.NotNil(t, devices)
-	
+
 	// If devices exist, check structure
 	for _, device := range devices {
 		assert.NotEmpty(t, device.Name)
