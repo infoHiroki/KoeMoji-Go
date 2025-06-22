@@ -24,7 +24,7 @@ import (
 	"github.com/hirokitakamura/koemoji-go/internal/whisper"
 )
 
-const version = "1.3.0"
+const version = "1.5.0"
 
 // Color constants
 const (
@@ -66,7 +66,7 @@ type App struct {
 }
 
 func main() {
-	configPath, debugMode, showVersion, showHelp, configMode, guiMode := parseFlags()
+	configPath, debugMode, showVersion, showHelp, configMode, tuiMode := parseFlags()
 
 	if showVersion {
 		fmt.Printf("KoeMoji-Go v%s\n", version)
@@ -78,12 +78,17 @@ func main() {
 		return
 	}
 
-	// Handle GUI mode
-	if guiMode {
-		gui.Run(configPath, debugMode)
+	// Handle TUI mode (non-default)
+	if tuiMode {
+		runTUIMode(configPath, debugMode, configMode)
 		return
 	}
 
+	// Default: GUI mode
+	gui.Run(configPath, debugMode)
+}
+
+func runTUIMode(configPath string, debugMode bool, configMode bool) {
 	app := &App{
 		configPath:     configPath,
 		debugMode:      debugMode,
@@ -113,9 +118,9 @@ func parseFlags() (string, bool, bool, bool, bool, bool) {
 	showVersion := flag.Bool("version", false, "Show version")
 	showHelp := flag.Bool("help", false, "Show help")
 	configMode := flag.Bool("configure", false, "Enter configuration mode")
-	guiMode := flag.Bool("gui", false, "Run in GUI mode")
+	tuiMode := flag.Bool("tui", false, "Run in Terminal UI (TUI) mode")
 	flag.Parse()
-	return *configPath, *debugMode, *showVersion, *showHelp, *configMode, *guiMode
+	return *configPath, *debugMode, *showVersion, *showHelp, *configMode, *tuiMode
 }
 
 func showHelpText() {
@@ -125,8 +130,8 @@ func showHelpText() {
 	fmt.Println("\nOptions:")
 	flag.PrintDefaults()
 	fmt.Println("\nModes:")
-	fmt.Println("  Default - Terminal UI (TUI) mode")
-	fmt.Println("  --gui   - Graphical User Interface (GUI) mode")
+	fmt.Println("  Default - Graphical User Interface (GUI) mode")
+	fmt.Println("  --tui   - Terminal UI (TUI) mode")
 	fmt.Println("\nInteractive commands (TUI mode only):")
 	fmt.Println("  c - Configure settings")
 	fmt.Println("  l - Display all logs")
@@ -134,6 +139,7 @@ func showHelpText() {
 	fmt.Println("  i - Open input directory")
 	fmt.Println("  o - Open output directory")
 	fmt.Println("  a - Toggle AI summary")
+	fmt.Println("  r - Start/stop recording")
 	fmt.Println("  q - Quit")
 	fmt.Println("  Enter - Refresh display")
 }
