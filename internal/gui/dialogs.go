@@ -217,7 +217,7 @@ func (app *GUIApp) createRecordingForm() *widget.Form {
 
 // saveConfigFromDialog saves the configuration from dialog form entries
 func (app *GUIApp) saveConfigFromDialog(whisperModel, language *widget.Select,
-	uiLanguage *widget.Select, scanInterval *widget.Entry, useColors *widget.Check,
+	uiLanguage *widget.Select, scanInterval *widget.Entry,
 	inputDir, outputDir, archiveDir *widget.Entry, llmEnabled *widget.Check,
 	llmAPIKey *widget.Entry, llmModel *widget.Select) {
 
@@ -265,7 +265,6 @@ func (app *GUIApp) saveConfigFromDialog(whisperModel, language *widget.Select,
 		app.Config.ScanIntervalMinutes = interval
 	}
 
-	app.Config.UseColors = useColors.Checked
 	app.Config.InputDir = inputDir.Text
 	app.Config.OutputDir = outputDir.Text
 	app.Config.ArchiveDir = archiveDir.Text
