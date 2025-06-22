@@ -2,6 +2,9 @@ package gui
 
 import (
 	"context"
+	"io"
+	"log"
+	"os"
 	"sync"
 	"time"
 
@@ -22,6 +25,7 @@ type GUIApp struct {
 	debugMode      bool
 	processedFiles map[string]bool
 	mu             sync.Mutex
+	logger         *log.Logger
 
 	// UI related fields
 	startTime    time.Time
@@ -99,15 +103,20 @@ func (app *GUIApp) loadConfig() {
 	app.initLogger()
 
 	// Load configuration
-	cfg := config.LoadConfig(app.configPath, nil) // GUI mode doesn't need file logger
+	cfg := config.LoadConfig(app.configPath, app.logger) // Use logger for consistent behavior
 	app.Config = cfg
 }
 
-// initLogger initializes the logger (simplified for GUI mode)
+// initLogger initializes the logger (consistent with TUI mode)
 func (app *GUIApp) initLogger() {
-	// For GUI mode, we'll use in-memory logging only
-	// The log buffer will be displayed in the GUI
-	logger.LogInfo(nil, &app.logBuffer, &app.logMutex, "KoeMoji-Go v1.3.0 started")
+	logFile, err := os.OpenFile("koemoji.log", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
+	if err != nil {
+		log.Fatalf("Failed to open log file: %v", err)
+	}
+
+	// Only timestamps for file logging, no prefix for console
+	app.logger = log.New(io.MultiWriter(logFile), "", log.LstdFlags)
+	logger.LogInfo(app.logger, &app.logBuffer, &app.logMutex, "KoeMoji-Go v1.3.0 started (GUI mode)")
 }
 
 // ForceCleanup performs immediate resource cleanup for application exit
@@ -124,7 +133,7 @@ func (app *GUIApp) ForceCleanup() {
 	}
 
 	// Log cleanup action
-	logger.LogInfo(nil, &app.logBuffer, &app.logMutex, "Application resources cleaned up")
+	logger.LogInfo(app.logger, &app.logBuffer, &app.logMutex, "Application resources cleaned up")
 }
 
 // isUIReady checks if all essential UI components are initialized

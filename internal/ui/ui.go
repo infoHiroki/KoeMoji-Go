@@ -142,19 +142,39 @@ func DisplayLogs(config *config.Config) {
 		return
 	}
 
-	var cmd *exec.Cmd
 	switch runtime.GOOS {
 	case "windows":
-		cmd = exec.Command("notepad", "koemoji.log")
+		// Try to open with PowerShell to jump to end, fallback to regular notepad
+		powershellCmd := exec.Command("powershell", "-Command", 
+			`notepad koemoji.log; Start-Sleep -Milliseconds 500; Add-Type -AssemblyName System.Windows.Forms; [System.Windows.Forms.SendKeys]::SendWait("^{END}")`)
+		if err := powershellCmd.Run(); err != nil {
+			// Fallback to regular notepad if PowerShell fails
+			fallbackCmd := exec.Command("notepad", "koemoji.log")
+			if fallbackErr := fallbackCmd.Run(); fallbackErr != nil {
+				fmt.Printf(msg.LogFileError, fallbackErr)
+			}
+		}
 	case "darwin":
-		cmd = exec.Command("open", "koemoji.log")
+		// Get absolute path for AppleScript
+		absPath, err := filepath.Abs("koemoji.log")
+		if err != nil {
+			absPath = "koemoji.log"
+		}
+		
+		// Try to open with AppleScript to jump to end, fallback to regular open
+		appleScriptCmd := exec.Command("osascript", "-e", 
+			fmt.Sprintf(`tell application "TextEdit" to open POSIX file "%s"`, absPath),
+			"-e", `tell application "TextEdit" to goto paragraph -1`)
+		if err := appleScriptCmd.Run(); err != nil {
+			// Fallback to regular open if AppleScript fails
+			fallbackCmd := exec.Command("open", "koemoji.log")
+			if fallbackErr := fallbackCmd.Run(); fallbackErr != nil {
+				fmt.Printf(msg.LogFileError, fallbackErr)
+			}
+		}
 	default:
 		fmt.Println(msg.UnsupportedOS)
 		return
-	}
-
-	if err := cmd.Run(); err != nil {
-		fmt.Printf(msg.LogFileError, err)
 	}
 }
 

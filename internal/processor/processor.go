@@ -74,13 +74,18 @@ func ScanAndProcess(config *config.Config, log *log.Logger, logBuffer *[]logger.
 	}
 	mu.Unlock()
 
-	// Start processing if not already processing
+	// Start processing if not already processing (with proper locking)
+	mu.Lock()
 	if !*isProcessing {
+		*isProcessing = true
+		mu.Unlock()
 		if wg != nil {
 			wg.Add(1)
 		}
 		go processQueue(config, log, logBuffer, logMutex, queuedFiles, processingFile,
 			isProcessing, mu, wg, debugMode)
+	} else {
+		mu.Unlock()
 	}
 }
 
