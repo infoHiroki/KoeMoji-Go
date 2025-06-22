@@ -8,12 +8,15 @@ import (
 )
 
 func TestValidateAPIKey_ValidKey(t *testing.T) {
-	// Note: This test requires a real API call to OpenAI
-	// In a real test environment, you would mock the HTTP client
-	// For now, we test the basic validation logic
-	config := &config.Config{LLMAPIKey: "sk-test-key-should-not-work"}
-	err := ValidateAPIKey(config)
-	// We expect an error since this is not a real API key
+	// Test with obviously invalid key format
+	cfg := &config.Config{LLMAPIKey: "invalid-key-format"}
+	err := ValidateAPIKey(cfg)
+	assert.Error(t, err)
+	
+	// Test with valid format but fake key (will fail on API call)
+	cfg2 := &config.Config{LLMAPIKey: "sk-test1234567890abcdef1234567890abcdef12345678"}
+	err = ValidateAPIKey(cfg2)
+	// We expect an error since this is not a real API key, but format is valid
 	assert.Error(t, err)
 }
 

@@ -3,6 +3,7 @@ package gui
 import (
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
+	"fyne.io/fyne/v2/layout"
 	"fyne.io/fyne/v2/widget"
 
 	"github.com/hirokitakamura/koemoji-go/internal/ui"
@@ -22,10 +23,15 @@ func (app *GUIApp) createWindow() {
 	// Create UI components
 	app.createComponents()
 
-	// Set up the main layout using BorderLayout
+	// Set up the main layout using BorderLayout with bottom padding
+	bottomWithPadding := container.NewVBox(
+		app.buttonWidget,
+		widget.NewLabel(""), // Small spacer for bottom margin
+	)
+	
 	content := container.NewBorder(
 		app.statusWidget, // top
-		app.buttonWidget, // bottom
+		bottomWithPadding, // bottom with padding
 		nil,              // left
 		nil,              // right
 		app.logWidget,    // center
@@ -105,7 +111,7 @@ func (app *GUIApp) createLogViewer(msg *ui.Messages) fyne.CanvasObject {
 	logScroll.SetMinSize(fyne.NewSize(750, 400))
 
 	// Create a card container for the log viewer
-	logCard := widget.NewCard("Recent Logs", "", logScroll)
+	logCard := widget.NewCard("ログ", "", logScroll)
 
 	return logCard
 }
@@ -165,16 +171,21 @@ func (app *GUIApp) createButtonPanel(msg *ui.Messages) fyne.CanvasObject {
 		outputBtn,
 	)
 
-	// Arrange buttons in a horizontal container with better spacing
+	// Arrange buttons with appropriate spacing
 	buttonContainer := container.NewHBox(
+		layout.NewSpacer(),
 		primaryButtons,
-		widget.NewSeparator(),
+		widget.NewLabel("   "), // Fixed spacing between groups
 		configButtons,
-		widget.NewSeparator(),
+		widget.NewLabel("   "), // Fixed spacing between groups  
 		directoryButtons,
-		widget.NewSeparator(),
+		widget.NewLabel("   "), // Fixed spacing between groups
 		quitBtn,
+		layout.NewSpacer(),
 	)
 
-	return buttonContainer
+	// Add padding around the button container
+	paddedContainer := container.NewPadded(buttonContainer)
+
+	return paddedContainer
 }

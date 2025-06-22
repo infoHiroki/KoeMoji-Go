@@ -19,10 +19,23 @@ import (
 func (app *GUIApp) showConfigDialog() {
 	// Create form entries for basic settings
 	// UI Language first - most important setting
-	uiLanguageSelect := widget.NewSelect([]string{"en", "ja"}, func(value string) {
+	// UI Language options with display names
+	uiLanguageOptions := []string{"English", "日本語"}
+	uiCodeToDisplayMap := map[string]string{
+		"en": "English",
+		"ja": "日本語",
+	}
+	
+	uiLanguageSelect := widget.NewSelect(uiLanguageOptions, func(value string) {
 		// Handle UI language selection
 	})
-	uiLanguageSelect.SetSelected(app.Config.UILanguage)
+	
+	// Set current selection based on config
+	if displayName, exists := uiCodeToDisplayMap[app.Config.UILanguage]; exists {
+		uiLanguageSelect.SetSelected(displayName)
+	} else {
+		uiLanguageSelect.SetSelected("日本語") // Default fallback
+	}
 
 	// Whisper model selection (dropdown)
 	whisperModels := []string{
@@ -33,10 +46,47 @@ func (app *GUIApp) showConfigDialog() {
 	whisperModelSelect := widget.NewSelect(whisperModels, nil)
 	whisperModelSelect.SetSelected(app.Config.WhisperModel)
 
-	// Language selection (dropdown)
-	languages := []string{"ja", "en", "zh", "ko", "es", "fr", "de"}
-	languageSelect := widget.NewSelect(languages, nil)
-	languageSelect.SetSelected(app.Config.Language)
+	// Language selection (dropdown) with display names
+	languageOptions := []string{
+		"Auto（自動検出）",
+		"日本語",
+		"English", 
+		"中文（简体）",
+		"한국어",
+		"Español",
+		"Français", 
+		"Deutsch",
+		"Русский",
+		"العربية",
+		"हिन्दी",
+		"Italiano",
+		"Português",
+	}
+	
+	
+	// Reverse map for setting current selection
+	codeToDisplayMap := map[string]string{
+		"auto": "Auto（自動検出）",
+		"ja": "日本語",
+		"en": "English",
+		"zh": "中文（简体）",
+		"ko": "한국어", 
+		"es": "Español",
+		"fr": "Français",
+		"de": "Deutsch",
+		"ru": "Русский",
+		"ar": "العربية",
+		"hi": "हिन्दी",
+		"it": "Italiano",
+		"pt": "Português",
+	}
+	
+	languageSelect := widget.NewSelect(languageOptions, nil)
+	if displayName, exists := codeToDisplayMap[app.Config.Language]; exists {
+		languageSelect.SetSelected(displayName)
+	} else {
+		languageSelect.SetSelected("日本語") // Default fallback
+	}
 
 	scanIntervalEntry := widget.NewEntry()
 	scanIntervalEntry.SetText(strconv.Itoa(app.Config.ScanIntervalMinutes))
@@ -170,10 +220,45 @@ func (app *GUIApp) saveConfigFromDialog(whisperModel, language *widget.Select,
 	inputDir, outputDir, archiveDir *widget.Entry, llmEnabled *widget.Check,
 	llmAPIKey *widget.Entry, llmModel *widget.Select) {
 
+	// Language code mapping for saving to config
+	languageCodeMap := map[string]string{
+		"Auto（自動検出）": "auto",
+		"日本語": "ja",
+		"English": "en",
+		"中文（简体）": "zh", 
+		"한국어": "ko",
+		"Español": "es",
+		"Français": "fr",
+		"Deutsch": "de", 
+		"Русский": "ru",
+		"العربية": "ar",
+		"हिन्दी": "hi",
+		"Italiano": "it",
+		"Português": "pt",
+	}
+	
+	// UI Language code mapping
+	uiLanguageCodeMap := map[string]string{
+		"English": "en",
+		"日本語": "ja",
+	}
+
 	// Update configuration
 	app.Config.WhisperModel = whisperModel.Selected
-	app.Config.Language = language.Selected
-	app.Config.UILanguage = uiLanguage.Selected
+	
+	// Convert display name back to language code
+	if languageCode, exists := languageCodeMap[language.Selected]; exists {
+		app.Config.Language = languageCode
+	} else {
+		app.Config.Language = "ja" // Default fallback
+	}
+	
+	// Convert UI language display name back to code
+	if uiLangCode, exists := uiLanguageCodeMap[uiLanguage.Selected]; exists {
+		app.Config.UILanguage = uiLangCode
+	} else {
+		app.Config.UILanguage = "ja" // Default fallback
+	}
 
 	if interval, err := strconv.Atoi(scanInterval.Text); err == nil {
 		app.Config.ScanIntervalMinutes = interval
