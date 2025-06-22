@@ -18,16 +18,25 @@ import (
 // showConfigDialog displays the configuration dialog with tabbed interface
 func (app *GUIApp) showConfigDialog() {
 	// Create form entries for basic settings
-	whisperModelEntry := widget.NewEntry()
-	whisperModelEntry.SetText(app.Config.WhisperModel)
-
-	languageEntry := widget.NewEntry()
-	languageEntry.SetText(app.Config.Language)
-
+	// UI Language first - most important setting
 	uiLanguageSelect := widget.NewSelect([]string{"en", "ja"}, func(value string) {
 		// Handle UI language selection
 	})
 	uiLanguageSelect.SetSelected(app.Config.UILanguage)
+
+	// Whisper model selection (dropdown)
+	whisperModels := []string{
+		"tiny", "tiny.en", "base", "base.en",
+		"small", "small.en", "medium", "medium.en",
+		"large", "large-v1", "large-v2", "large-v3",
+	}
+	whisperModelSelect := widget.NewSelect(whisperModels, nil)
+	whisperModelSelect.SetSelected(app.Config.WhisperModel)
+
+	// Language selection (dropdown)
+	languages := []string{"ja", "en", "zh", "ko", "es", "fr", "de"}
+	languageSelect := widget.NewSelect(languages, nil)
+	languageSelect.SetSelected(app.Config.Language)
 
 	scanIntervalEntry := widget.NewEntry()
 	scanIntervalEntry.SetText(strconv.Itoa(app.Config.ScanIntervalMinutes))
@@ -37,11 +46,11 @@ func (app *GUIApp) showConfigDialog() {
 
 	// Basic settings form
 	basicForm := widget.NewForm(
-		widget.NewFormItem("Whisper Model", whisperModelEntry),
-		widget.NewFormItem("Language", languageEntry),
-		widget.NewFormItem("UI Language", uiLanguageSelect),
-		widget.NewFormItem("Scan Interval (min)", scanIntervalEntry),
-		widget.NewFormItem("Use Colors", colorsCheck),
+		widget.NewFormItem("言語", uiLanguageSelect),
+		widget.NewFormItem("Whisperモデル", whisperModelSelect),
+		widget.NewFormItem("音声認識言語", languageSelect),
+		widget.NewFormItem("スキャン間隔（分）", scanIntervalEntry),
+		widget.NewFormItem("色を使用", colorsCheck),
 	)
 
 	// Directory settings
@@ -55,9 +64,9 @@ func (app *GUIApp) showConfigDialog() {
 	archiveDirEntry.SetText(app.Config.ArchiveDir)
 
 	dirForm := widget.NewForm(
-		widget.NewFormItem("Input Directory", inputDirEntry),
-		widget.NewFormItem("Output Directory", outputDirEntry),
-		widget.NewFormItem("Archive Directory", archiveDirEntry),
+		widget.NewFormItem("入力フォルダ", inputDirEntry),
+		widget.NewFormItem("出力フォルダ", outputDirEntry),
+		widget.NewFormItem("アーカイブフォルダ", archiveDirEntry),
 	)
 
 	// LLM settings
@@ -71,9 +80,9 @@ func (app *GUIApp) showConfigDialog() {
 	llmModelSelect.SetSelected(app.Config.LLMModel)
 
 	llmForm := widget.NewForm(
-		widget.NewFormItem("Enable LLM Summary", llmEnabledCheck),
-		widget.NewFormItem("API Key", llmAPIKeyEntry),
-		widget.NewFormItem("Model", llmModelSelect),
+		widget.NewFormItem("AI要約を有効化", llmEnabledCheck),
+		widget.NewFormItem("APIキー", llmAPIKeyEntry),
+		widget.NewFormItem("モデル", llmModelSelect),
 	)
 
 	// Recording settings
@@ -81,24 +90,24 @@ func (app *GUIApp) showConfigDialog() {
 
 	// Create tabs
 	tabs := container.NewAppTabs(
-		container.NewTabItem("Basic", basicForm),
-		container.NewTabItem("Directories", dirForm),
-		container.NewTabItem("LLM", llmForm),
-		container.NewTabItem("Recording", recordingForm),
+		container.NewTabItem("基本設定", basicForm),
+		container.NewTabItem("フォルダ設定", dirForm),
+		container.NewTabItem("AI要約", llmForm),
+		container.NewTabItem("録音設定", recordingForm),
 	)
 
 	// Create dialog content
 	content := container.NewVBox(
-		widget.NewLabel("KoeMoji-Go Configuration"),
+		widget.NewLabel("KoeMoji-Go 設定"),
 		tabs,
 	)
 
 	// Create dialog with Save/Cancel buttons
-	configDialog := dialog.NewCustomConfirm("Settings", "Save", "Cancel", content,
+	configDialog := dialog.NewCustomConfirm("設定", "保存", "キャンセル", content,
 		func(save bool) {
 			if save {
 				// Save configuration changes only when Save is clicked
-				app.saveConfigFromDialog(whisperModelEntry, languageEntry, uiLanguageSelect,
+				app.saveConfigFromDialog(whisperModelSelect, languageSelect, uiLanguageSelect,
 					scanIntervalEntry, colorsCheck, inputDirEntry, outputDirEntry,
 					archiveDirEntry, llmEnabledCheck, llmAPIKeyEntry, llmModelSelect)
 			}
@@ -151,19 +160,19 @@ func (app *GUIApp) createRecordingForm() *widget.Form {
 	app.recordingDeviceMap = deviceMap
 
 	return widget.NewForm(
-		widget.NewFormItem("Recording Device", deviceSelect),
+		widget.NewFormItem("録音デバイス", deviceSelect),
 	)
 }
 
 // saveConfigFromDialog saves the configuration from dialog form entries
-func (app *GUIApp) saveConfigFromDialog(whisperModel, language *widget.Entry,
+func (app *GUIApp) saveConfigFromDialog(whisperModel, language *widget.Select,
 	uiLanguage *widget.Select, scanInterval *widget.Entry, useColors *widget.Check,
 	inputDir, outputDir, archiveDir *widget.Entry, llmEnabled *widget.Check,
 	llmAPIKey *widget.Entry, llmModel *widget.Select) {
 
 	// Update configuration
-	app.Config.WhisperModel = whisperModel.Text
-	app.Config.Language = language.Text
+	app.Config.WhisperModel = whisperModel.Selected
+	app.Config.Language = language.Selected
 	app.Config.UILanguage = uiLanguage.Selected
 
 	if interval, err := strconv.Atoi(scanInterval.Text); err == nil {
