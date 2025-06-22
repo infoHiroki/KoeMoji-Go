@@ -170,11 +170,12 @@ func TestConfigureComputeType(t *testing.T) {
 		changed  bool
 	}{
 		{"Select int8", "1", "int8", true},
-		{"Select int16", "2", "int16", true},
-		{"Select float16", "3", "float16", true},
-		{"Select float32", "4", "float32", true},
+		{"Select int8_float16", "2", "int8_float16", true},
+		{"Select int16", "3", "int16", true},
+		{"Select float16", "4", "float16", true},
+		{"Select float32", "5", "float32", true},
 		{"Keep current (empty)", "", "int8", false},
-		{"Invalid input", "5", "int8", false},
+		{"Invalid input", "6", "int8", false},
 		{"Invalid input (text)", "gpu", "int8", false},
 	}
 
@@ -229,8 +230,8 @@ func TestConfigureOutputFormat(t *testing.T) {
 		changed  bool
 	}{
 		{"Select txt", "1", "txt", true},
-		{"Select srt", "2", "srt", true},
-		{"Select vtt", "3", "vtt", true},
+		{"Select vtt", "2", "vtt", true},
+		{"Select srt", "3", "srt", true},
 		{"Select tsv", "4", "tsv", true},
 		{"Select json", "5", "json", true},
 		{"Keep current (empty)", "", "txt", false},
@@ -518,14 +519,5 @@ func TestResetToDefaults(t *testing.T) {
 }
 
 // Test helper functions
-func TestSelectFolder(t *testing.T) {
-	// Note: selectFolder uses system dialog which we can't test
-	// We can only test the fallback manual input mode
-
-	folder, err := selectFolder("Select test folder")
-
-	// In test environment, selectFolder will likely fail due to no GUI
-	// But we can verify the function exists and returns proper types
-	assert.NotNil(t, err)   // Expect error in headless environment
-	assert.Empty(t, folder) // Expect empty result on error
-}
+// NOTE: selectFolder() uses system dialogs which cannot be tested in automated environments
+// This function should be tested manually or through UI automation tools

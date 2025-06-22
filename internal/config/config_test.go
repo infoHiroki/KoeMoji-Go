@@ -175,7 +175,7 @@ func TestConfigValidation_EdgeCases(t *testing.T) {
 	assert.LessOrEqual(t, config.MaxCpuPercent, 100)
 
 	// Test output format
-	validFormats := []string{"txt", "srt", "vtt", "tsv", "json"}
+	validFormats := []string{"txt", "vtt", "srt", "tsv", "json"}
 	for _, format := range validFormats {
 		config.OutputFormat = format
 		assert.NotEmpty(t, config.OutputFormat)
@@ -336,7 +336,7 @@ func TestConfigurationFunctions(t *testing.T) {
 	})
 
 	t.Run("ValidateComputeType", func(t *testing.T) {
-		validTypes := []string{"int8", "int16", "float16", "float32"}
+		validTypes := []string{"int8", "int8_float16", "int16", "float16", "float32"}
 		for _, computeType := range validTypes {
 			config.ComputeType = computeType
 			assert.Contains(t, validTypes, config.ComputeType)
@@ -344,7 +344,7 @@ func TestConfigurationFunctions(t *testing.T) {
 	})
 
 	t.Run("ValidateOutputFormat", func(t *testing.T) {
-		validFormats := []string{"txt", "srt", "vtt", "tsv", "json"}
+		validFormats := []string{"txt", "vtt", "srt", "tsv", "json"}
 		for _, format := range validFormats {
 			config.OutputFormat = format
 			assert.Contains(t, validFormats, config.OutputFormat)

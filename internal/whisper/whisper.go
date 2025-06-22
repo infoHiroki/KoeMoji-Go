@@ -43,10 +43,23 @@ func getWhisperCommand() string {
 }
 
 func isFasterWhisperAvailable() bool {
-	cmd := exec.Command(getWhisperCommand(), "--help")
+	whisperCmd := getWhisperCommand()
+	// If we fall back to the command name (not an absolute path), check if it's in PATH
+	if whisperCmd == "whisper-ctranslate2" {
+		if _, err := exec.LookPath(whisperCmd); err != nil {
+			return false
+		}
+	}
+	
+	cmd := exec.Command(whisperCmd, "--help")
 	cmd.Stdout = nil
 	cmd.Stderr = nil
 	return cmd.Run() == nil
+}
+
+// IsFasterWhisperAvailableForTesting exports the availability check for testing
+func IsFasterWhisperAvailableForTesting() bool {
+	return isFasterWhisperAvailable()
 }
 
 func installFasterWhisper(log *log.Logger, logBuffer *[]logger.LogEntry, logMutex *sync.RWMutex) error {
@@ -68,10 +81,29 @@ func TranscribeAudio(config *config.Config, log *log.Logger, logBuffer *[]logger
 		msg := ui.GetMessages(config)
 		return fmt.Errorf(msg.InvalidPath, err)
 	}
-	inputDir, _ := filepath.Abs(config.InputDir)
+	inputDir, err := filepath.Abs(config.InputDir)
+	if err != nil {
+		msg := ui.GetMessages(config)
+		return fmt.Errorf(msg.InvalidPath, err)
+	}
 	if !strings.HasPrefix(absPath, inputDir+string(os.PathSeparator)) {
 		msg := ui.GetMessages(config)
 		return fmt.Errorf(msg.InvalidPath, inputFile)
+	}
+
+	// 入力ファイルの存在チェック
+	if _, err := os.Stat(inputFile); os.IsNotExist(err) {
+		return fmt.Errorf("input file does not exist: %s", inputFile)
+	}
+
+	// 入力ディレクトリの存在チェック
+	if _, err := os.Stat(config.InputDir); os.IsNotExist(err) {
+		return fmt.Errorf("input directory does not exist: %s", config.InputDir)
+	}
+
+	// 出力ディレクトリの作成確認
+	if err := os.MkdirAll(config.OutputDir, 0755); err != nil {
+		return fmt.Errorf("failed to create output directory: %w", err)
 	}
 
 	whisperCmd := getWhisperCommand()

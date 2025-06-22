@@ -121,14 +121,19 @@ func TestGetWhisperCommand_PathResolution(t *testing.T) {
 }
 
 func TestIsFasterWhisperAvailable_MockEnvironment(t *testing.T) {
-	// Save original PATH
+	// Save original PATH and HOME
 	originalPath := os.Getenv("PATH")
-	defer os.Setenv("PATH", originalPath)
+	originalHome := os.Getenv("HOME")
+	defer func() {
+		os.Setenv("PATH", originalPath)
+		os.Setenv("HOME", originalHome)
+	}()
 
-	// Clear PATH to simulate missing whisper
+	// Clear PATH and set HOME to non-existent to simulate missing whisper
 	os.Setenv("PATH", "")
+	os.Setenv("HOME", "/tmp/nonexistent")
 
-	available := isFasterWhisperAvailable()
+	available := IsFasterWhisperAvailableForTesting()
 	assert.False(t, available)
 }
 
