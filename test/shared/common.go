@@ -1,4 +1,4 @@
-package shared
+package testutil
 
 import (
 	"log"
@@ -8,7 +8,7 @@ import (
 	"testing"
 
 	"github.com/hirokitakamura/koemoji-go/internal/config"
-	"github.com/hirokitakamura/koemoji-go/internal/logger"
+	customLogger "github.com/hirokitakamura/koemoji-go/internal/logger"
 )
 
 // CreateTestConfig creates a basic test configuration
@@ -43,9 +43,9 @@ func CreateTestConfig(t *testing.T) *config.Config {
 }
 
 // CreateTestLogger creates a test logger with buffer
-func CreateTestLogger() (*log.Logger, *[]logger.LogEntry, *sync.RWMutex) {
+func CreateTestLogger() (*log.Logger, *[]customLogger.LogEntry, *sync.RWMutex) {
 	testLogger := log.New(os.Stdout, "", log.LstdFlags)
-	logBuffer := &[]logger.LogEntry{}
+	logBuffer := &[]customLogger.LogEntry{}
 	logMutex := &sync.RWMutex{}
 	return testLogger, logBuffer, logMutex
 }
@@ -59,15 +59,6 @@ func CreateTestDirectories(t *testing.T, dirs ...string) {
 		if err != nil {
 			t.Fatalf("Failed to create directory %s: %v", dir, err)
 		}
-	}
-}
-
-// AssertFileExists checks if a file exists
-func AssertFileExists(t *testing.T, path string) {
-	t.Helper()
-	
-	if _, err := os.Stat(path); os.IsNotExist(err) {
-		t.Errorf("Expected file %s to exist, but it doesn't", path)
 	}
 }
 

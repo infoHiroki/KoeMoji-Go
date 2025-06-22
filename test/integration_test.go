@@ -1,5 +1,5 @@
-// Package integration provides end-to-end integration tests for KoeMoji-Go
-package integration
+// Package integration_test provides end-to-end integration tests for KoeMoji-Go
+package integration_test
 
 import (
 	"context"
@@ -14,7 +14,7 @@ import (
 	"github.com/hirokitakamura/koemoji-go/internal/logger"
 	"github.com/hirokitakamura/koemoji-go/internal/processor"
 	"github.com/hirokitakamura/koemoji-go/internal/recorder"
-	"github.com/hirokitakamura/koemoji-go/internal/testutil"
+	testutil "github.com/hirokitakamura/koemoji-go/test/shared"
 	"github.com/hirokitakamura/koemoji-go/internal/whisper"
 )
 
@@ -108,7 +108,7 @@ func TestRecordingToTranscriptionWorkflow(t *testing.T) {
 	logBuffer := logger.NewLogger()
 
 	// Initialize recorder (this might fail if no audio devices available)
-	rec, err := recorder.NewRecorder(env.Config, logBuffer)
+	rec, err := recorder.NewRecorder()
 	if err != nil {
 		t.Skipf("Skipping recording test, no audio devices available: %v", err)
 	}
@@ -117,7 +117,7 @@ func TestRecordingToTranscriptionWorkflow(t *testing.T) {
 	reporter.Step("Initialized recorder")
 
 	// Test recording start/stop (very short recording)
-	if err := rec.StartRecording(); err != nil {
+	if err := rec.Start(); err != nil {
 		t.Fatalf("Failed to start recording: %v", err)
 	}
 	reporter.Step("Started recording")
@@ -125,9 +125,14 @@ func TestRecordingToTranscriptionWorkflow(t *testing.T) {
 	// Record for a very short time
 	time.Sleep(100 * time.Millisecond)
 
-	recordingFile, err := rec.StopRecording()
-	if err != nil {
+	if err := rec.Stop(); err != nil {
 		t.Fatalf("Failed to stop recording: %v", err)
+	}
+	
+	// Save to a test file
+	recordingFile := filepath.Join(env.InputDir, "test_recording.wav")
+	if err := rec.SaveToFile(recordingFile); err != nil {
+		t.Fatalf("Failed to save recording: %v", err)
 	}
 	reporter.Step(fmt.Sprintf("Stopped recording, file: %s", recordingFile))
 
@@ -293,14 +298,14 @@ func TestConfigurationChanges(t *testing.T) {
 		env.Config.WhisperModel = model
 		
 		// Save updated config
-		if err := config.SaveConfig(env.ConfigFile, env.Config); err != nil {
+		if err := config.SaveConfig(env.Config, env.ConfigFile); err != nil {
 			t.Fatalf("Failed to save config with model %s: %v", model, err)
 		}
 		
 		// Load config and verify
-		loadedConfig, err := config.LoadConfig(env.ConfigFile)
-		if err != nil {
-			t.Fatalf("Failed to load config: %v", err)
+		loadedConfig := config.LoadConfig(env.ConfigFile, nil)
+		if loadedConfig == nil {
+			t.Fatalf("Failed to load config")
 		}
 		
 		if loadedConfig.WhisperModel != model {
@@ -317,13 +322,13 @@ func TestConfigurationChanges(t *testing.T) {
 		env.Config.Language = lang
 		env.Config.UILanguage = lang
 		
-		if err := config.SaveConfig(env.ConfigFile, env.Config); err != nil {
+		if err := config.SaveConfig(env.Config, env.ConfigFile); err != nil {
 			t.Fatalf("Failed to save config with language %s: %v", lang, err)
 		}
 		
-		loadedConfig, err := config.LoadConfig(env.ConfigFile)
-		if err != nil {
-			t.Fatalf("Failed to load config: %v", err)
+		loadedConfig := config.LoadConfig(env.ConfigFile, nil)
+		if loadedConfig == nil {
+			t.Fatalf("Failed to load config")
 		}
 		
 		if loadedConfig.Language != lang || loadedConfig.UILanguage != lang {

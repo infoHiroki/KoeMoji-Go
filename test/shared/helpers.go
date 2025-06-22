@@ -16,7 +16,7 @@ import (
 	"time"
 
 	"github.com/hirokitakamura/koemoji-go/internal/config"
-	"github.com/hirokitakamura/koemoji-go/internal/logger"
+	customLogger "github.com/hirokitakamura/koemoji-go/internal/logger"
 	"github.com/stretchr/testify/require"
 )
 
@@ -25,7 +25,7 @@ type TestContext struct {
 	TempDir    string
 	Config     *config.Config
 	Logger     *log.Logger
-	LogBuffer  []logger.LogEntry
+	LogBuffer  []customLogger.LogEntry
 	LogMutex   sync.RWMutex
 	Cleanup    func()
 }
@@ -59,7 +59,7 @@ func NewTestContext(t *testing.T) *TestContext {
 		TempDir:   tempDir,
 		Config:    cfg,
 		Logger:    logger,
-		LogBuffer: make([]logger.LogEntry, 0),
+		LogBuffer: make([]customLogger.LogEntry, 0),
 		LogMutex:  sync.RWMutex{},
 		Cleanup:   func() {}, // No-op cleanup by default
 	}

@@ -50,8 +50,8 @@ func NewTestEnvironment(t *testing.T) *TestEnvironment {
 		WhisperModel:       "tiny",
 		Language:           "ja",
 		UILanguage:         "ja",
-		ScanIntervalMins:   1,
-		MaxCPUPercent:      50, // Lower for tests
+		ScanIntervalMinutes: 1,
+		MaxCpuPercent:       50, // Lower for tests
 		ComputeType:        "int8",
 		UseColors:          false, // Disable for consistent test output
 		OutputFormat:       "txt",
@@ -216,8 +216,8 @@ func saveConfig(filename string, cfg *config.Config) error {
 	return os.WriteFile(filename, data, 0644)
 }
 
-// MockHTTPServer provides a mock HTTP server for LLM testing
-type MockHTTPServer struct {
+// MockLLMServer provides a mock HTTP server for LLM testing
+type MockLLMServer struct {
 	Server interface{} // Will be httptest.Server
 	URL    string
 }
@@ -278,8 +278,8 @@ func (m *BenchmarkMetrics) SetProcessSpeed(fileSize int64) {
 	}
 }
 
-// CreateLargeTestFile creates a large test file for performance testing
-func CreateLargeTestFile(t *testing.T, dir, filename string, sizeMB int) string {
+// CreateLargeTestFileForBenchmark creates a large test file for performance testing
+func CreateLargeTestFileForBenchmark(t *testing.T, dir, filename string, sizeMB int) string {
 	t.Helper()
 
 	filePath := filepath.Join(dir, filename)
@@ -296,8 +296,8 @@ func CreateLargeTestFile(t *testing.T, dir, filename string, sizeMB int) string 
 	return filePath
 }
 
-// SkipIfShort skips test if running in short mode
-func SkipIfShort(t *testing.T, reason string) {
+// SkipIfShortForBenchmark skips test if running in short mode
+func SkipIfShortForBenchmark(t *testing.T, reason string) {
 	if testing.Short() {
 		t.Skipf("Skipping in short mode: %s", reason)
 	}

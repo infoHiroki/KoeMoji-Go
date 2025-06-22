@@ -37,7 +37,6 @@ type MemoryStats struct {
 	TotalAllocMB float64
 	SysMB        float64
 	NumGC        uint32
-	GCCPUPercent float64
 }
 
 // GetMemoryStats returns current memory statistics
@@ -50,7 +49,6 @@ func GetMemoryStats() MemoryStats {
 		TotalAllocMB: bToMB(m.TotalAlloc),
 		SysMB:        bToMB(m.Sys),
 		NumGC:        m.NumGC,
-		GCCPUPercent: m.GCCPUPercent,
 	}
 }
 
@@ -151,7 +149,7 @@ func (br *BenchmarkRunner) printResults() {
 	fmt.Printf("  End: %.2f MB\n", endMem.AllocMB)
 	fmt.Printf("  Peak: %.2f MB\n", endMem.SysMB)
 	fmt.Printf("  Total Allocated: %.2f MB\n", endMem.TotalAllocMB)
-	fmt.Printf("  GC Runs: %d (%.2f%% CPU)\n", endMem.NumGC, endMem.GCCPUPercent)
+	fmt.Printf("  GC Runs: %d\n", endMem.NumGC)
 	fmt.Printf("========================\n")
 }
 
