@@ -318,12 +318,16 @@ func TestErrorHandling(t *testing.T) {
 		audioFile := testdata.CreateTestAudioFile(t, config.InputDir, "test.wav")
 
 		err := TranscribeAudio(config, logger, logBuffer, logMutex, false, audioFile)
-		// Will fail, but not due to security validation
+		// Should fail due to invalid output directory
+		assert.Error(t, err)
+		
+		// Error should be about directory creation, not security validation
 		if err != nil {
 			errorMsg := strings.ToLower(err.Error())
-			assert.False(t, strings.Contains(errorMsg, "invalid") ||
-				strings.Contains(errorMsg, "無効") ||
-				strings.Contains(err.Error(), "ファイルパス"))
+			// Check that it's a directory creation error, not security error
+			assert.True(t, strings.Contains(errorMsg, "create") || 
+				strings.Contains(errorMsg, "directory") ||
+				strings.Contains(errorMsg, "permission"))
 		}
 	})
 }

@@ -140,3 +140,77 @@ go tool cover -html=coverage.out -o coverage.html
 6. **Add benchmarks** for performance-critical code
 7. **Keep tests deterministic** and independent
 8. **Use descriptive test names** that explain the scenario
+
+## Future Test Expansion Tasks
+
+### **High Priority (Missing Critical Coverage)**
+
+#### **1. GUI Package Testing**
+- **Location**: `internal/gui/`
+- **Components**: `app.go`, `window.go`, `components.go`, `dialogs.go`
+- **Challenge**: Fyne GUI testing requires UI automation tools
+- **Approach**: Mock Fyne components or use headless testing
+- **Impact**: 0% → 40% coverage target
+
+#### **2. Main Application Testing**
+- **Location**: `cmd/koemoji-go/main.go`
+- **Components**: CLI argument parsing, application startup
+- **Approach**: Integration tests with temporary configs
+- **Impact**: 0% → 60% coverage target
+
+#### **3. Terminal UI Testing**
+- **Location**: `internal/ui/`
+- **Components**: Real-time terminal interface, message handling
+- **Challenge**: Terminal UI simulation
+- **Approach**: Mock terminal interface or capture output
+- **Impact**: 0% → 40% coverage target
+
+### **Medium Priority (Enhanced Coverage)**
+
+#### **4. WAV Processing Testing**
+- **Location**: `internal/recorder/wav.go`
+- **Components**: WAV file handling, audio format validation
+- **Approach**: Generate test WAV files programmatically
+
+#### **5. Cross-Platform Testing**
+- **Scope**: Windows/macOS specific functionality
+- **Components**: File dialogs, audio device detection
+- **Approach**: Platform-specific test builds
+
+#### **6. End-to-End Workflow Testing**
+- **Scope**: Complete application workflows
+- **Components**: Record → Transcribe → Summarize → Archive
+- **Approach**: Integration tests with real audio samples
+
+### **Implementation Guidelines**
+
+#### **For GUI Testing**
+```go
+// Example approach for Fyne testing
+func TestGUIComponents(t *testing.T) {
+    // Use headless mode or mock Fyne objects
+    app := test.NewApp()
+    defer app.Quit()
+    
+    window := app.NewWindow("Test")
+    // Test component creation and interaction
+}
+```
+
+#### **For Main Application Testing**
+```go
+// Example approach for CLI testing
+func TestMainApplication(t *testing.T) {
+    // Test with various command line arguments
+    args := []string{"--gui", "--config", tempConfigFile}
+    // Execute and validate behavior
+}
+```
+
+### **Estimated Effort**
+- **GUI Testing**: 2-3 days (learning Fyne test patterns)
+- **Main App Testing**: 1 day (CLI integration tests)  
+- **UI Testing**: 1-2 days (terminal simulation)
+- **Total**: ~1 week for comprehensive coverage
+
+These tasks should be tackled when time permits and are not blocking current development.
