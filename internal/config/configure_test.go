@@ -84,8 +84,8 @@ func TestConfigureUILanguage(t *testing.T) {
 		expected string
 		changed  bool
 	}{
-		{"Select Japanese", "1", "ja", true},
-		{"Select English", "2", "en", true},
+		{"Select English", "1", "en", true},
+		{"Select Japanese", "2", "ja", true},
 		{"Keep current (empty)", "", "ja", false},
 		{"Invalid input", "3", "ja", false},
 		{"Invalid input (text)", "xyz", "ja", false},
