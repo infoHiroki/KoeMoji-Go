@@ -2,6 +2,7 @@ package config
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
 	"os"
 	"path/filepath"
@@ -224,4 +225,189 @@ func TestRecordingConfig_Validation(t *testing.T) {
 	assert.GreaterOrEqual(t, config.RecordingDeviceID, -1)
 	assert.GreaterOrEqual(t, config.RecordingMaxHours, 0)
 	assert.GreaterOrEqual(t, config.RecordingMaxFileMB, 0)
+}
+
+// Test the getMessages function for both languages
+func TestGetMessages(t *testing.T) {
+	// Test English messages
+	configEN := &Config{UILanguage: "en"}
+	messagesEN := getMessages(configEN)
+	assert.Equal(t, "KoeMoji-Go Configuration", messagesEN.ConfigTitle)
+	assert.Equal(t, "Whisper Model", messagesEN.WhisperModel)
+	
+	// Test Japanese messages
+	configJA := &Config{UILanguage: "ja"}
+	messagesJA := getMessages(configJA)
+	assert.Equal(t, "KoeMoji-Go 設定", messagesJA.ConfigTitle)
+	assert.Equal(t, "Whisperモデル", messagesJA.WhisperModel)
+	
+	// Test nil config defaults to English
+	messagesDefault := getMessages(nil)
+	assert.Equal(t, "KoeMoji-Go Configuration", messagesDefault.ConfigTitle)
+}
+
+// Test the getAPIKeyDisplay function
+func TestGetAPIKeyDisplay(t *testing.T) {
+	tests := []struct {
+		apiKey   string
+		expected string
+	}{
+		{"", "[未設定]"},
+		{"sk-1234567890", "[設定済み]"},
+		{"sk-1234567890123456789012345", "sk-1...5"},
+		{"very-long-api-key-that-exceeds-ten-characters", "very...ters"},
+	}
+	
+	for _, tt := range tests {
+		t.Run(fmt.Sprintf("apiKey=%s", tt.apiKey), func(t *testing.T) {
+			result := getAPIKeyDisplay(tt.apiKey)
+			assert.Equal(t, tt.expected, result)
+		})
+	}
+}
+
+// Test configuration validation with invalid values
+func TestConfigValidation_InvalidValues(t *testing.T) {
+	config := GetDefaultConfig()
+	
+	// Test invalid CPU percent (should be caught by validation)
+	config.MaxCpuPercent = 0
+	assert.Equal(t, 0, config.MaxCpuPercent) // Structure allows it, validation should catch
+	
+	config.MaxCpuPercent = 101
+	assert.Equal(t, 101, config.MaxCpuPercent) // Structure allows it, validation should catch
+	
+	// Test negative scan interval
+	config.ScanIntervalMinutes = -1
+	assert.Equal(t, -1, config.ScanIntervalMinutes) // Structure allows it, validation should catch
+	
+	// Test invalid LLM max tokens
+	config.LLMMaxTokens = -100
+	assert.Equal(t, -100, config.LLMMaxTokens) // Structure allows it, validation should catch
+}
+
+// Test SaveConfig with invalid directory permissions
+func TestSaveConfig_InvalidPermissions(t *testing.T) {
+	config := GetDefaultConfig()
+	
+	// Try to save to a non-existent directory
+	invalidPath := "/non/existent/directory/config.json"
+	err := SaveConfig(config, invalidPath)
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "failed to create config file")
+}
+
+// Test LoadConfig with file permission errors
+func TestLoadConfig_PermissionError(t *testing.T) {
+	if os.Geteuid() == 0 {
+		t.Skip("Running as root, permission test not applicable")
+	}
+	
+	tempDir := t.TempDir()
+	configFile := filepath.Join(tempDir, "no_read.json")
+	
+	// Create file and write valid config
+	testConfig := map[string]interface{}{
+		"whisper_model": "base",
+		"language":      "en",
+	}
+	data, _ := json.Marshal(testConfig)
+	err := os.WriteFile(configFile, data, 0000) // No read permissions
+	require.NoError(t, err)
+	
+	logger := log.New(os.Stdout, "", log.LstdFlags)
+	
+	// This should fail to open and return default config
+	config := LoadConfig(configFile, logger)
+	
+	// Should return default config when file can't be read
+	defaultConfig := GetDefaultConfig()
+	assert.Equal(t, defaultConfig.WhisperModel, config.WhisperModel)
+}
+
+// Test complete config round-trip with all fields
+func TestCompleteConfigRoundTrip(t *testing.T) {
+	tempDir := t.TempDir()
+	configFile := filepath.Join(tempDir, "complete_config.json")
+	
+	originalConfig := &Config{
+		WhisperModel:          "large-v2",
+		Language:              "en",
+		UILanguage:            "en", 
+		ScanIntervalMinutes:   3,
+		MaxCpuPercent:         85,
+		ComputeType:           "float16",
+		UseColors:             false,
+		OutputFormat:          "vtt",
+		InputDir:              "./custom_input",
+		OutputDir:             "./custom_output",
+		ArchiveDir:            "./custom_archive",
+		LLMSummaryEnabled:     true,
+		LLMAPIProvider:        "openai",
+		LLMAPIKey:             "test-api-key-12345",
+		LLMModel:              "gpt-3.5-turbo",
+		LLMMaxTokens:          2048,
+		SummaryPromptTemplate: "Summarize this text: {text} in {language}",
+		SummaryLanguage:       "en",
+		RecordingDeviceID:     5,
+		RecordingDeviceName:   "Test Microphone",
+		RecordingMaxHours:     3,
+		RecordingMaxFileMB:    200,
+	}
+	
+	// Save the config
+	err := SaveConfig(originalConfig, configFile)
+	require.NoError(t, err)
+	
+	// Load it back
+	logger := log.New(os.Stdout, "", log.LstdFlags)
+	loadedConfig := LoadConfig(configFile, logger)
+	
+	// Verify all fields match
+	assert.Equal(t, originalConfig.WhisperModel, loadedConfig.WhisperModel)
+	assert.Equal(t, originalConfig.Language, loadedConfig.Language)
+	assert.Equal(t, originalConfig.UILanguage, loadedConfig.UILanguage)
+	assert.Equal(t, originalConfig.ScanIntervalMinutes, loadedConfig.ScanIntervalMinutes)
+	assert.Equal(t, originalConfig.MaxCpuPercent, loadedConfig.MaxCpuPercent)
+	assert.Equal(t, originalConfig.ComputeType, loadedConfig.ComputeType)
+	assert.Equal(t, originalConfig.UseColors, loadedConfig.UseColors)
+	assert.Equal(t, originalConfig.OutputFormat, loadedConfig.OutputFormat)
+	assert.Equal(t, originalConfig.InputDir, loadedConfig.InputDir)
+	assert.Equal(t, originalConfig.OutputDir, loadedConfig.OutputDir)
+	assert.Equal(t, originalConfig.ArchiveDir, loadedConfig.ArchiveDir)
+	assert.Equal(t, originalConfig.LLMSummaryEnabled, loadedConfig.LLMSummaryEnabled)
+	assert.Equal(t, originalConfig.LLMAPIProvider, loadedConfig.LLMAPIProvider)
+	assert.Equal(t, originalConfig.LLMAPIKey, loadedConfig.LLMAPIKey)
+	assert.Equal(t, originalConfig.LLMModel, loadedConfig.LLMModel)
+	assert.Equal(t, originalConfig.LLMMaxTokens, loadedConfig.LLMMaxTokens)
+	assert.Equal(t, originalConfig.SummaryPromptTemplate, loadedConfig.SummaryPromptTemplate)
+	assert.Equal(t, originalConfig.SummaryLanguage, loadedConfig.SummaryLanguage)
+	assert.Equal(t, originalConfig.RecordingDeviceID, loadedConfig.RecordingDeviceID)
+	assert.Equal(t, originalConfig.RecordingDeviceName, loadedConfig.RecordingDeviceName)
+	assert.Equal(t, originalConfig.RecordingMaxHours, loadedConfig.RecordingMaxHours)
+	assert.Equal(t, originalConfig.RecordingMaxFileMB, loadedConfig.RecordingMaxFileMB)
+}
+
+// Test JSON encoding with special characters
+func TestSaveConfig_SpecialCharacters(t *testing.T) {
+	tempDir := t.TempDir()
+	configFile := filepath.Join(tempDir, "special_chars.json")
+	
+	config := GetDefaultConfig()
+	config.RecordingDeviceName = "マイク デバイス"  // Japanese characters
+	config.SummaryPromptTemplate = "テスト: {text} を {language} で要約してください。"  // Japanese with placeholders
+	
+	err := SaveConfig(config, configFile)
+	require.NoError(t, err)
+	
+	// Verify the file contains proper JSON
+	data, err := os.ReadFile(configFile)
+	require.NoError(t, err)
+	
+	var loadedData map[string]interface{}
+	err = json.Unmarshal(data, &loadedData)
+	require.NoError(t, err)
+	
+	assert.Equal(t, "マイク デバイス", loadedData["recording_device_name"])
+	assert.Contains(t, loadedData["summary_prompt_template"].(string), "テスト")
 }

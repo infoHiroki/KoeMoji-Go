@@ -71,17 +71,17 @@
 				
 				<option value="file7">github.com/hirokitakamura/koemoji-go/internal/llm/llm.go (17.6%)</option>
 				
-				<option value="file8">github.com/hirokitakamura/koemoji-go/internal/logger/logger.go (0.0%)</option>
+				<option value="file8">github.com/hirokitakamura/koemoji-go/internal/logger/logger.go (100.0%)</option>
 				
-				<option value="file9">github.com/hirokitakamura/koemoji-go/internal/processor/processor.go (2.3%)</option>
+				<option value="file9">github.com/hirokitakamura/koemoji-go/internal/processor/processor.go (21.6%)</option>
 				
 				<option value="file10">github.com/hirokitakamura/koemoji-go/internal/recorder/recorder.go (45.1%)</option>
 				
 				<option value="file11">github.com/hirokitakamura/koemoji-go/internal/recorder/wav.go (0.0%)</option>
 				
-				<option value="file12">github.com/hirokitakamura/koemoji-go/internal/ui/messages.go (0.0%)</option>
+				<option value="file12">github.com/hirokitakamura/koemoji-go/internal/ui/messages.go (66.7%)</option>
 				
-				<option value="file13">github.com/hirokitakamura/koemoji-go/internal/ui/ui.go (0.0%)</option>
+				<option value="file13">github.com/hirokitakamura/koemoji-go/internal/ui/ui.go (5.1%)</option>
 				
 				<option value="file14">github.com/hirokitakamura/koemoji-go/internal/whisper/whisper.go (7.7%)</option>
 				
@@ -1567,6 +1567,9 @@ func configureRecordingDevice(config *Config, reader *bufio.Reader) bool <span c
 
 import (
         "context"
+        "io"
+        "log"
+        "os"
         "sync"
         "time"
 
@@ -1587,6 +1590,7 @@ type GUIApp struct {
         debugMode      bool
         processedFiles map[string]bool
         mu             sync.Mutex
+        logger         *log.Logger
 
         // UI related fields
         startTime    time.Time
@@ -1664,16 +1668,21 @@ func (app *GUIApp) loadConfig() <span class="cov0" title="0">{
         app.initLogger()
 
         // Load configuration
-        cfg := config.LoadConfig(app.configPath, nil) // GUI mode doesn't need file logger
+        cfg := config.LoadConfig(app.configPath, app.logger) // Use logger for consistent behavior
         app.Config = cfg
 }</span>
 
-// initLogger initializes the logger (simplified for GUI mode)
+// initLogger initializes the logger (consistent with TUI mode)
 func (app *GUIApp) initLogger() <span class="cov0" title="0">{
-        // For GUI mode, we'll use in-memory logging only
-        // The log buffer will be displayed in the GUI
-        logger.LogInfo(nil, &amp;app.logBuffer, &amp;app.logMutex, "KoeMoji-Go v1.3.0 started")
-}</span>
+        logFile, err := os.OpenFile("koemoji.log", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
+        if err != nil </span><span class="cov0" title="0">{
+                log.Fatalf("Failed to open log file: %v", err)
+        }</span>
+
+        // Only timestamps for file logging, no prefix for console
+        <span class="cov0" title="0">app.logger = log.New(io.MultiWriter(logFile), "", log.LstdFlags)
+        logger.LogInfo(app.logger, &amp;app.logBuffer, &amp;app.logMutex, "KoeMoji-Go v1.3.0 started (GUI mode)")</span>
+}
 
 // ForceCleanup performs immediate resource cleanup for application exit
 func (app *GUIApp) ForceCleanup() <span class="cov0" title="0">{
@@ -1689,7 +1698,7 @@ func (app *GUIApp) ForceCleanup() <span class="cov0" title="0">{
         }</span>
 
         // Log cleanup action
-        <span class="cov0" title="0">logger.LogInfo(nil, &amp;app.logBuffer, &amp;app.logMutex, "Application resources cleaned up")</span>
+        <span class="cov0" title="0">logger.LogInfo(app.logger, &amp;app.logBuffer, &amp;app.logMutex, "Application resources cleaned up")</span>
 }
 
 // isUIReady checks if all essential UI components are initialized
@@ -1739,7 +1748,7 @@ func (app *GUIApp) startPeriodicUpdate() <span class="cov0" title="0">{
                 for </span><span class="cov0" title="0">{
                         select </span>{
                         case &lt;-app.ctx.Done():<span class="cov0" title="0">
-                                logger.LogInfo(nil, &amp;app.logBuffer, &amp;app.logMutex, "GUI periodic update stopped")
+                                logger.LogInfo(app.logger, &amp;app.logBuffer, &amp;app.logMutex, "GUI periodic update stopped")
                                 return</span>
                         case &lt;-ticker.C:<span class="cov0" title="0">
                                 // Use fyne.Do to safely update UI from goroutine
@@ -1896,7 +1905,7 @@ func (app *GUIApp) onConfigPressed() <span class="cov0" title="0">{
         app.showConfigDialog()
 
         // Log the action
-        logger.LogInfo(nil, &amp;app.logBuffer, &amp;app.logMutex, "Configuration dialog opened")
+        logger.LogInfo(app.logger, &amp;app.logBuffer, &amp;app.logMutex, "Configuration dialog opened")
 }</span>
 
 // onLogsPressed handles the logs button press
@@ -1905,12 +1914,12 @@ func (app *GUIApp) onLogsPressed() <span class="cov0" title="0">{
         ui.DisplayLogs(app.Config)
 
         // Log the action
-        logger.LogInfo(nil, &amp;app.logBuffer, &amp;app.logMutex, "Log file opened")
+        logger.LogInfo(app.logger, &amp;app.logBuffer, &amp;app.logMutex, "Log file opened")
 }</span>
 
 // onScanPressed handles the scan button press
 func (app *GUIApp) onScanPressed() <span class="cov0" title="0">{
-        logger.LogInfo(nil, &amp;app.logBuffer, &amp;app.logMutex, "Manual scan triggered")
+        logger.LogInfo(app.logger, &amp;app.logBuffer, &amp;app.logMutex, "Manual scan triggered")
 
         // Use existing sync.WaitGroup reference if available, or create minimal scan
         processor.ScanAndProcess(app.Config, nil, &amp;app.logBuffer, &amp;app.logMutex,
@@ -1921,14 +1930,14 @@ func (app *GUIApp) onScanPressed() <span class="cov0" title="0">{
 // onInputDirPressed handles the input directory button press
 func (app *GUIApp) onInputDirPressed() <span class="cov0" title="0">{
         if err := ui.OpenDirectory(app.Config.InputDir); err != nil </span><span class="cov0" title="0">{
-                logger.LogError(nil, &amp;app.logBuffer, &amp;app.logMutex, "Failed to open input directory: %v", err)
+                logger.LogError(app.logger, &amp;app.logBuffer, &amp;app.logMutex, "Failed to open input directory: %v", err)
         }</span>
 }
 
 // onOutputDirPressed handles the output directory button press
 func (app *GUIApp) onOutputDirPressed() <span class="cov0" title="0">{
         if err := ui.OpenDirectory(app.Config.OutputDir); err != nil </span><span class="cov0" title="0">{
-                logger.LogError(nil, &amp;app.logBuffer, &amp;app.logMutex, "Failed to open output directory: %v", err)
+                logger.LogError(app.logger, &amp;app.logBuffer, &amp;app.logMutex, "Failed to open output directory: %v", err)
         }</span>
 }
 
@@ -1956,7 +1965,7 @@ func (app *GUIApp) startRecording() <span class="cov0" title="0">{
                 }</span>
 
                 <span class="cov0" title="0">if err != nil </span><span class="cov0" title="0">{
-                        logger.LogError(nil, &amp;app.logBuffer, &amp;app.logMutex, "録音の初期化に失敗: %v", err)
+                        logger.LogError(app.logger, &amp;app.logBuffer, &amp;app.logMutex, "録音の初期化に失敗: %v", err)
                         return
                 }</span>
                 
@@ -1978,13 +1987,13 @@ func (app *GUIApp) startRecording() <span class="cov0" title="0">{
         // Start recording
         <span class="cov0" title="0">err := app.recorder.Start()
         if err != nil </span><span class="cov0" title="0">{
-                logger.LogError(nil, &amp;app.logBuffer, &amp;app.logMutex, "録音の開始に失敗: %v", err)
+                logger.LogError(app.logger, &amp;app.logBuffer, &amp;app.logMutex, "録音の開始に失敗: %v", err)
                 return
         }</span>
 
         // KISS Design: No state sync needed, query directly
         <span class="cov0" title="0">if app.isRecording() </span><span class="cov0" title="0">{
-                logger.LogInfo(nil, &amp;app.logBuffer, &amp;app.logMutex, "録音を開始しました")
+                logger.LogInfo(app.logger, &amp;app.logBuffer, &amp;app.logMutex, "録音を開始しました")
         }</span>
 
         // Update button appearance
@@ -1994,7 +2003,7 @@ func (app *GUIApp) startRecording() <span class="cov0" title="0">{
 // stopRecording stops audio recording
 func (app *GUIApp) stopRecording() <span class="cov0" title="0">{
         if app.recorder == nil </span><span class="cov0" title="0">{
-                logger.LogError(nil, &amp;app.logBuffer, &amp;app.logMutex, "録音が初期化されていません")
+                logger.LogError(app.logger, &amp;app.logBuffer, &amp;app.logMutex, "録音が初期化されていません")
                 app.updateRecordingUI()
                 return
         }</span>
@@ -2002,7 +2011,7 @@ func (app *GUIApp) stopRecording() <span class="cov0" title="0">{
         // Stop recording
         <span class="cov0" title="0">err := app.recorder.Stop()
         if err != nil </span><span class="cov0" title="0">{
-                logger.LogError(nil, &amp;app.logBuffer, &amp;app.logMutex, "録音の停止に失敗: %v", err)
+                logger.LogError(app.logger, &amp;app.logBuffer, &amp;app.logMutex, "録音の停止に失敗: %v", err)
                 app.updateRecordingUI()
                 return
         }</span>
@@ -2015,14 +2024,14 @@ func (app *GUIApp) stopRecording() <span class="cov0" title="0">{
         outputPath := filepath.Join(app.Config.InputDir, filename)
         err = app.recorder.SaveToFile(outputPath)
         if err != nil </span><span class="cov0" title="0">{
-                logger.LogError(nil, &amp;app.logBuffer, &amp;app.logMutex, "録音ファイルの保存に失敗: %v", err)
+                logger.LogError(app.logger, &amp;app.logBuffer, &amp;app.logMutex, "録音ファイルの保存に失敗: %v", err)
                 app.updateRecordingUI()
                 return
         }</span>
 
         // KISS Design: Get duration directly from recorder
         <span class="cov0" title="0">duration := app.getRecordingDuration()
-        logger.LogInfo(nil, &amp;app.logBuffer, &amp;app.logMutex, "録音を停止しました: %s (時間: %s)", filename, duration.Round(time.Second))
+        logger.LogInfo(app.logger, &amp;app.logBuffer, &amp;app.logMutex, "録音を停止しました: %s (時間: %s)", filename, duration.Round(time.Second))
 
         // Update button appearance
         app.updateRecordingUI()</span>
@@ -2080,19 +2089,36 @@ import (
         "github.com/hirokitakamura/koemoji-go/internal/config"
         "github.com/hirokitakamura/koemoji-go/internal/logger"
         "github.com/hirokitakamura/koemoji-go/internal/recorder"
+        "github.com/hirokitakamura/koemoji-go/internal/ui"
 )
 
 // showConfigDialog displays the configuration dialog with tabbed interface
 func (app *GUIApp) showConfigDialog() <span class="cov0" title="0">{
+        // Get messages for the current language
+        msg := ui.GetMessages(app.Config)
+        
         // Create form entries for basic settings
         // UI Language first - most important setting
-        uiLanguageSelect := widget.NewSelect([]string{"en", "ja"}, func(value string) </span>{<span class="cov0" title="0">
+        // UI Language options with display names
+        uiLanguageOptions := []string{"English", "日本語"}
+        uiCodeToDisplayMap := map[string]string{
+                "en": "English",
+                "ja": "日本語",
+        }
+        
+        uiLanguageSelect := widget.NewSelect(uiLanguageOptions, func(value string) </span>{<span class="cov0" title="0">
                 // Handle UI language selection
         }</span>)
-        <span class="cov0" title="0">uiLanguageSelect.SetSelected(app.Config.UILanguage)
+        
+        // Set current selection based on config
+        <span class="cov0" title="0">if displayName, exists := uiCodeToDisplayMap[app.Config.UILanguage]; exists </span><span class="cov0" title="0">{
+                uiLanguageSelect.SetSelected(displayName)
+        }</span> else<span class="cov0" title="0"> {
+                uiLanguageSelect.SetSelected("日本語") // Default fallback
+        }</span>
 
         // Whisper model selection (dropdown)
-        whisperModels := []string{
+        <span class="cov0" title="0">whisperModels := []string{
                 "tiny", "tiny.en", "base", "base.en",
                 "small", "small.en", "medium", "medium.en",
                 "large", "large-v1", "large-v2", "large-v3",
@@ -2100,24 +2126,57 @@ func (app *GUIApp) showConfigDialog() <span class="cov0" title="0">{
         whisperModelSelect := widget.NewSelect(whisperModels, nil)
         whisperModelSelect.SetSelected(app.Config.WhisperModel)
 
-        // Language selection (dropdown)
-        languages := []string{"ja", "en", "zh", "ko", "es", "fr", "de"}
-        languageSelect := widget.NewSelect(languages, nil)
-        languageSelect.SetSelected(app.Config.Language)
+        // Language selection (dropdown) with display names
+        languageOptions := []string{
+                "Auto（自動検出）",
+                "日本語",
+                "English", 
+                "中文（简体）",
+                "한국어",
+                "Español",
+                "Français", 
+                "Deutsch",
+                "Русский",
+                "العربية",
+                "हिन्दी",
+                "Italiano",
+                "Português",
+        }
+        
+        
+        // Reverse map for setting current selection
+        codeToDisplayMap := map[string]string{
+                "auto": "Auto（自動検出）",
+                "ja": "日本語",
+                "en": "English",
+                "zh": "中文（简体）",
+                "ko": "한국어", 
+                "es": "Español",
+                "fr": "Français",
+                "de": "Deutsch",
+                "ru": "Русский",
+                "ar": "العربية",
+                "hi": "हिन्दी",
+                "it": "Italiano",
+                "pt": "Português",
+        }
+        
+        languageSelect := widget.NewSelect(languageOptions, nil)
+        if displayName, exists := codeToDisplayMap[app.Config.Language]; exists </span><span class="cov0" title="0">{
+                languageSelect.SetSelected(displayName)
+        }</span> else<span class="cov0" title="0"> {
+                languageSelect.SetSelected("日本語") // Default fallback
+        }</span>
 
-        scanIntervalEntry := widget.NewEntry()
+        <span class="cov0" title="0">scanIntervalEntry := widget.NewEntry()
         scanIntervalEntry.SetText(strconv.Itoa(app.Config.ScanIntervalMinutes))
-
-        colorsCheck := widget.NewCheck("", nil)
-        colorsCheck.SetChecked(app.Config.UseColors)
 
         // Basic settings form
         basicForm := widget.NewForm(
-                widget.NewFormItem("言語", uiLanguageSelect),
-                widget.NewFormItem("Whisperモデル", whisperModelSelect),
-                widget.NewFormItem("音声認識言語", languageSelect),
-                widget.NewFormItem("スキャン間隔（分）", scanIntervalEntry),
-                widget.NewFormItem("色を使用", colorsCheck),
+                widget.NewFormItem(msg.LanguageLabel, uiLanguageSelect),
+                widget.NewFormItem(msg.WhisperModelLabel, whisperModelSelect),
+                widget.NewFormItem(msg.SpeechLanguageLabel, languageSelect),
+                widget.NewFormItem(msg.ScanIntervalLabel, scanIntervalEntry),
         )
 
         // Directory settings
@@ -2131,9 +2190,9 @@ func (app *GUIApp) showConfigDialog() <span class="cov0" title="0">{
         archiveDirEntry.SetText(app.Config.ArchiveDir)
 
         dirForm := widget.NewForm(
-                widget.NewFormItem("入力フォルダ", inputDirEntry),
-                widget.NewFormItem("出力フォルダ", outputDirEntry),
-                widget.NewFormItem("アーカイブフォルダ", archiveDirEntry),
+                widget.NewFormItem(msg.InputDirLabel, inputDirEntry),
+                widget.NewFormItem(msg.OutputDirLabel, outputDirEntry),
+                widget.NewFormItem(msg.ArchiveDirLabel, archiveDirEntry),
         )
 
         // LLM settings
@@ -2147,9 +2206,9 @@ func (app *GUIApp) showConfigDialog() <span class="cov0" title="0">{
         llmModelSelect.SetSelected(app.Config.LLMModel)
 
         llmForm := widget.NewForm(
-                widget.NewFormItem("AI要約を有効化", llmEnabledCheck),
-                widget.NewFormItem("APIキー", llmAPIKeyEntry),
-                widget.NewFormItem("モデル", llmModelSelect),
+                widget.NewFormItem(msg.LLMEnabledLabel, llmEnabledCheck),
+                widget.NewFormItem(msg.APIKeyLabel, llmAPIKeyEntry),
+                widget.NewFormItem(msg.ModelLabel, llmModelSelect),
         )
 
         // Recording settings
@@ -2157,25 +2216,25 @@ func (app *GUIApp) showConfigDialog() <span class="cov0" title="0">{
 
         // Create tabs
         tabs := container.NewAppTabs(
-                container.NewTabItem("基本設定", basicForm),
-                container.NewTabItem("フォルダ設定", dirForm),
-                container.NewTabItem("AI要約", llmForm),
-                container.NewTabItem("録音設定", recordingForm),
+                container.NewTabItem(msg.BasicTab, basicForm),
+                container.NewTabItem(msg.DirectoriesTab, dirForm),
+                container.NewTabItem(msg.LLMTab, llmForm),
+                container.NewTabItem(msg.RecordingTab, recordingForm),
         )
 
         // Create dialog content
         content := container.NewVBox(
-                widget.NewLabel("KoeMoji-Go 設定"),
+                widget.NewLabel(msg.SettingsTitle),
                 tabs,
         )
 
         // Create dialog with Save/Cancel buttons
-        configDialog := dialog.NewCustomConfirm("設定", "保存", "キャンセル", content,
+        configDialog := dialog.NewCustomConfirm(msg.SettingsTitle, msg.SaveBtn, msg.CancelBtn, content,
                 func(save bool) </span><span class="cov0" title="0">{
                         if save </span><span class="cov0" title="0">{
                                 // Save configuration changes only when Save is clicked
                                 app.saveConfigFromDialog(whisperModelSelect, languageSelect, uiLanguageSelect,
-                                        scanIntervalEntry, colorsCheck, inputDirEntry, outputDirEntry,
+                                        scanIntervalEntry, inputDirEntry, outputDirEntry,
                                         archiveDirEntry, llmEnabledCheck, llmAPIKeyEntry, llmModelSelect)
                         }</span>
                         // If Cancel is clicked, changes are discarded automatically
@@ -2190,7 +2249,7 @@ func (app *GUIApp) createRecordingForm() *widget.Form <span class="cov0" title="
         // Get available recording devices
         devices, err := recorder.ListDevices()
         if err != nil </span><span class="cov0" title="0">{
-                logger.LogError(nil, &amp;app.logBuffer, &amp;app.logMutex, "Failed to list recording devices: %v", err)
+                logger.LogError(app.logger, &amp;app.logBuffer, &amp;app.logMutex, "Failed to list recording devices: %v", err)
                 return widget.NewForm(
                         widget.NewFormItem("Error", widget.NewLabel("Failed to load recording devices")),
                 )
@@ -2226,28 +2285,63 @@ func (app *GUIApp) createRecordingForm() *widget.Form <span class="cov0" title="
         app.recordingDeviceSelect = deviceSelect
         app.recordingDeviceMap = deviceMap
 
+        msg := ui.GetMessages(app.Config)
         return widget.NewForm(
-                widget.NewFormItem("録音デバイス", deviceSelect),
+                widget.NewFormItem(msg.RecordingDeviceLabel, deviceSelect),
         )</span>
 }
 
 // saveConfigFromDialog saves the configuration from dialog form entries
 func (app *GUIApp) saveConfigFromDialog(whisperModel, language *widget.Select,
-        uiLanguage *widget.Select, scanInterval *widget.Entry, useColors *widget.Check,
+        uiLanguage *widget.Select, scanInterval *widget.Entry,
         inputDir, outputDir, archiveDir *widget.Entry, llmEnabled *widget.Check,
         llmAPIKey *widget.Entry, llmModel *widget.Select) <span class="cov0" title="0">{
 
+        // Language code mapping for saving to config
+        languageCodeMap := map[string]string{
+                "Auto（自動検出）": "auto",
+                "日本語": "ja",
+                "English": "en",
+                "中文（简体）": "zh", 
+                "한국어": "ko",
+                "Español": "es",
+                "Français": "fr",
+                "Deutsch": "de", 
+                "Русский": "ru",
+                "العربية": "ar",
+                "हिन्दी": "hi",
+                "Italiano": "it",
+                "Português": "pt",
+        }
+        
+        // UI Language code mapping
+        uiLanguageCodeMap := map[string]string{
+                "English": "en",
+                "日本語": "ja",
+        }
+
         // Update configuration
         app.Config.WhisperModel = whisperModel.Selected
-        app.Config.Language = language.Selected
-        app.Config.UILanguage = uiLanguage.Selected
+        
+        // Convert display name back to language code
+        if languageCode, exists := languageCodeMap[language.Selected]; exists </span><span class="cov0" title="0">{
+                app.Config.Language = languageCode
+        }</span> else<span class="cov0" title="0"> {
+                app.Config.Language = "ja" // Default fallback
+        }</span>
+        
+        // Convert UI language display name back to code
+        <span class="cov0" title="0">if uiLangCode, exists := uiLanguageCodeMap[uiLanguage.Selected]; exists </span><span class="cov0" title="0">{
+                app.Config.UILanguage = uiLangCode
+        }</span> else<span class="cov0" title="0"> {
+                app.Config.UILanguage = "ja" // Default fallback
+        }</span>
 
-        if interval, err := strconv.Atoi(scanInterval.Text); err == nil </span><span class="cov0" title="0">{
+        <span class="cov0" title="0">if interval, err := strconv.Atoi(scanInterval.Text); err == nil </span><span class="cov0" title="0">{
                 app.Config.ScanIntervalMinutes = interval
         }</span>
 
-        <span class="cov0" title="0">app.Config.UseColors = useColors.Checked
-        app.Config.InputDir = inputDir.Text
+        <span class="cov0" title="0">app.Config.InputDir = inputDir.Text
         app.Config.OutputDir = outputDir.Text
         app.Config.ArchiveDir = archiveDir.Text
         app.Config.LLMSummaryEnabled = llmEnabled.Checked
@@ -2265,10 +2359,10 @@ func (app *GUIApp) saveConfigFromDialog(whisperModel, language *widget.Select,
 
         // Save to file
         <span class="cov0" title="0">if err := config.SaveConfig(app.Config, app.configPath); err != nil </span><span class="cov0" title="0">{
-                logger.LogError(nil, &amp;app.logBuffer, &amp;app.logMutex, "Failed to save config: %v", err)
+                logger.LogError(app.logger, &amp;app.logBuffer, &amp;app.logMutex, "Failed to save config: %v", err)
                 dialog.ShowError(err, app.window)
         }</span> else<span class="cov0" title="0"> {
-                logger.LogInfo(nil, &amp;app.logBuffer, &amp;app.logMutex, "Configuration saved successfully")
+                logger.LogInfo(app.logger, &amp;app.logBuffer, &amp;app.logMutex, "Configuration saved successfully")
                 dialog.ShowInformation("Success", "Configuration saved successfully!", app.window)
         }</span>
 }
@@ -2372,10 +2466,15 @@ func (app *GUIApp) createWindow() <span class="cov0" title="0">{
         // Create UI components
         app.createComponents()
 
-        // Set up the main layout using BorderLayout
+        // Set up the main layout using BorderLayout with bottom padding
+        bottomWithPadding := container.NewVBox(
+                app.buttonWidget,
+                widget.NewLabel(""), // Small spacer for bottom margin
+        )
+        
         content := container.NewBorder(
                 app.statusWidget, // top
-                app.buttonWidget, // bottom
+                bottomWithPadding, // bottom with padding
                 nil,              // left
                 nil,              // right
                 app.logWidget,    // center
@@ -2462,26 +2561,33 @@ func (app *GUIApp) createLogViewer(msg *ui.Messages) fyne.CanvasObject <span cla
 
 // createButtonPanel creates the action buttons panel
 func (app *GUIApp) createButtonPanel(msg *ui.Messages) fyne.CanvasObject <span class="cov0" title="0">{
+        // Define button size
+        buttonSize := fyne.NewSize(80, 40) // Width: 80, Height: 40
+        
         // Create buttons with localized labels
         configBtn := widget.NewButton(msg.ConfigCmd, func() </span><span class="cov0" title="0">{
                 app.onConfigPressed()
         }</span>)
         <span class="cov0" title="0">configBtn.Importance = widget.MediumImportance
+        configBtn.Resize(buttonSize)
 
         logsBtn := widget.NewButton(msg.LogsCmd, func() </span><span class="cov0" title="0">{
                 app.onLogsPressed()
         }</span>)
+        <span class="cov0" title="0">logsBtn.Resize(buttonSize)
 
-        <span class="cov0" title="0">scanBtn := widget.NewButton(msg.ScanCmd, func() </span><span class="cov0" title="0">{
+        scanBtn := widget.NewButton(msg.ScanCmd, func() </span><span class="cov0" title="0">{
                 app.onScanPressed()
         }</span>)
         <span class="cov0" title="0">scanBtn.Importance = widget.HighImportance
+        scanBtn.Resize(buttonSize)
 
         // Create recording button with dynamic text and importance
         recordBtn := widget.NewButton(msg.RecordCmd, func() </span><span class="cov0" title="0">{
                 app.onRecordPressed()
         }</span>)
         <span class="cov0" title="0">recordBtn.Importance = widget.WarningImportance
+        recordBtn.Resize(buttonSize)
 
         // Store reference for updating button text and appearance
         app.recordButton = recordBtn
@@ -2489,15 +2595,18 @@ func (app *GUIApp) createButtonPanel(msg *ui.Messages) fyne.CanvasObject <span c
         inputBtn := widget.NewButton(msg.InputDirCmd, func() </span><span class="cov0" title="0">{
                 app.onInputDirPressed()
         }</span>)
+        <span class="cov0" title="0">inputBtn.Resize(buttonSize)
 
-        <span class="cov0" title="0">outputBtn := widget.NewButton(msg.OutputDirCmd, func() </span><span class="cov0" title="0">{
+        outputBtn := widget.NewButton(msg.OutputDirCmd, func() </span><span class="cov0" title="0">{
                 app.onOutputDirPressed()
         }</span>)
+        <span class="cov0" title="0">outputBtn.Resize(buttonSize)
 
-        <span class="cov0" title="0">quitBtn := widget.NewButton(msg.QuitCmd, func() </span><span class="cov0" title="0">{
+        quitBtn := widget.NewButton(msg.QuitCmd, func() </span><span class="cov0" title="0">{
                 app.onQuitPressed()
         }</span>)
         <span class="cov0" title="0">quitBtn.Importance = widget.DangerImportance
+        quitBtn.Resize(buttonSize)
 
         // Create primary and secondary button groups for better organization
         primaryButtons := container.NewHBox(
@@ -2515,20 +2624,23 @@ func (app *GUIApp) createButtonPanel(msg *ui.Messages) fyne.CanvasObject <span c
                 outputBtn,
         )
 
-        // Arrange buttons in a horizontal container with center alignment
+        // Arrange buttons with appropriate spacing
         buttonContainer := container.NewHBox(
-                layout.NewSpacer(), // 左側スペーサー
+                layout.NewSpacer(),
                 primaryButtons,
-                widget.NewSeparator(),
+                widget.NewLabel("   "), // Fixed spacing between groups
                 configButtons,
-                widget.NewSeparator(),
+                widget.NewLabel("   "), // Fixed spacing between groups  
                 directoryButtons,
-                widget.NewSeparator(),
+                widget.NewLabel("   "), // Fixed spacing between groups
                 quitBtn,
-                layout.NewSpacer(), // 右側スペーサー
+                layout.NewSpacer(),
         )
 
-        return buttonContainer</span>
+        // Add padding around the button container
+        paddedContainer := container.NewPadded(buttonContainer)
+
+        return paddedContainer</span>
 }
 </pre>
 		
@@ -2790,7 +2902,7 @@ type LogEntry struct {
 }
 
 // Logging functions
-func addToLogBuffer(logBuffer *[]LogEntry, logMutex *sync.RWMutex, level, message string) <span class="cov0" title="0">{
+func addToLogBuffer(logBuffer *[]LogEntry, logMutex *sync.RWMutex, level, message string) <span class="cov8" title="1">{
         logMutex.Lock()
         defer logMutex.Unlock()
 
@@ -2801,51 +2913,51 @@ func addToLogBuffer(logBuffer *[]LogEntry, logMutex *sync.RWMutex, level, messag
         }
 
         *logBuffer = append(*logBuffer, entry)
-        if len(*logBuffer) &gt; 12 </span><span class="cov0" title="0">{
+        if len(*logBuffer) &gt; 12 </span><span class="cov8" title="1">{
                 *logBuffer = (*logBuffer)[1:]
         }</span>
 }
 
-func LogInfo(logger *log.Logger, logBuffer *[]LogEntry, logMutex *sync.RWMutex, format string, v ...any) <span class="cov0" title="0">{
+func LogInfo(logger *log.Logger, logBuffer *[]LogEntry, logMutex *sync.RWMutex, format string, v ...any) <span class="cov8" title="1">{
         message := fmt.Sprintf(format, v...)
-        if logger != nil </span><span class="cov0" title="0">{
+        if logger != nil </span><span class="cov8" title="1">{
                 logger.Printf("[INFO] %s", message)
         }</span>
-        <span class="cov0" title="0">addToLogBuffer(logBuffer, logMutex, "INFO", message)</span>
+        <span class="cov8" title="1">addToLogBuffer(logBuffer, logMutex, "INFO", message)</span>
 }
 
-func LogError(logger *log.Logger, logBuffer *[]LogEntry, logMutex *sync.RWMutex, format string, v ...any) <span class="cov0" title="0">{
+func LogError(logger *log.Logger, logBuffer *[]LogEntry, logMutex *sync.RWMutex, format string, v ...any) <span class="cov8" title="1">{
         message := fmt.Sprintf(format, v...)
-        if logger != nil </span><span class="cov0" title="0">{
+        if logger != nil </span><span class="cov8" title="1">{
                 logger.Printf("[ERROR] %s", message)
         }</span>
-        <span class="cov0" title="0">addToLogBuffer(logBuffer, logMutex, "ERROR", message)</span>
+        <span class="cov8" title="1">addToLogBuffer(logBuffer, logMutex, "ERROR", message)</span>
 }
 
-func LogDebug(logger *log.Logger, logBuffer *[]LogEntry, logMutex *sync.RWMutex, debugMode bool, format string, v ...any) <span class="cov0" title="0">{
-        if debugMode </span><span class="cov0" title="0">{
+func LogDebug(logger *log.Logger, logBuffer *[]LogEntry, logMutex *sync.RWMutex, debugMode bool, format string, v ...any) <span class="cov8" title="1">{
+        if debugMode </span><span class="cov8" title="1">{
                 message := fmt.Sprintf(format, v...)
-                if logger != nil </span><span class="cov0" title="0">{
+                if logger != nil </span><span class="cov8" title="1">{
                         logger.Printf("[DEBUG] %s", message)
                 }</span>
-                <span class="cov0" title="0">addToLogBuffer(logBuffer, logMutex, "DEBUG", message)</span>
+                <span class="cov8" title="1">addToLogBuffer(logBuffer, logMutex, "DEBUG", message)</span>
         }
 }
 
-func LogProc(logger *log.Logger, logBuffer *[]LogEntry, logMutex *sync.RWMutex, format string, v ...any) <span class="cov0" title="0">{
+func LogProc(logger *log.Logger, logBuffer *[]LogEntry, logMutex *sync.RWMutex, format string, v ...any) <span class="cov8" title="1">{
         message := fmt.Sprintf(format, v...)
-        if logger != nil </span><span class="cov0" title="0">{
+        if logger != nil </span><span class="cov8" title="1">{
                 logger.Printf("[PROC] %s", message)
         }</span>
-        <span class="cov0" title="0">addToLogBuffer(logBuffer, logMutex, "PROC", message)</span>
+        <span class="cov8" title="1">addToLogBuffer(logBuffer, logMutex, "PROC", message)</span>
 }
 
-func LogDone(logger *log.Logger, logBuffer *[]LogEntry, logMutex *sync.RWMutex, format string, v ...any) <span class="cov0" title="0">{
+func LogDone(logger *log.Logger, logBuffer *[]LogEntry, logMutex *sync.RWMutex, format string, v ...any) <span class="cov8" title="1">{
         message := fmt.Sprintf(format, v...)
-        if logger != nil </span><span class="cov0" title="0">{
+        if logger != nil </span><span class="cov8" title="1">{
                 logger.Printf("[DONE] %s", message)
         }</span>
-        <span class="cov0" title="0">addToLogBuffer(logBuffer, logMutex, "DONE", message)</span>
+        <span class="cov8" title="1">addToLogBuffer(logBuffer, logMutex, "DONE", message)</span>
 }
 </pre>
 		
@@ -2895,7 +3007,7 @@ func StartProcessing(ctx context.Context, config *config.Config, log *log.Logger
 
 func ScanAndProcess(config *config.Config, log *log.Logger, logBuffer *[]logger.LogEntry, logMutex *sync.RWMutex,
         lastScanTime *time.Time, queuedFiles *[]string, processingFile *string, isProcessing *bool,
-        processedFiles *map[string]bool, mu *sync.Mutex, wg *sync.WaitGroup, debugMode bool) <span class="cov0" title="0">{
+        processedFiles *map[string]bool, mu *sync.Mutex, wg *sync.WaitGroup, debugMode bool) <span class="cov8" title="1">{
 
         *lastScanTime = time.Now()
         msg := ui.GetMessages(config)
@@ -2907,8 +3019,8 @@ func ScanAndProcess(config *config.Config, log *log.Logger, logBuffer *[]logger.
                 return
         }</span>
 
-        <span class="cov0" title="0">newFiles := filterNewAudioFiles(files, processedFiles, mu)
-        if len(newFiles) == 0 </span><span class="cov0" title="0">{
+        <span class="cov8" title="1">newFiles := filterNewAudioFiles(files, processedFiles, mu)
+        if len(newFiles) == 0 </span><span class="cov8" title="1">{
                 logger.LogDebug(log, logBuffer, logMutex, debugMode, "No new files found")
                 return
         }</span>
@@ -2921,32 +3033,37 @@ func ScanAndProcess(config *config.Config, log *log.Logger, logBuffer *[]logger.
         
         // Phase 1: Periodic cleanup of processed files map
         if len(*processedFiles) &gt; 5000 </span><span class="cov0" title="0">{
-                cleanupProcessedFiles(processedFiles, log, logBuffer, logMutex)
+                cleanupProcessedFiles(processedFiles, mu, log, logBuffer, logMutex)
         }</span>
         <span class="cov0" title="0">mu.Unlock()
 
-        // Start processing if not already processing
+        // Start processing if not already processing (with proper locking)
+        mu.Lock()
         if !*isProcessing </span><span class="cov0" title="0">{
+                *isProcessing = true
+                mu.Unlock()
                 if wg != nil </span><span class="cov0" title="0">{
                         wg.Add(1)
                 }</span>
                 <span class="cov0" title="0">go processQueue(config, log, logBuffer, logMutex, queuedFiles, processingFile,
                         isProcessing, mu, wg, debugMode)</span>
-        }
+        } else<span class="cov0" title="0"> {
+                mu.Unlock()
+        }</span>
 }
 
-func filterNewAudioFiles(files []string, processedFiles *map[string]bool, mu *sync.Mutex) []string <span class="cov0" title="0">{
+func filterNewAudioFiles(files []string, processedFiles *map[string]bool, mu *sync.Mutex) []string <span class="cov8" title="1">{
         mu.Lock()
         defer mu.Unlock()
 
         var newFiles []string
-        for _, file := range files </span><span class="cov0" title="0">{
-                if ui.IsAudioFile(file) &amp;&amp; !(*processedFiles)[file] </span><span class="cov0" title="0">{
+        for _, file := range files </span><span class="cov8" title="1">{
+                if ui.IsAudioFile(file) &amp;&amp; !(*processedFiles)[file] </span><span class="cov8" title="1">{
                         (*processedFiles)[file] = true
                         newFiles = append(newFiles, file)
                 }</span>
         }
-        <span class="cov0" title="0">return newFiles</span>
+        <span class="cov8" title="1">return newFiles</span>
 }
 
 func processQueue(config *config.Config, log *log.Logger, logBuffer *[]logger.LogEntry, logMutex *sync.RWMutex,
@@ -3109,26 +3226,29 @@ func formatDuration(d time.Duration) string <span class="cov0" title="0">{
 }
 
 // Phase 1: Helper function for processed files cleanup
-func cleanupProcessedFiles(processedFiles *map[string]bool, log *log.Logger, logBuffer *[]logger.LogEntry, logMutex *sync.RWMutex) <span class="cov0" title="0">{
+func cleanupProcessedFiles(processedFiles *map[string]bool, mu *sync.Mutex, log *log.Logger, logBuffer *[]logger.LogEntry, logMutex *sync.RWMutex) <span class="cov8" title="1">{
         // Keep only the most recent 2500 entries (half of the threshold)
         if len(*processedFiles) &lt;= 2500 </span><span class="cov0" title="0">{
                 return
         }</span>
         
+        // Note: This function is called while mu is already locked in ScanAndProcess
+        // No additional locking needed here as the caller already holds the lock
+        
         // Simple approach: reset the map when it gets too large
         // In a production system, you might want to keep recent entries based on timestamp
-        <span class="cov0" title="0">newMap := make(map[string]bool)
+        <span class="cov8" title="1">newMap := make(map[string]bool)
         count := 0
         
         // Keep approximately half of the entries
-        for file := range *processedFiles </span><span class="cov0" title="0">{
-                if count &lt; 2500 </span><span class="cov0" title="0">{
+        for file := range *processedFiles </span><span class="cov8" title="1">{
+                if count &lt; 2500 </span><span class="cov8" title="1">{
                         newMap[file] = true
                         count++
                 }</span>
         }
         
-        <span class="cov0" title="0">*processedFiles = newMap
+        <span class="cov8" title="1">*processedFiles = newMap
         logger.LogInfo(log, logBuffer, logMutex, "Cleaned up processed files map, kept %d entries", len(*processedFiles))</span>
 }
 </pre>
@@ -3710,6 +3830,29 @@ type Messages struct {
         Recording       string
         RecordingStop   string
         SelectDevice    string
+
+        // Settings dialog messages
+        SettingsTitle     string
+        BasicTab          string
+        DirectoriesTab    string
+        LLMTab            string
+        RecordingTab      string
+        SaveBtn           string
+        CancelBtn         string
+        
+        // Settings form labels
+        LanguageLabel         string
+        WhisperModelLabel     string
+        SpeechLanguageLabel   string
+        ScanIntervalLabel     string
+        UseColorsLabel        string
+        InputDirLabel         string
+        OutputDirLabel        string
+        ArchiveDirLabel       string
+        LLMEnabledLabel       string
+        APIKeyLabel           string
+        ModelLabel            string
+        RecordingDeviceLabel  string
 }
 
 var messagesEN = Messages{
@@ -3771,6 +3914,29 @@ var messagesEN = Messages{
         Recording:       "Recording",
         RecordingStop:   "Recording stopped: %s",
         SelectDevice:    "Select recording device",
+
+        // Settings dialog messages
+        SettingsTitle:     "KoeMoji-Go Settings",
+        BasicTab:          "Basic",
+        DirectoriesTab:    "Directories",
+        LLMTab:            "AI Summary",
+        RecordingTab:      "Recording",
+        SaveBtn:           "Save",
+        CancelBtn:         "Cancel",
+        
+        // Settings form labels
+        LanguageLabel:         "Language",
+        WhisperModelLabel:     "Whisper Model",
+        SpeechLanguageLabel:   "Speech Recognition Language",
+        ScanIntervalLabel:     "Scan Interval (min)",
+        UseColorsLabel:        "Use Colors",
+        InputDirLabel:         "Input Folder",
+        OutputDirLabel:        "Output Folder",
+        ArchiveDirLabel:       "Archive Folder",
+        LLMEnabledLabel:       "Enable AI Summary",
+        APIKeyLabel:           "API Key",
+        ModelLabel:            "Model",
+        RecordingDeviceLabel:  "Recording Device",
 }
 
 var messagesJA = Messages{
@@ -3832,11 +3998,34 @@ var messagesJA = Messages{
         Recording:       "録音中",
         RecordingStop:   "録音を停止しました: %s",
         SelectDevice:    "録音デバイスを選択",
+
+        // Settings dialog messages
+        SettingsTitle:     "KoeMoji-Go 設定",
+        BasicTab:          "基本設定",
+        DirectoriesTab:    "フォルダ設定",
+        LLMTab:            "AI要約",
+        RecordingTab:      "録音設定",
+        SaveBtn:           "保存",
+        CancelBtn:         "キャンセル",
+        
+        // Settings form labels
+        LanguageLabel:         "言語",
+        WhisperModelLabel:     "Whisperモデル",
+        SpeechLanguageLabel:   "音声認識言語",
+        ScanIntervalLabel:     "スキャン間隔（分）",
+        UseColorsLabel:        "色を使用",
+        InputDirLabel:         "入力フォルダ",
+        OutputDirLabel:        "出力フォルダ",
+        ArchiveDirLabel:       "アーカイブフォルダ",
+        LLMEnabledLabel:       "AI要約を有効化",
+        APIKeyLabel:           "APIキー",
+        ModelLabel:            "モデル",
+        RecordingDeviceLabel:  "録音デバイス",
 }
 
 // GetMessages returns the messages for the current UI language
-func GetMessages(config *config.Config) *Messages <span class="cov0" title="0">{
-        if config != nil &amp;&amp; config.UILanguage == "ja" </span><span class="cov0" title="0">{
+func GetMessages(config *config.Config) *Messages <span class="cov8" title="1">{
+        if config != nil &amp;&amp; config.UILanguage == "ja" </span><span class="cov8" title="1">{
                 return &amp;messagesJA
         }</span>
         <span class="cov0" title="0">return &amp;messagesEN</span>
@@ -3987,20 +4176,40 @@ func DisplayLogs(config *config.Config) <span class="cov0" title="0">{
                 return
         }</span>
 
-        <span class="cov0" title="0">var cmd *exec.Cmd
-        switch runtime.GOOS </span>{
+        <span class="cov0" title="0">switch runtime.GOOS </span>{
         case "windows":<span class="cov0" title="0">
-                cmd = exec.Command("notepad", "koemoji.log")</span>
+                // Try to open with PowerShell to jump to end, fallback to regular notepad
+                powershellCmd := exec.Command("powershell", "-Command", 
+                        `notepad koemoji.log; Start-Sleep -Milliseconds 500; Add-Type -AssemblyName System.Windows.Forms; [System.Windows.Forms.SendKeys]::SendWait("^{END}")`)
+                if err := powershellCmd.Run(); err != nil </span><span class="cov0" title="0">{
+                        // Fallback to regular notepad if PowerShell fails
+                        fallbackCmd := exec.Command("notepad", "koemoji.log")
+                        if fallbackErr := fallbackCmd.Run(); fallbackErr != nil </span><span class="cov0" title="0">{
+                                fmt.Printf(msg.LogFileError, fallbackErr)
+                        }</span>
+                }
         case "darwin":<span class="cov0" title="0">
-                cmd = exec.Command("open", "koemoji.log")</span>
+                // Get absolute path for AppleScript
+                absPath, err := filepath.Abs("koemoji.log")
+                if err != nil </span><span class="cov0" title="0">{
+                        absPath = "koemoji.log"
+                }</span>
+                
+                // Try to open with AppleScript to jump to end, fallback to regular open
+                <span class="cov0" title="0">appleScriptCmd := exec.Command("osascript", "-e", 
+                        fmt.Sprintf(`tell application "TextEdit" to open POSIX file "%s"`, absPath),
+                        "-e", `tell application "TextEdit" to goto paragraph -1`)
+                if err := appleScriptCmd.Run(); err != nil </span><span class="cov0" title="0">{
+                        // Fallback to regular open if AppleScript fails
+                        fallbackCmd := exec.Command("open", "koemoji.log")
+                        if fallbackErr := fallbackCmd.Run(); fallbackErr != nil </span><span class="cov0" title="0">{
+                                fmt.Printf(msg.LogFileError, fallbackErr)
+                        }</span>
+                }
         default:<span class="cov0" title="0">
                 fmt.Println(msg.UnsupportedOS)
                 return</span>
         }
-
-        <span class="cov0" title="0">if err := cmd.Run(); err != nil </span><span class="cov0" title="0">{
-                fmt.Printf(msg.LogFileError, err)
-        }</span>
 }
 
 func OpenDirectory(dirPath string) error <span class="cov0" title="0">{
@@ -4086,15 +4295,15 @@ func updateFileCounts(config *config.Config, inputCount, outputCount, archiveCou
         }</span>
 }
 
-func IsAudioFile(filename string) bool <span class="cov0" title="0">{
+func IsAudioFile(filename string) bool <span class="cov8" title="1">{
         ext := strings.ToLower(filepath.Ext(filename))
         audioExts := []string{".mp3", ".wav", ".m4a", ".flac", ".ogg", ".aac", ".mp4", ".mov", ".avi"}
-        for _, audioExt := range audioExts </span><span class="cov0" title="0">{
-                if ext == audioExt </span><span class="cov0" title="0">{
+        for _, audioExt := range audioExts </span><span class="cov8" title="1">{
+                if ext == audioExt </span><span class="cov8" title="1">{
                         return true
                 }</span>
         }
-        <span class="cov0" title="0">return false</span>
+        <span class="cov8" title="1">return false</span>
 }
 </pre>
 		

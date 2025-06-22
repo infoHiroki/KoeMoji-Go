@@ -269,13 +269,13 @@ func TestCleanupProcessedFiles_SafeConcurrentAccess(t *testing.T) {
 		processedFiles[fmt.Sprintf("file_%d.wav", i)] = true
 	}
 
-	logger := log.New(os.Stdout, "", log.LstdFlags)
+	log := log.New(os.Stdout, "", log.LstdFlags)
 	var logBuffer []logger.LogEntry
 	var logMutex sync.RWMutex
 
 	// Test that cleanup works without concurrent map access issues
 	mu.Lock()
-	cleanupProcessedFiles(&processedFiles, &mu, logger, &logBuffer, &logMutex)
+	cleanupProcessedFiles(&processedFiles, &mu, log, &logBuffer, &logMutex)
 	mu.Unlock()
 
 	// Should have cleaned up to approximately half
