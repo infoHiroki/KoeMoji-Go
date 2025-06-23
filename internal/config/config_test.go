@@ -65,7 +65,8 @@ func TestLoadConfig_ValidFile(t *testing.T) {
 	require.NoError(t, err)
 
 	logger := log.New(os.Stdout, "", log.LstdFlags)
-	config := LoadConfig(configFile, logger)
+	config, err := LoadConfig(configFile, logger)
+	require.NoError(t, err)
 
 	assert.Equal(t, "base", config.WhisperModel)
 	assert.Equal(t, "en", config.Language)
@@ -91,7 +92,8 @@ func TestLoadConfig_NonExistentFile(t *testing.T) {
 	configFile := filepath.Join(tempDir, "nonexistent.json")
 
 	logger := log.New(os.Stdout, "", log.LstdFlags)
-	config := LoadConfig(configFile, logger)
+	config, err := LoadConfig(configFile, logger)
+	require.NoError(t, err)
 
 	defaultConfig := GetDefaultConfig()
 	assert.Equal(t, defaultConfig.WhisperModel, config.WhisperModel)
@@ -132,7 +134,8 @@ func TestSaveConfig(t *testing.T) {
 	assert.FileExists(t, configFile)
 
 	logger := log.New(os.Stdout, "", log.LstdFlags)
-	loadedConfig := LoadConfig(configFile, logger)
+	loadedConfig, err := LoadConfig(configFile, logger)
+	require.NoError(t, err)
 
 	assert.Equal(t, "medium", loadedConfig.WhisperModel)
 	assert.Equal(t, "en", loadedConfig.Language)
@@ -472,7 +475,8 @@ func TestCompleteConfigRoundTrip(t *testing.T) {
 
 	// Load it back
 	logger := log.New(os.Stdout, "", log.LstdFlags)
-	loadedConfig := LoadConfig(configFile, logger)
+	loadedConfig, err := LoadConfig(configFile, logger)
+	require.NoError(t, err)
 
 	// Verify all fields match
 	assert.Equal(t, originalConfig.WhisperModel, loadedConfig.WhisperModel)
@@ -662,7 +666,8 @@ func TestConfigMigration(t *testing.T) {
 		require.NoError(t, err)
 
 		logger := log.New(os.Stdout, "", log.LstdFlags)
-		config := LoadConfig(configFile, logger)
+		config, err := LoadConfig(configFile, logger)
+		require.NoError(t, err)
 
 		// Should load legacy fields
 		assert.Equal(t, "large-v2", config.WhisperModel)
@@ -700,7 +705,8 @@ func TestConfigMigration(t *testing.T) {
 		require.NoError(t, err)
 
 		logger := log.New(os.Stdout, "", log.LstdFlags)
-		config := LoadConfig(configFile, logger)
+		config, err := LoadConfig(configFile, logger)
+		require.NoError(t, err)
 
 		// Should load known fields
 		assert.Equal(t, "large-v3", config.WhisperModel)

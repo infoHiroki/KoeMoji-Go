@@ -192,9 +192,9 @@ func TestConfigurationChanges(t *testing.T) {
 		}
 
 		// Load config and verify
-		loadedConfig := config.LoadConfig(env.ConfigFile, nil)
-		if loadedConfig == nil {
-			t.Fatalf("Failed to load config")
+		loadedConfig, err := config.LoadConfig(env.ConfigFile, nil)
+		if err != nil {
+			t.Fatalf("Failed to load config: %v", err)
 		}
 
 		if loadedConfig.WhisperModel != model {
@@ -215,9 +215,9 @@ func TestConfigurationChanges(t *testing.T) {
 			t.Fatalf("Failed to save config with language %s: %v", lang, err)
 		}
 
-		loadedConfig := config.LoadConfig(env.ConfigFile, nil)
-		if loadedConfig == nil {
-			t.Fatalf("Failed to load config")
+		loadedConfig, err := config.LoadConfig(env.ConfigFile, nil)
+		if err != nil {
+			t.Fatalf("Failed to load config: %v", err)
 		}
 
 		if loadedConfig.Language != lang || loadedConfig.UILanguage != lang {

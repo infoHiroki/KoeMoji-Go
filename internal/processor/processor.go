@@ -175,15 +175,16 @@ func moveToArchive(config *config.Config, sourcePath string) error {
 	return nil
 }
 
-func EnsureDirectories(config *config.Config, log *log.Logger) {
+func EnsureDirectories(config *config.Config, log *log.Logger) error {
 	dirs := []string{config.InputDir, config.OutputDir, config.ArchiveDir}
 	for _, dir := range dirs {
 		if err := os.MkdirAll(dir, 0755); err != nil {
 			msg := ui.GetMessages(config)
 			log.Printf("[ERROR] "+msg.DirCreateError, dir, err)
-			os.Exit(1)
+			return fmt.Errorf("failed to create directory %s: %v", dir, err)
 		}
 	}
+	return nil
 }
 
 func generateSummary(config *config.Config, log *log.Logger, logBuffer *[]logger.LogEntry,

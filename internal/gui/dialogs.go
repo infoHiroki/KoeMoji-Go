@@ -338,3 +338,26 @@ func formatRecordingDuration(d time.Duration) string {
 		return fmt.Sprintf("%ds", seconds)
 	}
 }
+
+// showDependencyErrorDialog shows an error dialog for dependency issues
+func (app *GUIApp) showDependencyErrorDialog(err error) {
+	message := fmt.Sprintf("FasterWhisper is not available: %v\n\nThe application will continue with limited functionality.\n\nTo fix this issue, please install:\npip install faster-whisper whisper-ctranslate2", err)
+	
+	// Show error dialog
+	dialog.ShowError(fmt.Errorf(message), app.window)
+	
+	// Log the error
+	logger.LogError(app.logger, &app.logBuffer, &app.logMutex, "Dependency error dialog shown: %v", err)
+}
+
+// showConfigErrorDialog shows an error dialog for configuration loading issues
+func (app *GUIApp) showConfigErrorDialog(err error) {
+	title := "Configuration Error"
+	message := fmt.Sprintf("Failed to load configuration: %v\n\nUsing default settings instead.", err)
+	
+	// Show error dialog
+	dialog.ShowInformation(title, message, app.window)
+	
+	// Log the error
+	logger.LogError(app.logger, &app.logBuffer, &app.logMutex, "Config error dialog shown: %v", err)
+}

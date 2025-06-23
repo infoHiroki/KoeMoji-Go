@@ -27,6 +27,8 @@ func getWhisperCommand() string {
 	standardPaths := []string{
 		filepath.Join(os.Getenv("HOME"), ".local", "bin", "whisper-ctranslate2"),                    // macOS user install
 		"/usr/local/bin/whisper-ctranslate2",                                                        // macOS system
+		"/opt/homebrew/bin/whisper-ctranslate2",                                                     // Homebrew Apple Silicon
+		"/usr/local/bin/whisper-ctranslate2",                                                        // Homebrew Intel
 		filepath.Join(os.Getenv("HOME"), "Library", "Python", "3.12", "bin", "whisper-ctranslate2"), // macOS Python 3.12
 		filepath.Join(os.Getenv("HOME"), "Library", "Python", "3.11", "bin", "whisper-ctranslate2"), // macOS Python 3.11
 		filepath.Join(os.Getenv("HOME"), "Library", "Python", "3.10", "bin", "whisper-ctranslate2"), // macOS Python 3.10
@@ -197,18 +199,19 @@ func monitorProgress(log *log.Logger, logBuffer *[]logger.LogEntry, logMutex *sy
 }
 
 func EnsureDependencies(config *config.Config, log *log.Logger, logBuffer *[]logger.LogEntry,
-	logMutex *sync.RWMutex, debugMode bool) {
+	logMutex *sync.RWMutex, debugMode bool) error {
 
 	if !isFasterWhisperAvailable() {
 		logger.LogInfo(log, logBuffer, logMutex, "FasterWhisper not found. Attempting to install...")
 		if err := installFasterWhisper(log, logBuffer, logMutex); err != nil {
 			logger.LogError(log, logBuffer, logMutex, "FasterWhisper installation failed: %v", err)
 			logger.LogError(log, logBuffer, logMutex, "Please install manually: pip install faster-whisper whisper-ctranslate2")
-			os.Exit(1)
+			return fmt.Errorf("FasterWhisper installation failed: %v", err)
 		}
 	} else {
 		logger.LogDebug(log, logBuffer, logMutex, debugMode, "FasterWhisper is available")
 	}
+	return nil
 }
 
 func formatDuration(d time.Duration) string {

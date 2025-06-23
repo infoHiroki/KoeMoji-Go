@@ -99,7 +99,13 @@ func runTUIMode(configPath string, debugMode bool, configMode bool) {
 	}
 
 	app.initLogger()
-	cfg := config.LoadConfig(configPath, app.logger)
+	cfg, err := config.LoadConfig(configPath, app.logger)
+	if err != nil {
+		logger.LogError(app.logger, &app.logBuffer, &app.logMutex, "Failed to load config: %v", err)
+		fmt.Fprintf(os.Stderr, "Warning: Failed to load config: %v\n", err)
+		fmt.Fprintf(os.Stderr, "Using default configuration.\n")
+		cfg = config.GetDefaultConfig()
+	}
 	app.Config = cfg
 
 	if configMode {
@@ -107,8 +113,18 @@ func runTUIMode(configPath string, debugMode bool, configMode bool) {
 		return
 	}
 
-	processor.EnsureDirectories(app.Config, app.logger)
-	whisper.EnsureDependencies(app.Config, app.logger, &app.logBuffer, &app.logMutex, app.debugMode)
+	if err := processor.EnsureDirectories(app.Config, app.logger); err != nil {
+		logger.LogError(app.logger, &app.logBuffer, &app.logMutex, "Failed to create directories: %v", err)
+		fmt.Fprintf(os.Stderr, "Warning: Failed to create directories: %v\n", err)
+		fmt.Fprintf(os.Stderr, "The application will continue with limited functionality.\n")
+	}
+
+	if err := whisper.EnsureDependencies(app.Config, app.logger, &app.logBuffer, &app.logMutex, app.debugMode); err != nil {
+		logger.LogError(app.logger, &app.logBuffer, &app.logMutex, "FasterWhisper dependency check failed: %v", err)
+		fmt.Fprintf(os.Stderr, "Warning: FasterWhisper is not available: %v\n", err)
+		fmt.Fprintf(os.Stderr, "Please install manually: pip install faster-whisper whisper-ctranslate2\n")
+		fmt.Fprintf(os.Stderr, "The application will continue with limited functionality.\n")
+	}
 	app.run()
 }
 

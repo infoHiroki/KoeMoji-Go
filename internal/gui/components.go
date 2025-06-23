@@ -18,8 +18,23 @@ import (
 // startPeriodicUpdate starts the 5-second periodic UI update
 func (app *GUIApp) startPeriodicUpdate() {
 	// Initialize dependencies once
-	processor.EnsureDirectories(app.Config, nil)
-	whisper.EnsureDependencies(app.Config, nil, &app.logBuffer, &app.logMutex, app.debugMode)
+	if err := processor.EnsureDirectories(app.Config, nil); err != nil {
+		logger.LogError(app.logger, &app.logBuffer, &app.logMutex, "Failed to create directories: %v", err)
+	}
+	
+	if err := whisper.EnsureDependencies(app.Config, nil, &app.logBuffer, &app.logMutex, app.debugMode); err != nil {
+		logger.LogError(app.logger, &app.logBuffer, &app.logMutex, "FasterWhisper dependency check failed: %v", err)
+		logger.LogInfo(app.logger, &app.logBuffer, &app.logMutex, "Application will continue with limited functionality")
+		
+		// Show dependency error dialog in GUI mode
+		go func() {
+			// Wait for UI to be ready before showing dialog
+			for !app.isUIReady() {
+				time.Sleep(100 * time.Millisecond)
+			}
+			app.showDependencyErrorDialog(err)
+		}()
+	}
 
 	// Phase 2: Start file processing with context
 	go processor.StartProcessing(app.ctx, app.Config, nil, &app.logBuffer, &app.logMutex,
