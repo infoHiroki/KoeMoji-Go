@@ -138,7 +138,6 @@ func showHelpText() {
 	fmt.Println("  s - Scan now")
 	fmt.Println("  i - Open input directory")
 	fmt.Println("  o - Open output directory")
-	fmt.Println("  a - Toggle AI summary")
 	fmt.Println("  r - Start/stop recording")
 	fmt.Println("  q - Quit")
 	fmt.Println("  Enter - Refresh display")
