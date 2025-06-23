@@ -23,5 +23,5 @@
         "CompanyName": "KoeMoji-Go Development Team",
         "LegalCopyright": "Copyright (c) 2025 KoeMoji-Go Development Team"
     },
-    "IconPath": "icon.ico"
+    "IconPath": "../assets/icons/icon.ico"
 }

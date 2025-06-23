@@ -1,6 +1,7 @@
 # ビルド成果物
 dist/
 build/dist/
+build/temp/
 *.syso
 *.exe
 

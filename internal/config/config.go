@@ -75,22 +75,37 @@ func LoadConfig(configPath string, logger *log.Logger) *Config {
 	// Default config
 	config := GetDefaultConfig()
 
-	file, err := os.Open(configPath)
-	if err != nil {
-		if os.IsNotExist(err) {
-			logger.Printf("[INFO] Config file not found, using defaults")
-			return config
+	// Try to find config file in multiple locations
+	configPaths := []string{
+		configPath,                    // Specified path
+		"../Resources/config.json",    // App bundle Resources directory
+		"./config.json",              // Current directory
+	}
+
+	var file *os.File
+	var err error
+	var foundPath string
+
+	for _, path := range configPaths {
+		file, err = os.Open(path)
+		if err == nil {
+			foundPath = path
+			break
 		}
-		logger.Printf("[ERROR] Failed to load config: %v", err)
-		os.Exit(1)
+	}
+
+	if file == nil {
+		logger.Printf("[INFO] Config file not found in any location, using defaults")
+		return config
 	}
 	defer file.Close()
 
 	if err := json.NewDecoder(file).Decode(config); err != nil {
-		logger.Printf("[ERROR] Failed to parse config: %v", err)
+		logger.Printf("[ERROR] Failed to parse config from %s: %v", foundPath, err)
 		os.Exit(1)
 	}
 
+	logger.Printf("[INFO] Loaded config from: %s", foundPath)
 	return config
 }
 
