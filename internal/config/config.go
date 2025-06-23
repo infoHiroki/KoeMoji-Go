@@ -96,6 +96,14 @@ func LoadConfig(configPath string, logger *log.Logger) *Config {
 
 	if file == nil {
 		logger.Printf("[INFO] Config file not found in any location, using defaults")
+		
+		// Create default config file
+		if err := SaveConfig(config, configPath); err != nil {
+			logger.Printf("[WARN] Could not create default config file: %v", err)
+		} else {
+			logger.Printf("[INFO] Created default config file: %s", configPath)
+		}
+		
 		return config
 	}
 	defer file.Close()
