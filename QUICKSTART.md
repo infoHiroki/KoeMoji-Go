@@ -17,9 +17,9 @@ Pythonがない場合：
 
 [GitHubリリース](https://github.com/hirokitakamura/koemoji-go/releases)から対応OS版をダウンロード：
 
-- **Windows**: `koemoji-go-windows-1.1.1.zip`
-- **macOS Intel**: `koemoji-go-macos-intel-1.1.1.tar.gz`
-- **macOS Apple Silicon**: `koemoji-go-macos-arm64-1.1.1.tar.gz`
+- **Windows**: `koemoji-go-windows-1.5.0.zip`
+- **macOS Intel**: `koemoji-go-macos-intel-1.5.0.tar.gz`
+- **macOS Apple Silicon**: `koemoji-go-macos-arm64-1.5.0.tar.gz`
 
 ## 2. 実行
 

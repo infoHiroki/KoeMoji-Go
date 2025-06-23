@@ -93,25 +93,25 @@ python -m ensurepip --upgrade
 ### ダウンロード
 1. **[GitHubリリースページ](https://github.com/hirokitakamura/koemoji-go/releases)から対応OS版をダウンロード**
 
-**Windows版**: `koemoji-go-windows-1.1.1.zip`
+**Windows版**: `koemoji-go-windows-1.5.0.zip`
 ```
-📁 koemoji-go-windows-1.1.1.zip
+📁 koemoji-go-windows-1.5.0.zip
 ├── koemoji-go.exe     # アイコン付き実行ファイル
 ├── config.json        # 設定ファイル
 └── README.md          # 説明書
 ```
 
-**macOS Intel版**: `koemoji-go-macos-intel-1.1.1.tar.gz`
+**macOS Intel版**: `koemoji-go-macos-intel-1.5.0.tar.gz`
 ```
-📁 koemoji-go-macos-intel-1.1.1.tar.gz  
+📁 koemoji-go-macos-intel-1.5.0.tar.gz  
 ├── koemoji-go         # Intel Mac用実行ファイル
 ├── config.json        # 設定ファイル
 └── README.md          # 説明書
 ```
 
-**macOS Apple Silicon版**: `koemoji-go-macos-arm64-1.1.1.tar.gz`
+**macOS Apple Silicon版**: `koemoji-go-macos-arm64-1.5.0.tar.gz`
 ```
-📁 koemoji-go-macos-arm64-1.1.1.tar.gz  
+📁 koemoji-go-macos-arm64-1.5.0.tar.gz  
 ├── koemoji-go         # Apple Silicon用実行ファイル
 ├── config.json        # 設定ファイル
 └── README.md          # 説明書
@@ -196,23 +196,36 @@ source ~/.zshrc  # 設定を反映
 - 新しいファイルが見つかると順次処理を開始
 - 処理完了後、元ファイルは`archive/`に移動
 
-## 5. 対話操作
+## 5. UI モード選択（v1.5.0新機能）
+
+**GUI モード（デフォルト）**: グラフィカルな画面で操作
+```bash
+./koemoji-go
+```
+
+**TUI モード**: ターミナル画面で操作
+```bash
+./koemoji-go --tui
+```
+
+## 6. 対話操作
 
 実行中に以下のキーで操作できます：
 - `c` - 設定変更
 - `l` - ログ表示
+- `r` - 録音開始/停止（v1.4.0新機能）
 - `a` - AI要約のオン/オフ切り替え（v1.2.0新機能）
 - `s` - 手動スキャン
 - `i` - 入力ディレクトリを開く
 - `o` - 出力ディレクトリを開く
 - `q` - 終了
 
-## 6. 対応ファイル形式
+## 7. 対応ファイル形式
 
 - **音声**: MP3, WAV, M4A, FLAC, OGG, AAC
 - **動画**: MP4, MOV, AVI
 
-## 7. 設定のカスタマイズ
+## 8. 設定のカスタマイズ
 
 `config.json`で動作をカスタマイズできます：
 
@@ -282,7 +295,7 @@ source ~/.zshrc  # 設定を反映
    - 文字起こし完了後、自動的に要約が生成される
    - 要約は`output/ファイル名_summary.txt`として保存
 
-## 8. コマンドラインオプション
+## 9. コマンドラインオプション
 
 ```bash
 ./koemoji-go -config custom.json  # カスタム設定ファイル
@@ -292,7 +305,7 @@ source ~/.zshrc  # 設定を反映
 ./koemoji-go -configure           # 設定モード
 ```
 
-## 9. トラブルシューティング
+## 10. トラブルシューティング
 
 問題が発生した場合は [TROUBLESHOOTING.md](TROUBLESHOOTING.md) をご確認ください。
 
@@ -323,9 +336,9 @@ source ~/.zshrc  # 設定を反映
 ```
 
 **生成されるファイル:**
-- Windows: `koemoji-go-windows-1.1.0.zip` (アイコン付き.exe)
-- macOS Intel: `koemoji-go-macos-intel-1.1.0.tar.gz` (Intel Mac専用)
-- macOS Apple Silicon: `koemoji-go-macos-arm64-1.1.0.tar.gz` (M1/M2 Mac専用)
+- Windows: `koemoji-go-windows-1.5.0.zip` (アイコン付き.exe)
+- macOS Intel: `koemoji-go-macos-intel-1.5.0.tar.gz` (Intel Mac専用)
+- macOS Apple Silicon: `koemoji-go-macos-arm64-1.5.0.tar.gz` (M1/M2 Mac専用)
 
 #### 開発用シンプルビルド
 ```bash
