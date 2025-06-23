@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-KoeMoji-Go is a Go-based audio/video transcription tool that uses FasterWhisper for high-accuracy speech recognition. It provides a real-time terminal UI for monitoring file processing, built-in audio recording capabilities, and supports cross-platform distribution (Windows/macOS).
+KoeMoji-Go is a Go-based audio/video transcription tool that uses FasterWhisper for high-accuracy speech recognition. It provides both GUI and TUI modes for monitoring file processing, built-in audio recording capabilities, and supports cross-platform distribution (Windows/macOS).
 
 ## Key Commands
 
@@ -21,8 +21,8 @@ cd build && ./build.sh
 ./koemoji-go --help
 ./koemoji-go --configure
 
-# Run in GUI mode
-./koemoji-go --gui
+# Run in GUI mode (default)
+./koemoji-go
 ```
 
 ### Testing & Quality
@@ -87,11 +87,11 @@ The application supports English and Japanese UI languages. Messages are central
 
 ### GUI Architecture
 ```bash
-# GUI mode launch
-./koemoji-go --gui
-
-# Traditional TUI launch (default)
+# GUI mode launch (default)
 ./koemoji-go
+
+# TUI mode launch
+./koemoji-go --tui
 ```
 
 ### Package Structure (`internal/gui/`)
