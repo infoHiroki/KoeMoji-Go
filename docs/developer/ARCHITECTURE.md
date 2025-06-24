@@ -88,7 +88,7 @@ KoeMoji-Go/
 
 ### 対応プラットフォーム
 - **Windows**: x64 (フォルダ選択ダイアログ対応)
-- **macOS**: Intel/Apple Silicon (フォルダ選択ダイアログ対応)
+- **macOS**: Apple Silicon (フォルダ選択ダイアログ対応)
 
 ### 対応ファイル形式
 **入力**: mp3, wav, m4a, flac, ogg, aac, mp4, mov, avi

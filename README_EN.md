@@ -55,7 +55,6 @@ Download and extract the version for your OS from [GitHub Releases](https://gith
 #### 🍎 macOS
 
 1. **Download**:
-   - **Intel Mac**: `koemoji-go-macos-intel-1.5.0.tar.gz`
    - **Apple Silicon (M1/M2)**: `koemoji-go-macos-arm64-1.5.0.tar.gz`
 
 2. **Extracted contents**:

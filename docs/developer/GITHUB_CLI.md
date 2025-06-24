@@ -78,7 +78,6 @@ gh release create v1.1.1 \
 EOF
 )" \
   build/dist/koemoji-go-windows-1.1.0.zip \
-  build/dist/koemoji-go-macos-intel-1.1.0.tar.gz \
   build/dist/koemoji-go-macos-arm64-1.1.0.tar.gz
 ```
 

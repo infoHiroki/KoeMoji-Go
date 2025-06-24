@@ -55,7 +55,6 @@ Pythonがない場合は [Python公式ダウンロード](https://www.python.org
 #### 🍎 macOS
 
 1. **ダウンロード**:
-   - **Intel Mac**: `koemoji-go-macos-intel-1.5.0.tar.gz`
    - **Apple Silicon (M1/M2)**: `koemoji-go-macos-arm64-1.5.0.tar.gz`
 
 2. **展開後の構成**:

@@ -120,7 +120,6 @@ KoeMoji-Go/
 
 ### 配布パッケージ
 - Windows: `.exe` + `config.json` + `README.md`
-- macOS Intel: バイナリ + 設定ファイル
 - macOS Apple Silicon: バイナリ + 設定ファイル
 
 ## Windows環境問題修正計画

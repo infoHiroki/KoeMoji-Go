@@ -264,7 +264,7 @@ label := widget.NewLabelWithData(boundString)
 
 #### デスクトップ
 - Windows
-- macOS (Intel & Apple Silicon)
+- macOS (Apple Silicon)
 - Linux
 - FreeBSD、その他BSDシステム
 

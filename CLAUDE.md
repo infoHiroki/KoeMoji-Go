@@ -142,7 +142,7 @@ The application provides a built-in configuration editor accessible via:
 ### Cross-Platform Builds
 The `build/build.sh` script handles:
 - Windows builds with embedded icons using `goversioninfo`
-- macOS builds for both Intel and Apple Silicon
+- macOS builds for Apple Silicon
 - Automatic packaging with config files and documentation
 
 ### Windows-Specific Considerations
