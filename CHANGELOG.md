@@ -4,6 +4,20 @@
 
 フォーマットは [Keep a Changelog](https://keepachangelog.com/ja/1.0.0/) に基づいています。
 
+## [1.5.1] - 2025-06-24
+
+### 削除
+- Intel Macサポートの削除
+  - ビルドスクリプトからIntel版（amd64）ビルドを削除
+  - GitHub ActionsからIntel版ビルドステップを削除
+  - ドキュメントからIntel版の記述を削除
+  - Apple Silicon版（ARM64）のみをサポート
+
+### 変更
+- macOSの配布体制をApple Silicon専用に変更
+  - `KoeMoji-Go_Mac_M1M2版.tar.gz`のみを提供
+  - ビルドスクリプトとドキュメントを統一
+
 ## [1.5.0] - 2025-06-24
 
 ### 追加

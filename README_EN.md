@@ -36,10 +36,10 @@ Download and extract the version for your OS from [GitHub Releases](https://gith
 
 #### 🪟 Windows
 
-1. **Download**: `koemoji-go-windows-1.5.0.zip`
+1. **Download**: `koemoji-go-windows-1.5.1.zip`
 2. **Extracted contents**:
    ```
-   📁 koemoji-go-windows-1.5.0
+   📁 koemoji-go-windows-1.5.1
    ├── koemoji-go.exe          # Executable with icon
    ├── libportaudio.dll        # Audio recording library
    ├── libgcc_s_seh-1.dll      # GCC runtime
@@ -55,11 +55,11 @@ Download and extract the version for your OS from [GitHub Releases](https://gith
 #### 🍎 macOS
 
 1. **Download**:
-   - **Apple Silicon (M1/M2)**: `koemoji-go-macos-arm64-1.5.0.tar.gz`
+   - **Apple Silicon (M1/M2)**: `koemoji-go-macos-arm64-1.5.1.tar.gz`
 
 2. **Extracted contents**:
    ```
-   📁 koemoji-go-macos-*-1.5.0
+   📁 koemoji-go-macos-*-1.5.1
    ├── koemoji-go         # Executable file
    ├── config.json        # Configuration file
    └── README.md          # Documentation

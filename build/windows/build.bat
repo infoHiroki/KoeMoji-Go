@@ -2,9 +2,9 @@
 setlocal enabledelayedexpansion
 
 rem KoeMoji-Go Windows Build Script
-rem Version: 1.5.0
+rem Version: 1.5.1
 
-set VERSION=1.5.0
+set VERSION=1.5.1
 set APP_NAME=koemoji-go
 set DIST_DIR=dist
 set SOURCE_DIR=..\..\cmd\koemoji-go

@@ -132,7 +132,7 @@ func (app *GUIApp) initLogger() {
 
 	// Only timestamps for file logging, no prefix for console
 	app.logger = log.New(io.MultiWriter(logFile), "", log.LstdFlags)
-	logger.LogInfo(app.logger, &app.logBuffer, &app.logMutex, "KoeMoji-Go v1.5.0 started (GUI mode)")
+	logger.LogInfo(app.logger, &app.logBuffer, &app.logMutex, "KoeMoji-Go v1.5.1 started (GUI mode)")
 }
 
 // ForceCleanup performs immediate resource cleanup for application exit
