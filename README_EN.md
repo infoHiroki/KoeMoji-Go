@@ -6,414 +6,111 @@ Automatic Audio/Video Transcription Tool
 
 ## Overview
 
-KoeMoji-Go is a Go application that automatically transcribes audio and video files.
+KoeMoji-Go is an application that automatically transcribes audio and video files.
 It's a Go port of the Python-based KoeMojiAuto-cli, providing single binary distribution and stable sequential processing.
 
-![KoeMoji-Go Dashboard](build/screenshot01.png)
-
-## Features
+### Features
 
 - **Single Binary**: Works with just one executable file
 - **Sequential Processing**: Stable processing one file at a time
 - **FasterWhisper Integration**: High-accuracy speech recognition
-- **AI Summary**: Automatic summary generation using OpenAI API (v1.2.0 new feature)
-- **Cross-Platform**: Windows/Mac support
+- **AI Summary**: Automatic summary generation using OpenAI API
+- **Recording Feature**: Built-in microphone recording
+- **GUI/TUI Support**: Both graphical and terminal interfaces
 - **Auto Monitoring**: Automatically monitors folders and processes files
-- **Real-time UI**: Real-time display of processing status
 
-## 1. System Requirements
-
-### Hardware Requirements
-- **OS**: Windows 10/11, macOS 10.15+
-- **CPU**: Intel/AMD 64bit, Apple Silicon
-- **Memory**: 4GB+ recommended (8GB+ for better performance)
-- **Storage**: 5GB+ (including Whisper model files)
+## ⚡ Quick Start
 
 ### Prerequisites
 
-#### Python 3.8+ Installation
-KoeMoji-Go uses FasterWhisper, so **Python 3.8+ is required**.
-
-**Check Python version:**
+**Python 3.8+** is required.
 ```bash
-python --version
-# or
-python3 --version
+python --version  # Check version is 3.8+
 ```
 
-**If Python is not installed:**
+If Python is not installed, download from [Python Official Downloads](https://www.python.org/downloads/).
 
-**Windows:**
-1. Download from [Python official site](https://www.python.org/downloads/windows/)
-2. Check "Add Python to PATH" during installation
-3. Recommended: Python 3.11+
+### Installation
 
-**macOS:**
-```bash
-# Using Homebrew
-brew install python
+Download and extract the version for your OS from [GitHub Releases](https://github.com/infoHiroki/KoeMoji-Go/releases).
 
-# Or download from official site
-# https://www.python.org/downloads/macos/
-```
+#### 🪟 Windows
 
+1. **Download**: `koemoji-go-windows-1.5.0.zip`
+2. **Extracted contents**:
+   ```
+   📁 koemoji-go-windows-1.5.0
+   ├── koemoji-go.exe          # Executable with icon
+   ├── libportaudio.dll        # Audio recording library
+   ├── libgcc_s_seh-1.dll      # GCC runtime
+   ├── libwinpthread-1.dll     # Thread support
+   ├── config.json             # Configuration file
+   └── README.md               # Documentation
+   ```
+3. **Run**:
+   ```cmd
+   koemoji-go.exe
+   ```
 
-#### Check pip
-```bash
-pip --version
-# or
-pip3 --version
-```
+#### 🍎 macOS
 
-If pip is not available:
-```bash
-# macOS
-python3 -m ensurepip --upgrade
+1. **Download**:
+   - **Intel Mac**: `koemoji-go-macos-intel-1.5.0.tar.gz`
+   - **Apple Silicon (M1/M2)**: `koemoji-go-macos-arm64-1.5.0.tar.gz`
 
-# Windows
-python -m ensurepip --upgrade
-```
+2. **Extracted contents**:
+   ```
+   📁 koemoji-go-macos-*-1.5.0
+   ├── koemoji-go         # Executable file
+   ├── config.json        # Configuration file
+   └── README.md          # Documentation
+   ```
 
-## 2. Installation
+3. **Run**:
+   ```bash
+   ./koemoji-go
+   ```
 
-### Download
-1. **Download the version for your OS from [GitHub Releases](https://github.com/hirokitakamura/koemoji-go/releases)**
+> **First run**: FasterWhisper will be automatically installed (takes a few minutes)
 
-**Windows**: `koemoji-go-windows-1.1.0.zip`
-```
-📁 koemoji-go-windows-1.0.0.zip
-├── koemoji-go.exe     # Executable with icon
-├── config.json        # Configuration file
-└── README.md          # Documentation
-```
+### Basic Usage
 
-**macOS Intel**: `koemoji-go-macos-intel-1.1.0.tar.gz`
-```
-📁 koemoji-go-macos-intel-1.0.0.tar.gz  
-├── koemoji-go         # Intel Mac executable
-├── config.json        # Configuration file
-└── README.md          # Documentation
-```
+#### 1. Process Audio Files
+1. Place audio files (MP3, WAV, etc.) in the `input/` folder
+2. Processing will start automatically
+3. Results are saved in the `output/` folder
+4. Processed files are moved to `archive/`
 
-**macOS Apple Silicon**: `koemoji-go-macos-arm64-1.1.0.tar.gz`
-```
-📁 koemoji-go-macos-arm64-1.0.0.tar.gz  
-├── koemoji-go         # Apple Silicon executable
-├── config.json        # Configuration file
-└── README.md          # Documentation
-```
+#### 2. UI Mode Selection
+- **GUI Mode (Default)**: Click buttons to operate
+  ```bash
+  ./koemoji-go
+  ```
+- **TUI Mode**: Keyboard controls
+  ```bash
+  ./koemoji-go --tui
+  ```
 
-
-2. **Extract the downloaded file**
-
-3. **FasterWhisper will be automatically installed on first run**
-
-### Manual Installation (if needed)
-```bash
-pip install faster-whisper whisper-ctranslate2
-```
-
-## 3. First Run
-
-### Basic Execution
-
-**Windows:**
-```cmd
-koemoji-go.exe
-```
-
-**macOS:**
-```bash
-./koemoji-go
-```
-
-### Add to PATH (Optional)
-
-To run from anywhere, add to PATH:
-
-**macOS:**
-```bash
-# Add binary to PATH
-sudo cp koemoji-go /usr/local/bin/koemoji-go
-sudo chmod +x /usr/local/bin/koemoji-go
-
-# Alias setup (optional)
-echo 'alias koe="koemoji-go"' >> ~/.zshrc  # for zsh
-echo 'alias koe="koemoji-go"' >> ~/.bashrc # for bash
-source ~/.zshrc  # Apply settings
-```
-
-**Windows:**
-```cmd
-# Set PATH manually through environment variables
-# Or open command prompt in the executable folder
-```
-
-Now you can run with `koemoji-go` or `koe` command.
-
-The following directories will be automatically created on first run:
-- `input/` - Place files to process here
-- `output/` - Transcription results output here
-- `archive/` - Processed files stored here
-- `koemoji.log` - Log file
-
-## 4. Basic Usage
-
-### Step 1: Prepare Audio Files
-- Place supported files in the `input/` folder
-- Multiple files can be processed simultaneously
-
-### Step 2: Monitor Processing Status
-- Processing status is displayed in real-time on the UI screen
-- Completed files are automatically moved to `archive/`
-- Transcription results are saved in the `output/` folder
-
-### Processing Flow
-```
-[input/audio file] → [transcription] → [output/text file]
-                                    ↓              ↓ (if AI summary enabled)
-                            [archive/processed file]   [output/summary file]
-```
-
-- Automatically scans the `input/` folder every 10 minutes
-- Starts sequential processing when new files are found
-- After processing, original files are moved to `archive/`
-
-## 5. Interactive Controls
-
-During execution, you can use the following keys:
+#### 3. Main Controls (TUI Mode)
 - `c` - Configure settings
 - `l` - Display logs
-- `a` - Toggle AI summary on/off (v1.2.0 new feature)
 - `s` - Manual scan
-- `i` - Open input directory
-- `o` - Open output directory
+- `r` - Start/stop recording
 - `q` - Quit
 
-## 6. Supported File Formats
-
+#### 4. Supported File Formats
 - **Audio**: MP3, WAV, M4A, FLAC, OGG, AAC
 - **Video**: MP4, MOV, AVI
 
-## 7. Configuration Customization
+#### 5. AI Summary Feature (Optional)
+1. Get API key from [OpenAI Platform](https://platform.openai.com/)
+2. Enter API key in settings (`c`)
+3. Summary will be automatically generated after transcription
 
-You can customize behavior with `config.json`:
+## 📚 Additional Information
 
-```json
-{
-  "whisper_model": "large-v3",
-  "language": "ja",
-  "scan_interval_minutes": 10,
-  "max_cpu_percent": 95,
-  "compute_type": "int8",
-  "use_colors": true,
-  "ui_mode": "enhanced",
-  "llm_summary_enabled": false,
-  "llm_api_provider": "openai",
-  "llm_api_key": "",
-  "llm_model": "gpt-4o",
-  "llm_max_tokens": 4096
-}
-```
-
-### Configuration Options
-
-**Basic Settings:**
-- `whisper_model`: Whisper model (tiny, base, small, medium, large, large-v2, large-v3)
-- `language`: Language code (ja, en, etc.)
-- `scan_interval_minutes`: Folder monitoring interval (minutes)
-- `max_cpu_percent`: CPU usage limit (currently unused)
-- `compute_type`: Quantization type (int8, float16, etc.)
-- `use_colors`: Enable/disable color display
-- `ui_mode`: UI display mode (enhanced/simple)
-
-**AI Summary Settings (v1.2.0 new feature):**
-- `llm_summary_enabled`: Enable/disable AI summary
-- `llm_api_provider`: API provider (currently only openai)
-- `llm_api_key`: OpenAI API key
-- `llm_model`: Model to use (gpt-4o, gpt-4-turbo, gpt-3.5-turbo, etc.)
-- `llm_max_tokens`: Maximum tokens (summary length)
-- `use_colors`: Enable/disable color display
-- `ui_mode`: UI display mode (enhanced/simple)
-
-### Whisper Model Selection
-
-| Model | Size | Speed | Accuracy | Recommended Use |
-|-------|------|-------|----------|-----------------|
-| tiny | Smallest | Fastest | Low | Testing |
-| base | Small | Fast | Medium | Simple audio |
-| small | Medium | Normal | Medium | Balanced |
-| medium | Large | Slow | High | Quality focused |
-| large | Largest | Slowest | Highest | High accuracy (old) |
-| large-v2 | Largest | Slowest | Highest | Multilingual improved |
-| large-v3 | Largest | Slowest | Highest | **Japanese recommended** |
-
-**Recommended**: For Japanese transcription, `large-v3` is optimal (significantly reduced hallucinations).
-
-### AI Summary Setup (v1.2.0 new feature)
-
-1. **Get OpenAI API Key**:
-   - Create account at [OpenAI Platform](https://platform.openai.com/)
-   - Generate API key
-
-2. **Configuration**:
-   - Press `c` to open settings
-   - Set API key in option 14
-   - Select model in option 15 (gpt-4o recommended)
-   - Or edit `config.json` directly
-
-3. **Usage**:
-   - Press `a` to toggle AI summary on/off
-   - Summary is automatically generated after transcription
-   - Summary saved as `output/filename_summary.txt`
-
-## 8. Command Line Options
-
-```bash
-./koemoji-go --config custom.json  # Custom config file
-./koemoji-go --debug               # Debug mode
-./koemoji-go --version             # Show version
-./koemoji-go --help                # Show help
-```
-
-## 9. Troubleshooting
-
-### Common Issues
-
-**Q: "Python not found" error**
-- Python is not installed
-- Install Python following the "1. System Requirements" section above
-- Restart terminal/command prompt after installation
-
-**Q: Python is installed but old version**
-```bash
-# Check version
-python --version
-
-# If below Python 3.8, install newer version
-```
-
-**Q: FasterWhisper installation fails**
-```bash
-# Install manually
-pip install faster-whisper whisper-ctranslate2
-
-# If pip is old
-pip install --upgrade pip
-pip install faster-whisper whisper-ctranslate2
-
-# If permission error
-pip install --user faster-whisper whisper-ctranslate2
-```
-
-**Q: "whisper-ctranslate2 not found" error**
-- Python PATH may not be set correctly
-- pip installed packages PATH may not be set
-- Check the following:
-```bash
-# Check if package is installed
-pip show whisper-ctranslate2
-
-# Check PATH
-which whisper-ctranslate2
-# or
-where whisper-ctranslate2  # Windows
-```
-
-**Q: Processing is slow**
-- Change model to `small` or `medium` in `config.json`
-- Default is already optimized for maximum speed (`compute_type`: `int8`)
-
-**Q: Audio files not recognized**
-- Supported formats: MP3, WAV, M4A, FLAC, OGG, AAC, MP4, MOV, AVI
-- Check if filename contains special characters
-
-**Q: Transcription results are incorrect**
-- Recommend using `large-v3` model
-- Check audio quality (noise, volume, etc.)
-
-### Check Logs
-
-If problems occur, check `koemoji.log`:
-```bash
-# Check log file
-cat koemoji.log
-
-# Check latest logs only
-tail -f koemoji.log
-```
-
----
-
-## Developer Information
-
-### Build Instructions
-
-#### Simple Build (with icons - recommended)
-```bash
-# Build for all platforms with icons
-./build.sh
-
-# Build for specific platform only
-./build.sh windows   # Windows only
-./build.sh macos     # macOS only
-
-# Clean build artifacts
-./build.sh clean
-```
-
-**Generated files:**
-- Windows: `koemoji-go-windows-1.1.0.zip` (executable with icon)
-- macOS Intel: `koemoji-go-macos-intel-1.1.0.tar.gz` (Intel Mac only)
-- macOS Apple Silicon: `koemoji-go-macos-arm64-1.1.0.tar.gz` (M1/M2 Mac only)
-
-#### Simple Development Build
-```bash
-go build -o koemoji-go main.go
-```
-
-#### Manual Build (without icons)
-```bash
-# Windows 64bit
-GOOS=windows GOARCH=amd64 go build -o koemoji-go-windows-amd64.exe main.go
-
-# macOS Intel
-GOOS=darwin GOARCH=amd64 go build -o koemoji-go-darwin-amd64 main.go
-
-# macOS Apple Silicon
-GOOS=darwin GOARCH=arm64 go build -o koemoji-go-darwin-arm64 main.go
-
-```
-
-### Development Environment Setup
-
-#### Required Tools
-- Go 1.21+
-- Python 3.8+ + FasterWhisper (for testing)
-- Git
-
-#### Setup Steps
-```bash
-git clone https://github.com/hirokitakamura/koemoji-go.git
-cd koemoji-go
-go mod tidy
-go build -o koemoji-go main.go
-```
-
-### Technical Specifications
-
-#### Architecture
-- **Language**: Go 1.21
-- **Dependencies**: Standard library only
-- **External Integration**: FasterWhisper (whisper-ctranslate2)
-- **Processing Method**: Sequential processing (one file at a time)
-
-#### Core Features
-- Automatic directory monitoring
-- Real-time UI display
-- Log management
-- Configuration file management
-- Cross-platform support
+- **[🔧 Troubleshooting](TROUBLESHOOTING.md)** - Problem solving and FAQ
+- **[📖 Developer Documentation](docs/)** - Build instructions, architecture, technical specifications
 
 ## License
 
@@ -424,6 +121,5 @@ See [LICENSE](LICENSE) file for details.
 
 ## Author
 
-KoeMoji-Go Development Team
-
+KoeMoji-Go Development Team  
 Contact: koemoji2024@gmail.com

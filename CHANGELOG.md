@@ -36,4 +36,4 @@
 ### 追加
 - 録音機能の実装
 
-[1.5.0]: https://github.com/hirokitakamura/koemoji-go/releases/tag/v1.5.0
+[1.5.0]: https://github.com/infoHiroki/KoeMoji-Go/releases/tag/v1.5.0
