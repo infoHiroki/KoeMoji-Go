@@ -7,17 +7,20 @@
 ### 🎯 [user/](./user/) - ユーザー向けドキュメント
 エンドユーザーが使用するための詳細なガイドライン。
 
-- **[USAGE.md](./user/USAGE.md)** - 詳細な使用方法、コマンドリファレンス、設定オプション
+- **[USAGE.md](./user/USAGE.md)** - 使用方法ガイドの目次・ナビゲーション
+- **[BASIC_USAGE.md](./user/BASIC_USAGE.md)** - 基本的な操作方法とコマンド
+- **[AI_FEATURES.md](./user/AI_FEATURES.md)** - AI要約機能の詳細設定
+- **[RECORDING_SETUP.md](./user/RECORDING_SETUP.md)** - 録音機能セットアップガイド
+- **[TROUBLESHOOTING.md](./user/TROUBLESHOOTING.md)** - 問題解決とFAQ
 
 ### 💻 [developer/](./developer/) - 開発者向けドキュメント
 コードベースの理解と開発に必要な技術文書。
 
 - **[ARCHITECTURE.md](./developer/ARCHITECTURE.md)** - システムアーキテクチャ、パッケージ構成、設計思想
 - **[DEVELOPMENT.md](./developer/DEVELOPMENT.md)** - 開発環境構築、ビルドプロセス、テスト手順
+- **[WINDOWS_BUILD_GUIDE.md](./developer/WINDOWS_BUILD_GUIDE.md)** - Windows環境でのビルド手順（MSYS2使用）
 - **[GITHUB_CLI.md](./developer/GITHUB_CLI.md)** - GitHub CLI自動化、リリース管理
-
-### 🪟 プラットフォーム別ビルドガイド
-- **[WINDOWS_BUILD_GUIDE.md](./WINDOWS_BUILD_GUIDE.md)** - Windows環境でのビルド手順（MSYS2使用）
+- **[CLAUDE.md](./developer/CLAUDE.md)** - AI開発アシスタント向けプロジェクト情報
 
 ### 📐 [design/](./design/) - 設計ドキュメント
 システム設計と仕様に関する詳細な設計書。
@@ -32,6 +35,7 @@
 
 - **[fyne-implementation.md](./technical/fyne-implementation.md)** - Fyneフレームワーク実装における課題と解決策
 - **[windows-process-execution.md](./technical/windows-process-execution.md)** - Windows環境での外部プロセス起動とコンソールウィンドウ制御
+- **[Fyne-Deep-Research.md](./technical/Fyne-Deep-Research.md)** - Fyneフレームワークの詳細調査
 
 ### 🎨 [creative/](./creative/) - 創作・教育コンテンツ
 技術学習や創作的なアプローチでのドキュメント。
@@ -43,19 +47,16 @@
 
 プロジェクトルートには以下の重要なドキュメントがあります：
 
-- **[README.md](../README.md)** - プロジェクト概要（日本語）
-- **[README_EN.md](../README_EN.md)** - プロジェクト概要（英語）
-- **[QUICKSTART.md](../QUICKSTART.md)** - 5分で始める簡潔ガイド
-- **[TROUBLESHOOTING.md](../TROUBLESHOOTING.md)** - 問題解決とFAQ
-- **[CLAUDE.md](../CLAUDE.md)** - AI開発アシスタント向けプロジェクト情報
+- **[README.md](../README.md)** - プロジェクト概要とクイックスタート
+- **[TROUBLESHOOTING.md](user/TROUBLESHOOTING.md)** - 問題解決とFAQ
+- **[CLAUDE.md](developer/CLAUDE.md)** - AI開発アシスタント向けプロジェクト情報
 
 ## 📝 ドキュメント利用ガイド
 
 ### 初めてのユーザー
-1. [QUICKSTART.md](../QUICKSTART.md) で5分クイックスタート
-2. [README.md](../README.md) でプロジェクト概要を理解
-3. [user/USAGE.md](./user/USAGE.md) で詳細な使用方法を学習
-4. 問題が発生したら [TROUBLESHOOTING.md](../TROUBLESHOOTING.md) を確認
+1. [README.md](../README.md) でプロジェクト概要とクイックスタートを確認
+2. [user/USAGE.md](./user/USAGE.md) で詳細な使用方法を学習
+3. 問題が発生したら [TROUBLESHOOTING.md](user/TROUBLESHOOTING.md) を確認
 
 ### 開発者・コントリビューター
 1. [developer/ARCHITECTURE.md](./developer/ARCHITECTURE.md) でシステム構成を理解

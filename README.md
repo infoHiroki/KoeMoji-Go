@@ -2,8 +2,6 @@
 
 音声・動画ファイル自動文字起こしツール
 
-**日本語版 README** | [English README](README_EN.md)
-
 ## 概要
 
 KoeMoji-Goは、音声・動画ファイルを自動で文字起こしするアプリケーションです。
@@ -108,7 +106,7 @@ Pythonがない場合は [Python公式ダウンロード](https://www.python.org
 
 ## 📚 詳細情報
 
-- **[🔧 トラブル解決](TROUBLESHOOTING.md)** - 問題解決とFAQ
+- **[🔧 トラブル解決](docs/user/TROUBLESHOOTING.md)** - 問題解決とFAQ
 - **[📖 開発者向けドキュメント](docs/)** - ビルド方法、アーキテクチャ、技術仕様
 
 ## ライセンス

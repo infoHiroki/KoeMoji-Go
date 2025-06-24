@@ -151,7 +151,7 @@ The `build/build.sh` script handles:
 - Required DLLs: libportaudio.dll, libgcc_s_seh-1.dll, libwinpthread-1.dll
 - Color support forced on Windows 10+ for optimal UI experience
 - Notepad used for log file viewing (universal Windows compatibility)
-- See docs/WINDOWS_BUILD_GUIDE.md for detailed build instructions
+- See docs/developer/WINDOWS_BUILD_GUIDE.md for detailed build instructions
 
 ## External Dependencies
 
