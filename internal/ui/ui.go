@@ -145,11 +145,11 @@ func DisplayLogs(config *config.Config) {
 	switch runtime.GOOS {
 	case "windows":
 		// Try to open with PowerShell to jump to end, fallback to regular notepad
-		powershellCmd := CreateCommand("powershell", "-Command",
+		powershellCmd := createCommand("powershell", "-Command",
 			`notepad koemoji.log; Start-Sleep -Milliseconds 500; Add-Type -AssemblyName System.Windows.Forms; [System.Windows.Forms.SendKeys]::SendWait("^{END}")`)
 		if err := powershellCmd.Run(); err != nil {
 			// Fallback to regular notepad if PowerShell fails
-			fallbackCmd := CreateCommand("notepad", "koemoji.log")
+			fallbackCmd := createCommand("notepad", "koemoji.log")
 			if fallbackErr := fallbackCmd.Run(); fallbackErr != nil {
 				fmt.Printf(msg.LogFileError, fallbackErr)
 			}
@@ -162,12 +162,12 @@ func DisplayLogs(config *config.Config) {
 		}
 
 		// Try to open with AppleScript to jump to end, fallback to regular open
-		appleScriptCmd := CreateCommand("osascript", "-e",
+		appleScriptCmd := createCommand("osascript", "-e",
 			fmt.Sprintf(`tell application "TextEdit" to open POSIX file "%s"`, absPath),
 			"-e", `tell application "TextEdit" to goto paragraph -1`)
 		if err := appleScriptCmd.Run(); err != nil {
 			// Fallback to regular open if AppleScript fails
-			fallbackCmd := CreateCommand("open", "koemoji.log")
+			fallbackCmd := createCommand("open", "koemoji.log")
 			if fallbackErr := fallbackCmd.Run(); fallbackErr != nil {
 				fmt.Printf(msg.LogFileError, fallbackErr)
 			}
@@ -182,9 +182,10 @@ func OpenDirectory(dirPath string) error {
 	var cmd *exec.Cmd
 	switch runtime.GOOS {
 	case "windows":
-		cmd = CreateCommand("explorer", dirPath)
+		// Explorer doesn't work with HideWindow flag, use regular exec.Command
+		cmd = exec.Command("explorer", dirPath)
 	case "darwin":
-		cmd = CreateCommand("open", dirPath)
+		cmd = createCommand("open", dirPath)
 	default:
 		return fmt.Errorf("opening directories not supported on this platform")
 	}

@@ -1,7 +1,7 @@
 //go:build !windows
 // +build !windows
 
-package ui
+package whisper
 
 import "os/exec"
 

@@ -31,6 +31,7 @@
 実装時の技術的課題と解決策を記録したテクニカルノート。
 
 - **[fyne-implementation.md](./technical/fyne-implementation.md)** - Fyneフレームワーク実装における課題と解決策
+- **[windows-process-execution.md](./technical/windows-process-execution.md)** - Windows環境での外部プロセス起動とコンソールウィンドウ制御
 
 ### 🎨 [creative/](./creative/) - 創作・教育コンテンツ
 技術学習や創作的なアプローチでのドキュメント。

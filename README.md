@@ -96,9 +96,12 @@ python -m ensurepip --upgrade
 **Windows版**: `koemoji-go-windows-1.5.0.zip`
 ```
 📁 koemoji-go-windows-1.5.0.zip
-├── koemoji-go.exe     # アイコン付き実行ファイル
-├── config.json        # 設定ファイル
-└── README.md          # 説明書
+├── koemoji-go.exe          # アイコン付き実行ファイル
+├── libportaudio.dll        # 録音機能用ライブラリ
+├── libgcc_s_seh-1.dll      # GCCランタイム
+├── libwinpthread-1.dll     # スレッドサポート
+├── config.json             # 設定ファイル
+└── README.md               # 説明書
 ```
 
 **macOS Intel版**: `koemoji-go-macos-intel-1.5.0.tar.gz`

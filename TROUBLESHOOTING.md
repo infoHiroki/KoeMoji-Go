@@ -4,6 +4,14 @@
 
 ## 環境・インストール関連
 
+### Q: OneDriveフォルダでビルドエラーが発生する
+```
+A: OneDriveの同期によるファイルロックが原因です
+- 解決策: OneDrive外のフォルダ（例: C:\Dev\KoeMoji-Go）にプロジェクトを移動
+- xcopyコマンドでプロジェクトをコピー:
+  xcopy /E /I /Y "OneDrive内のパス" "C:\Dev\KoeMoji-Go"
+```
+
 ### Q: "Python not found" エラーが出る
 ```
 A: Pythonがインストールされていません
@@ -81,6 +89,14 @@ A: 以下を確認：
 A: プラットフォーム別の対応：
 - Windows: explorerが利用可能か確認
 - macOS: Finderが利用可能か確認
+```
+
+### Q: GUI版で入力/出力ボタンが反応しない（v1.5.0で修正済み）
+```
+A: v1.5.0以前のバージョンで発生する問題：
+- 原因: WindowsでHideWindowフラグがexplorer.exeと互換性がない
+- 解決策: v1.5.0以降にアップデート
+- 一時的な回避策: TUIモード（--tui）を使用
 ```
 
 ### Q: 設定変更（cキー）が反映されない

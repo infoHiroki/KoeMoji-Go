@@ -182,31 +182,17 @@ PortAudioを簡単にインストールするためのヘルパースクリプ�
 
 ## 既知の問題と回避策
 
-### GUI起動時のコンソールウィンドウ表示
-
-## 参考リンク
-
-- [MSYS2](https://www.msys2.org/)
-- [Go CGO Documentation](https://golang.org/cmd/cgo/)
-- [PortAudio](http://www.portaudio.com/)
-- [Fyne Framework](https://fyne.io/)
-
+### ~~GUI起動時のコンソールウィンドウ表示~~ (v1.5.0で修正済み)
 
 **問題**: GUI版で「i」（入力ディレクトリを開く）、「o」（出力ディレクトリを開く）、「l」（ログを開く）を押すと、一時的にコンソールウィンドウが表示される。
 
-**原因**: `exec.Command`で外部プログラム（explorer.exe、notepad.exe等）を起動する際、Windowsではデフォルトでコンソールウィンドウが表示される。
+**状態**: ✅ **v1.5.0で修正済み** - `syscall.SysProcAttr`の`CREATE_NO_WINDOW`フラグを使用して解決
 
-**回避策**:
-1. 現状では仕様として受け入れる（一瞬表示されるだけで実害はない）
-2. 将来の修正案:
-   - `syscall.SysProcAttr`の`CREATE_NO_WINDOW`フラグを使用
-   - VBScriptラッパーを作成して静かに実行
-
-### 相対パスの解決問題
+### ~~相対パスの解決問題~~ (v1.5.0で修正済み)
 
 **問題**: プログラムを異なる場所から実行すると、`./input`、`./output`などの相対パスが意図しない場所を指す可能性がある。
 
-**原因**: 相対パスは現在の作業ディレクトリ（CWD）を基準に解決されるが、実行方法によってCWDが異なる。
+**状態**: ✅ **v1.5.0で修正済み** - 実行ファイルのディレクトリを基準にパスを解決するように改善
 
 **回避策**:
 
@@ -237,14 +223,15 @@ PortAudioを簡単にインストールするためのヘルパースクリプ�
 
 ## 今後の改善点
 
-1. **コンソールウィンドウの非表示化**
-   - Windows固有のプロセス起動オプションを実装
-   - 対象ファイル: `internal/ui/ui.go`
+1. **GitHub Actions対応**: CI/CDパイプラインでの自動ビルド
+2. **静的リンク**: DLLを含まない単一実行ファイルの作成（将来的な目標）
+3. **インストーラー**: NSIS等を使用したインストーラーの作成
+4. **デジタル署名**: 実行ファイルへのコード署名でセキュリティ警告を回避
 
-2. **パス解決の改善**
-   - 実行ファイル基準の相対パス解決
-   - 対象ファイル: `internal/config/config.go`
+## 参考リンク
 
-3. **GitHub Actions対応**: CI/CDパイプラインでの自動ビルド
-4. **静的リンク**: DLLを含まない単一実行ファイルの作成
-5. **インストーラー**: NSIS等を使用したインストーラーの作成
+- [MSYS2](https://www.msys2.org/)
+- [Go CGO Documentation](https://golang.org/cmd/cgo/)
+- [PortAudio](http://www.portaudio.com/)
+- [Fyne Framework](https://fyne.io/)
+- [goversioninfo](https://github.com/josephspurrier/goversioninfo)

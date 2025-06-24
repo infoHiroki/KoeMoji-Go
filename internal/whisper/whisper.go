@@ -53,7 +53,7 @@ func isFasterWhisperAvailable() bool {
 		}
 	}
 	
-	cmd := exec.Command(whisperCmd, "--help")
+	cmd := createCommand(whisperCmd, "--help")
 	cmd.Stdout = nil
 	cmd.Stderr = nil
 	return cmd.Run() == nil
@@ -66,7 +66,7 @@ func IsFasterWhisperAvailableForTesting() bool {
 
 func installFasterWhisper(log *log.Logger, logBuffer *[]logger.LogEntry, logMutex *sync.RWMutex) error {
 	logger.LogInfo(log, logBuffer, logMutex, "Installing faster-whisper and whisper-ctranslate2...")
-	cmd := exec.Command("pip", "install", "faster-whisper", "whisper-ctranslate2")
+	cmd := createCommand("pip", "install", "faster-whisper", "whisper-ctranslate2")
 	if err := cmd.Run(); err != nil {
 		return fmt.Errorf("pip install failed: %w", err)
 	}
@@ -110,7 +110,7 @@ func TranscribeAudio(config *config.Config, log *log.Logger, logBuffer *[]logger
 
 	whisperCmd := getWhisperCommand()
 
-	cmd := exec.Command(whisperCmd,
+	cmd := createCommand(whisperCmd,
 		"--model", config.WhisperModel,
 		"--language", config.Language,
 		"--output_dir", config.OutputDir,
