@@ -133,24 +133,52 @@ mkdir -p $DIST_DIR
 
 # Skip Windows build when only building apps
 if [ "$BUILD_APPS" != true ] && [ "$BUILD_DMG" != true ]; then
-    # Windows with icon
-    echo "🪟 Building Windows with icon..."
-    if ! command -v goversioninfo &> /dev/null; then
-        echo "📦 Installing goversioninfo..."
-        go install github.com/josephspurrier/goversioninfo/cmd/goversioninfo@latest
-        export PATH=$PATH:$(go env GOPATH)/bin
+    # Check if we're on Windows or can cross-compile with CGO
+    if [[ "$OSTYPE" == "msys" || "$OSTYPE" == "cygwin" || "$OSTYPE" == "win32" ]]; then
+        # Native Windows build
+        echo "🪟 Building Windows (native)..."
+        if ! command -v goversioninfo &> /dev/null; then
+            echo "📦 Installing goversioninfo..."
+            go install github.com/josephspurrier/goversioninfo/cmd/goversioninfo@latest
+            export PATH=$PATH:$(go env GOPATH)/bin
+        fi
+
+        echo "🎨 Generating Windows resource file..."
+        $(go env GOPATH)/bin/goversioninfo -o temp/resource.syso templates/windows/versioninfo.json
+
+        echo "🔨 Building Windows executable..."
+        CGO_ENABLED=1 go build -ldflags="-s -w" -o $DIST_DIR/${APP_NAME}.exe $SOURCE_DIR
+
+        # Clean up resource file
+        rm -f temp/resource.syso
+
+        echo "✅ Windows build completed"
+    else
+        # Cross-compilation attempt
+        echo "🪟 Attempting Windows cross-compilation..."
+        echo "⚠️  Note: CGO dependencies (PortAudio/Fyne) may cause build failures"
+        
+        if ! command -v goversioninfo &> /dev/null; then
+            echo "📦 Installing goversioninfo..."
+            go install github.com/josephspurrier/goversioninfo/cmd/goversioninfo@latest
+            export PATH=$PATH:$(go env GOPATH)/bin
+        fi
+
+        echo "🎨 Generating Windows resource file..."
+        $(go env GOPATH)/bin/goversioninfo -o temp/resource.syso templates/windows/versioninfo.json
+
+        echo "🔨 Building Windows executable..."
+        if CGO_ENABLED=0 GOOS=windows GOARCH=amd64 go build -ldflags="-s -w" -o $DIST_DIR/${APP_NAME}.exe $SOURCE_DIR 2>/dev/null; then
+            echo "✅ Windows build completed (CGO disabled)"
+        else
+            echo "❌ Windows cross-compilation failed"
+            echo "💡 For full functionality, build on Windows with: CGO_ENABLED=1"
+            echo "💡 Or use GitHub Actions for automated Windows builds"
+        fi
+
+        # Clean up resource file
+        rm -f temp/resource.syso
     fi
-
-    echo "🎨 Generating Windows resource file..."
-    $(go env GOPATH)/bin/goversioninfo -o temp/resource.syso templates/windows/versioninfo.json
-
-    echo "🔨 Building Windows executable..."
-    GOOS=windows GOARCH=amd64 go build -ldflags="-s -w" -o $DIST_DIR/${APP_NAME}.exe $SOURCE_DIR
-
-    # Clean up resource file
-    rm -f temp/resource.syso
-
-    echo "✅ Windows build completed"
 fi
 
 # macOS builds

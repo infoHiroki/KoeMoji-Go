@@ -59,37 +59,34 @@ jobs:
         go-version: '1.21'
     
     - name: Setup Windows build environment
-      shell: powershell
-      run: |
-        # Install MSYS2 and required packages
-        choco install msys2 -y
-        $env:PATH = "C:\tools\msys64\mingw64\bin;C:\tools\msys64\usr\bin;" + $env:PATH
-        # Refresh environment
-        refreshenv
-        # Install portaudio via MSYS2
-        C:\tools\msys64\usr\bin\bash.exe -lc "pacman -S --noconfirm mingw-w64-x86_64-portaudio mingw-w64-x86_64-pkg-config mingw-w64-x86_64-gcc"
-        echo "Windows build environment ready"
+      uses: msys2/setup-msys2@v2
+      with:
+        msystem: UCRT64
+        update: true
+        install: >-
+          git
+          mingw-w64-ucrt-x86_64-gcc
+          mingw-w64-ucrt-x86_64-pkg-config
+          mingw-w64-ucrt-x86_64-portaudio
     
     - name: Install goversioninfo
       run: go install github.com/josephspurrier/goversioninfo/cmd/goversioninfo@latest
     
     - name: Build Windows
-      shell: powershell
+      shell: msys2 {0}
       run: |
-        $env:PATH = "C:\tools\msys64\mingw64\bin;C:\tools\msys64\usr\bin;" + $env:PATH
-        $env:CGO_ENABLED = "1"
-        $env:CC = "gcc"
-        $env:PKG_CONFIG_PATH = "C:\tools\msys64\mingw64\lib\pkgconfig"
+        export CGO_ENABLED=1
+        export CC=gcc
         
-        mkdir -p build/dist -Force
+        mkdir -p build/dist
         
         cd build
-        goversioninfo -o resource_windows_amd64.syso versioninfo.json
-        Copy-Item resource_windows_amd64.syso ../cmd/koemoji-go/
+        goversioninfo -o resource_windows_amd64.syso templates/windows/versioninfo.json
+        cp resource_windows_amd64.syso ../cmd/koemoji-go/
         
         go build -ldflags="-s -w" -o dist/koemoji-go.exe ../cmd/koemoji-go
         
-        Remove-Item resource_windows_amd64.syso, ../cmd/koemoji-go/resource_windows_amd64.syso -ErrorAction SilentlyContinue
+        rm -f resource_windows_amd64.syso ../cmd/koemoji-go/resource_windows_amd64.syso
     
     - name: Upload Windows artifacts
       uses: actions/upload-artifact@v4
