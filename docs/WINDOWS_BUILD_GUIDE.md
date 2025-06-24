@@ -1,154 +1,250 @@
-# KoeMoji-Go Windows ビルドガイド
+# Windows Build Guide for KoeMoji-Go
+
+最終更新: 2025-06-24
 
 ## 概要
-KoeMoji-GoをWindows環境でビルドして、完全機能版（録音・GUI・TUI・LLM要約）のバイナリを作成する手順書です。
+
+このドキュメントは、Windows環境でKoeMoji-Goをビルドするための実践的なガイドです。MSYS2を使用したビルド環境の構築から、配布パッケージの作成まで、実際に成功した手順を記載しています。
 
 ## 前提条件
+
+### 必須要件
 - Windows 10/11 (64bit)
-- インターネット接続
-- 管理者権限
+- Go 1.21以上
+- Python 3.8以上（FasterWhisper用）
+- MSYS2（GCCツールチェーン用）
 
-## 手順
+## セットアップ手順
 
-### 1. Git for Windows インストール
-1. https://git-scm.com/download/win からダウンロード
-2. インストール（デフォルト設定でOK）
-3. Git Bashを起動して確認：
+### 1. Go言語のインストール
+
+1. [Go公式サイト](https://golang.org/dl/)から最新版をダウンロード
+2. インストーラーを実行
+3. 確認:
+   ```cmd
+   go version
+   ```
+
+### 2. MSYS2のインストールとセットアップ
+
+1. [MSYS2公式サイト](https://www.msys2.org/)からインストーラーをダウンロード
+2. デフォルト設定でインストール（通常は`C:\msys64`）
+3. MSYS2を起動し、以下のコマンドを実行:
+
 ```bash
-git --version
+# パッケージデータベースを更新
+pacman -Syu
+
+# MinGW-w64 GCCツールチェーンをインストール
+pacman -S mingw-w64-x86_64-gcc mingw-w64-x86_64-make mingw-w64-x86_64-pkg-config
+
+# PortAudioをインストール（録音機能に必要）
+pacman -S mingw-w64-x86_64-portaudio
 ```
 
-### 2. Go 言語環境セットアップ
-1. https://golang.org/dl/ から Go 1.21+ をダウンロード
-2. インストーラーを実行（デフォルト設定）
-3. コマンドプロンプトで確認：
+### 3. プロジェクトのセットアップ
+
+1. プロジェクトをクローン:
+   ```cmd
+   git clone https://github.com/hirokitakamura/koemoji-go.git
+   cd koemoji-go
+   ```
+
+2. goversioninfoをインストール（Windowsアイコン用）:
+   ```cmd
+   go install github.com/josephspurrier/goversioninfo/cmd/goversioninfo@latest
+   ```
+
+## ビルド手順
+
+### 自動ビルド（推奨）
+
+`build`ディレクトリに作成された`build.bat`を使用:
+
 ```cmd
-go version
-```
-
-### 3. Visual Studio Build Tools インストール
-1. https://visualstudio.microsoft.com/ja/downloads/ から「Build Tools for Visual Studio 2022」をダウンロード
-2. インストール時に「C++ build tools」をチェック
-3. 必要コンポーネント：
-   - MSVC v143 - VS 2022 C++ x64/x86 build tools
-   - Windows 10/11 SDK
-
-### 4. PortAudio 依存関係セットアップ
-
-#### 方法A: vcpkg 使用（推奨）
-```cmd
-# vcpkg をインストール
-git clone https://github.com/Microsoft/vcpkg.git
-cd vcpkg
-.\bootstrap-vcpkg.bat
-.\vcpkg.exe integrate install
-
-# PortAudio をインストール
-.\vcpkg.exe install portaudio:x64-windows
-
-# 環境変数設定
-set CGO_ENABLED=1
-set PKG_CONFIG_PATH=%CD%\installed\x64-windows\lib\pkgconfig
-```
-
-#### 方法B: 手動インストール
-1. http://files.portaudio.com/download.html からPortAudioソースをダウンロード
-2. Visual Studioでビルド
-3. 生成されたライブラリを適切な場所に配置
-
-### 5. リポジトリクローンとビルド
-```cmd
-# プロジェクトをクローン
-git clone https://github.com/infoHiroki/KoeMoji-Go.git
-cd KoeMoji-Go
-
-# goversioninfo インストール（Windowsアイコン用）
-go install github.com/josephspurrier/goversioninfo/cmd/goversioninfo@latest
-
-# Windowsリソースファイル生成
 cd build
-goversioninfo -o resource_windows_amd64.syso versioninfo.json
-copy resource_windows_amd64.syso ..\cmd\koemoji-go\
+build.bat
+```
+
+このスクリプトは以下を自動的に実行します:
+- 環境のチェック
+- Windowsリソースファイルの生成（アイコン埋め込み）
+- CGOを有効にしたビルド
+- 必要なDLLのコピー
+- 配布用ZIPパッケージの作成
+
+### 手動ビルド
+
+必要に応じて手動でビルドする場合:
+
+```cmd
+# MSYS2のパスを一時的に追加
+set PATH=C:\msys64\mingw64\bin;%PATH%
+set PKG_CONFIG_PATH=C:\msys64\mingw64\lib\pkgconfig
+
+# GOPATHを設定（未設定の場合）
+for /f "tokens=*" %i in ('go env GOPATH') do set GOPATH=%i
+
+# リソースファイルを生成
+cd build\templates\windows
+%GOPATH%\bin\goversioninfo.exe -o ..\..\temp\resource.syso versioninfo.json
+cd ..\..\..
 
 # ビルド実行
-cd ..
-go build -ldflags="-s -w" -o koemoji-go.exe .\cmd\koemoji-go
+cd cmd\koemoji-go
+go build -ldflags="-s -w -H=windowsgui" -o ..\..\build\dist\koemoji-go.exe .
+cd ..\..
 
-# クリーンアップ
-del cmd\koemoji-go\resource_windows_amd64.syso
-del build\resource_windows_amd64.syso
+# 必要なDLLをコピー
+copy C:\msys64\mingw64\bin\libportaudio.dll build\dist\
+copy C:\msys64\mingw64\bin\libgcc_s_seh-1.dll build\dist\
+copy C:\msys64\mingw64\bin\libwinpthread-1.dll build\dist\
 ```
 
-### 6. 動作確認
-```cmd
-# バージョン確認
-.\koemoji-go.exe --version
+## 必要なDLLファイル
 
-# ヘルプ表示
-.\koemoji-go.exe --help
+ビルドした実行ファイルには以下のDLLが必要です:
+- `libportaudio.dll` - 音声入出力
+- `libgcc_s_seh-1.dll` - GCCランタイム
+- `libwinpthread-1.dll` - スレッドサポート
 
-# 設定モード起動
-.\koemoji-go.exe --configure
-```
+これらはMSYS2の`mingw64\bin`ディレクトリにあります。
 
 ## トラブルシューティング
 
-### CGO_ENABLED エラー
-```cmd
-set CGO_ENABLED=1
-go env CGO_ENABLED
+### PortAudioが見つからないエラー
+
+```
+Package portaudio-2.0 was not found in the pkg-config search path
 ```
 
-### PortAudio 関連エラー
-```cmd
-# pkg-config パス確認
-echo %PKG_CONFIG_PATH%
+解決方法:
+1. MSYS2でPortAudioをインストール:
+   ```bash
+   pacman -S mingw-w64-x86_64-portaudio
+   ```
 
-# vcpkg 再インストール
-vcpkg remove portaudio:x64-windows
-vcpkg install portaudio:x64-windows
+2. PKG_CONFIG_PATHを設定:
+   ```cmd
+   set PKG_CONFIG_PATH=C:\msys64\mingw64\lib\pkgconfig
+   ```
+
+### DLLが見つからないエラー
+
+実行時に「libportaudio.dllが見つかりません」などのエラーが出る場合:
+
+1. 必要なDLLを実行ファイルと同じディレクトリにコピー
+2. または、`C:\msys64\mingw64\bin`をシステムのPATHに追加
+
+### 録音デバイスのエラー
+
+「no default input device」エラーの場合:
+1. Windowsのサウンド設定でマイクが有効か確認
+2. プライバシー設定でマイクへのアクセスが許可されているか確認
+
+## 配布パッケージの構成
+
+ビルド成功後、以下の構成で配布パッケージが作成されます:
+
+```
+koemoji-go-windows-1.5.0.zip
+├── koemoji-go.exe          # 実行ファイル（アイコン付き）
+├── libportaudio.dll        # PortAudioライブラリ
+├── libgcc_s_seh-1.dll      # GCCランタイム
+├── libwinpthread-1.dll     # Pthreadライブラリ
+├── config.json             # 設定ファイル
+└── README.md               # 説明書
 ```
 
-### ビルドエラー: 'gcc' not found
-Visual Studio Build Toolsが正しくインストールされていません。
-1. Visual Studio Installer を再実行
-2. 「C++ build tools」を追加インストール
+## ビルドスクリプト
 
-### Fyne GUI関連エラー
+### build.bat
+
+プロジェクトの`build`ディレクトリに配置されたWindows用ビルドスクリプトです。
+
+主な機能:
+- 環境の自動チェック
+- MSYS2パスの自動設定
+- goversioninfoの自動インストール
+- DLLの自動コピー
+- 配布パッケージの自動作成
+
+使用方法:
 ```cmd
-# OpenGL ドライバーが古い場合
-# グラフィックドライバーを最新に更新
+build.bat         # ビルド実行
+build.bat clean   # クリーンアップ
+build.bat help    # ヘルプ表示
 ```
 
-## 成果物
-ビルド成功時に以下が生成されます：
-- `koemoji-go.exe` - 完全機能版バイナリ（約50-80MB）
+### install_portaudio.bat
 
-## 機能確認
-以下の機能が利用可能になります：
-- ✅ **録音機能**: マイクからの直接録音
-- ✅ **GUI**: Fyne ベースのグラフィカルUI
-- ✅ **TUI**: ターミナルでの操作
-- ✅ **文字起こし**: FasterWhisper による高精度変換
-- ✅ **LLM要約**: OpenAI API との連携
+PortAudioを簡単にインストールするためのヘルパースクリプトです。
 
-## 配布準備
-```cmd
-# 配布用フォルダ作成
-mkdir koemoji-go-windows-v1.5.0
-copy koemoji-go.exe koemoji-go-windows-v1.5.0\
-copy config.example.json koemoji-go-windows-v1.5.0\config.json
-copy README.md koemoji-go-windows-v1.5.0\
+## 既知の問題と回避策
 
-# ZIP圧縮
-powershell Compress-Archive -Path koemoji-go-windows-v1.5.0 -DestinationPath koemoji-go-windows-v1.5.0.zip
-```
+### GUI起動時のコンソールウィンドウ表示
 
-## 参考情報
+## 参考リンク
+
+- [MSYS2](https://www.msys2.org/)
 - [Go CGO Documentation](https://golang.org/cmd/cgo/)
-- [PortAudio Documentation](http://files.portaudio.com/docs/v19-doxydocs/)
-- [Fyne Windows Building](https://docs.fyne.io/started/cross-compiling)
+- [PortAudio](http://www.portaudio.com/)
+- [Fyne Framework](https://fyne.io/)
 
----
-作成日: 2025-06-23  
-対象バージョン: KoeMoji-Go v1.5.0
+
+**問題**: GUI版で「i」（入力ディレクトリを開く）、「o」（出力ディレクトリを開く）、「l」（ログを開く）を押すと、一時的にコンソールウィンドウが表示される。
+
+**原因**: `exec.Command`で外部プログラム（explorer.exe、notepad.exe等）を起動する際、Windowsではデフォルトでコンソールウィンドウが表示される。
+
+**回避策**:
+1. 現状では仕様として受け入れる（一瞬表示されるだけで実害はない）
+2. 将来の修正案:
+   - `syscall.SysProcAttr`の`CREATE_NO_WINDOW`フラグを使用
+   - VBScriptラッパーを作成して静かに実行
+
+### 相対パスの解決問題
+
+**問題**: プログラムを異なる場所から実行すると、`./input`、`./output`などの相対パスが意図しない場所を指す可能性がある。
+
+**原因**: 相対パスは現在の作業ディレクトリ（CWD）を基準に解決されるが、実行方法によってCWDが異なる。
+
+**回避策**:
+
+1. **ショートカットを使用**（推奨）
+   - koemoji-go.exeのショートカットを作成
+   - プロパティで「作業フォルダー」を実行ファイルのあるディレクトリに設定
+
+2. **バッチファイルでラップ**
+   ```batch
+   @echo off
+   cd /d "%~dp0"
+   start koemoji-go.exe
+   ```
+   このバッチファイルをkoemoji-go.exeと同じディレクトリに配置
+
+3. **設定ファイルで絶対パスを使用**
+   ```json
+   {
+     "input_dir": "C:\\path\\to\\koemoji-go\\input",
+     "output_dir": "C:\\path\\to\\koemoji-go\\output",
+     "archive_dir": "C:\\path\\to\\koemoji-go\\archive"
+   }
+   ```
+
+**将来の修正案**:
+- プログラム起動時に実行ファイルの場所を基準とした相対パス解決を実装
+- `filepath.Abs()`と`os.Executable()`を組み合わせて使用
+
+## 今後の改善点
+
+1. **コンソールウィンドウの非表示化**
+   - Windows固有のプロセス起動オプションを実装
+   - 対象ファイル: `internal/ui/ui.go`
+
+2. **パス解決の改善**
+   - 実行ファイル基準の相対パス解決
+   - 対象ファイル: `internal/config/config.go`
+
+3. **GitHub Actions対応**: CI/CDパイプラインでの自動ビルド
+4. **静的リンク**: DLLを含まない単一実行ファイルの作成
+5. **インストーラー**: NSIS等を使用したインストーラーの作成

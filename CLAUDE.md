@@ -146,9 +146,12 @@ The `build/build.sh` script handles:
 - Automatic packaging with config files and documentation
 
 ### Windows-Specific Considerations
-- Icon embedding requires `resource_windows_amd64.syso` in `cmd/koemoji-go/`
+- Icon embedding requires goversioninfo tool and resource.syso generation
+- CGO required for Fyne and PortAudio - needs MinGW-w64 (MSYS2 recommended)
+- Required DLLs: libportaudio.dll, libgcc_s_seh-1.dll, libwinpthread-1.dll
 - Color support forced on Windows 10+ for optimal UI experience
 - Notepad used for log file viewing (universal Windows compatibility)
+- See docs/WINDOWS_BUILD_GUIDE.md for detailed build instructions
 
 ## External Dependencies
 

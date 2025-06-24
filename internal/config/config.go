@@ -43,7 +43,7 @@ type Config struct {
 }
 
 func GetDefaultConfig() *Config {
-	return &Config{
+	config := &Config{
 		WhisperModel:        "large-v3",
 		Language:            "ja",
 		UILanguage:          "ja",
@@ -69,6 +69,11 @@ func GetDefaultConfig() *Config {
 		RecordingMaxHours:   0, // Unlimited by default
 		RecordingMaxFileMB:  0, // Unlimited by default
 	}
+	
+	// Resolve paths relative to executable
+	ResolveConfigPaths(config)
+	
+	return config
 }
 
 func LoadConfig(configPath string, logger *log.Logger) (*Config, error) {
@@ -112,6 +117,10 @@ func LoadConfig(configPath string, logger *log.Logger) (*Config, error) {
 	if logger != nil {
 		logger.Printf("[INFO] Loaded config from: %s", foundPath)
 	}
+	
+	// Resolve all relative paths to be relative to the executable
+	ResolveConfigPaths(config)
+	
 	return config, nil
 }
 

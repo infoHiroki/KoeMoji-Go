@@ -322,6 +322,14 @@ source ~/.zshrc  # 設定を反映
 ### ビルド方法
 
 #### 簡単ビルド（アイコン付き・推奨）
+
+**Windows:**
+```cmd
+cd build
+build.bat
+```
+
+**macOS/Linux:**
 ```bash
 # 全プラットフォーム向けアイコン付きビルド
 ./build.sh
@@ -362,6 +370,10 @@ GOOS=darwin GOARCH=arm64 go build -o koemoji-go-darwin-arm64 main.go
 - Go 1.21以上
 - Python 3.8以上 + FasterWhisper（テスト用）
 - Git
+
+**Windows追加要件:**
+- MSYS2（MinGW-w64 GCCツールチェーン）
+- 詳細は[Windows Build Guide](./docs/WINDOWS_BUILD_GUIDE.md)を参照
 
 #### セットアップ手順
 ```bash

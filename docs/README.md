@@ -16,6 +16,9 @@
 - **[DEVELOPMENT.md](./developer/DEVELOPMENT.md)** - 開発環境構築、ビルドプロセス、テスト手順
 - **[GITHUB_CLI.md](./developer/GITHUB_CLI.md)** - GitHub CLI自動化、リリース管理
 
+### 🪟 プラットフォーム別ビルドガイド
+- **[WINDOWS_BUILD_GUIDE.md](./WINDOWS_BUILD_GUIDE.md)** - Windows環境でのビルド手順（MSYS2使用）
+
 ### 📐 [design/](./design/) - 設計ドキュメント
 システム設計と仕様に関する詳細な設計書。
 
