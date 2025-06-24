@@ -87,9 +87,9 @@ echo.
 echo Generating Windows resource file...
 cd templates\windows
 if exist "%GOPATH_BIN%\goversioninfo.exe" (
-    "%GOPATH_BIN%\goversioninfo.exe" -o ..\..\temp\resource.syso versioninfo.json
+    "%GOPATH_BIN%\goversioninfo.exe" -64 -o ..\..\temp\resource.syso versioninfo.json
 ) else (
-    goversioninfo -o ..\..\temp\resource.syso versioninfo.json
+    goversioninfo -64 -o ..\..\temp\resource.syso versioninfo.json
 )
 if %errorlevel% neq 0 (
     echo Error: Failed to generate Windows resource file
@@ -98,6 +98,10 @@ if %errorlevel% neq 0 (
     exit /b 1
 )
 cd ..\..
+
+rem Copy resource file to source directory
+echo Copying resource file to source directory...
+copy temp\resource.syso %SOURCE_DIR%\ >nul
 
 rem Build Windows executable
 echo.
