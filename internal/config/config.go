@@ -61,7 +61,7 @@ func GetDefaultConfig() *Config {
 		LLMAPIKey:             "",
 		LLMModel:              "gpt-4o",
 		LLMMaxTokens:          4096,
-		SummaryPromptTemplate: "以下の文字起こしテキストを{language}で要約してください。重要なポイントを箇条書きでまとめ、全体の概要も含めてください。\n\n{text}",
+		SummaryPromptTemplate: "以下の文字起こしテキストを{language}で詳細に要約してください。\n\n要約には以下の要素を必ず含めてください：\n1. 全体の概要（2-3段落）\n2. 主要なトピックと議論されたポイント（箇条書き）\n3. 重要な結論や決定事項\n4. アクションアイテムやフォローアップが必要な項目（もしあれば）\n5. キーワードやキーフレーズのリスト\n\nできるだけ具体的で、重要な詳細を省略しないようにしてください。\n\n{text}",
 		SummaryLanguage:       "auto",
 		// Recording defaults
 		RecordingDeviceID:   -1, // -1 means use default device
