@@ -8,11 +8,11 @@
 📥 ダウンロード - お使いのOSに合わせて選んでください
 
 🪟 Windows版
-　　ファイル名: KoeMoji-Go_Windows版.zip
+　　ファイル名: KoeMoji-Go_Win.zip
 　　対象: Windows 10/11 (64bit)
 
 🍎 Mac版 (Apple Silicon)
-　　ファイル名: KoeMoji-Go_Mac_M1M2版.tar.gz
+　　ファイル名: KoeMoji-Go_Mac.tar.gz
 　　対象: M1/M2 CPU搭載のMac
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
