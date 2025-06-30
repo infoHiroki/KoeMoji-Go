@@ -84,6 +84,7 @@ type Messages struct {
 	LLMEnabledLabel      string
 	APIKeyLabel          string
 	ModelLabel           string
+	PromptTemplateLabel  string
 	RecordingDeviceLabel string
 }
 
@@ -119,7 +120,7 @@ var messagesEN = Messages{
 	LogDebug: "DEBUG",
 
 	// Processing messages
-	AppStarted:      "KoeMoji-Go v%s started",
+	AppStarted:      "KoeMoji-Go started",
 	AppRunning:      "KoeMoji-Go is running. Use commands below to interact.",
 	MonitoringDir:   "Monitoring %s directory every %d minutes",
 	ShuttingDown:    "Shutting down KoeMoji-Go...",
@@ -168,6 +169,7 @@ var messagesEN = Messages{
 	LLMEnabledLabel:      "Enable AI Summary",
 	APIKeyLabel:          "API Key",
 	ModelLabel:           "Model",
+	PromptTemplateLabel:  "Prompt Template",
 	RecordingDeviceLabel: "Recording Device",
 }
 
@@ -203,7 +205,7 @@ var messagesJA = Messages{
 	LogDebug: "デバッグ",
 
 	// Processing messages
-	AppStarted:      "KoeMoji-Go v%s を開始しました",
+	AppStarted:      "KoeMoji-Go を開始しました",
 	AppRunning:      "KoeMoji-Goが実行中です。以下のコマンドを使用してください。",
 	MonitoringDir:   "%sディレクトリを%d分ごとに監視しています",
 	ShuttingDown:    "KoeMoji-Goを終了しています...",
@@ -252,6 +254,7 @@ var messagesJA = Messages{
 	LLMEnabledLabel:      "AI要約を有効化",
 	APIKeyLabel:          "APIキー",
 	ModelLabel:           "モデル",
+	PromptTemplateLabel:  "プロンプトテンプレート",
 	RecordingDeviceLabel: "録音デバイス",
 }
 

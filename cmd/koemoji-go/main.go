@@ -167,7 +167,7 @@ func (app *App) initLogger() {
 
 	// Only timestamps for file logging, no prefix for console
 	app.logger = log.New(io.MultiWriter(logFile), "", log.LstdFlags)
-	logger.LogInfo(app.logger, &app.logBuffer, &app.logMutex, "KoeMoji-Go v%s started", version)
+	logger.LogInfo(app.logger, &app.logBuffer, &app.logMutex, "KoeMoji-Go started")
 }
 
 func (app *App) run() {

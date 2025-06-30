@@ -128,10 +128,17 @@ func (app *GUIApp) showConfigDialog() {
 	llmModelSelect := widget.NewSelect([]string{"gpt-4o", "gpt-4-turbo", "gpt-3.5-turbo"}, nil)
 	llmModelSelect.SetSelected(app.Config.LLMModel)
 
+	// Prompt template entry (multi-line)
+	llmPromptEntry := widget.NewMultiLineEntry()
+	llmPromptEntry.SetText(app.Config.SummaryPromptTemplate)
+	llmPromptEntry.SetMinRowsVisible(8) // Show 8 rows
+	llmPromptEntry.Wrapping = fyne.TextWrapWord
+
 	llmForm := widget.NewForm(
 		widget.NewFormItem(msg.LLMEnabledLabel, llmEnabledCheck),
 		widget.NewFormItem(msg.APIKeyLabel, llmAPIKeyEntry),
 		widget.NewFormItem(msg.ModelLabel, llmModelSelect),
+		widget.NewFormItem(msg.PromptTemplateLabel, llmPromptEntry),
 	)
 
 	// Recording settings
@@ -158,11 +165,11 @@ func (app *GUIApp) showConfigDialog() {
 				// Save configuration changes only when Save is clicked
 				app.saveConfigFromDialog(whisperModelSelect, languageSelect, uiLanguageSelect,
 					scanIntervalEntry, inputDirEntry, outputDirEntry,
-					archiveDirEntry, llmEnabledCheck, llmAPIKeyEntry, llmModelSelect)
+					archiveDirEntry, llmEnabledCheck, llmAPIKeyEntry, llmModelSelect, llmPromptEntry)
 			}
 			// If Cancel is clicked, changes are discarded automatically
 		}, app.window)
-	configDialog.Resize(fyne.NewSize(600, 450))
+	configDialog.Resize(fyne.NewSize(700, 550))
 
 	configDialog.Show()
 }
@@ -218,7 +225,7 @@ func (app *GUIApp) createRecordingForm() *widget.Form {
 func (app *GUIApp) saveConfigFromDialog(whisperModel, language *widget.Select,
 	uiLanguage *widget.Select, scanInterval *widget.Entry,
 	inputDir, outputDir, archiveDir *widget.Entry, llmEnabled *widget.Check,
-	llmAPIKey *widget.Entry, llmModel *widget.Select) {
+	llmAPIKey *widget.Entry, llmModel *widget.Select, llmPromptTemplate *widget.Entry) {
 
 	// Language code mapping for saving to config
 	languageCodeMap := map[string]string{
@@ -270,6 +277,7 @@ func (app *GUIApp) saveConfigFromDialog(whisperModel, language *widget.Select,
 	app.Config.LLMSummaryEnabled = llmEnabled.Checked
 	app.Config.LLMAPIKey = llmAPIKey.Text
 	app.Config.LLMModel = llmModel.Selected
+	app.Config.SummaryPromptTemplate = llmPromptTemplate.Text
 
 	// Update recording configuration
 	if app.recordingDeviceSelect != nil && app.recordingDeviceMap != nil {
