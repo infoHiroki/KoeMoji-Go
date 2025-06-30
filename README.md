@@ -107,6 +107,7 @@ Pythonがない場合は [Python公式ダウンロード](https://www.python.org
 ## 📚 詳細情報
 
 - **[🔧 トラブル解決](docs/user/TROUBLESHOOTING.md)** - 問題解決とFAQ
+- **[🎤 システム音声＋マイク録音設定（Windows）](docs/user/SYSTEM_MIC_RECORDING_WINDOWS.md)** - Windows環境での同時録音設定
 - **[📖 開発者向けドキュメント](docs/)** - ビルド方法、アーキテクチャ、技術仕様
 
 ## ライセンス
