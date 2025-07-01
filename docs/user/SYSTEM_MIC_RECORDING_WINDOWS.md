@@ -25,11 +25,7 @@ WindowsではmacOSのBlackHoleに相当する機能として、VB-Audio Virtual 
 
 ### 2. Windowsサウンド設定
 
-#### A. システム音声の設定
-1. Windowsの設定→システム→サウンドを開く
-2. 「出力」セクションで**「CABLE Input (VB-Audio Virtual Cable)」**を選択
-
-#### B. マイク音声を含める設定
+#### マイク音声を含める設定
 1. サウンドコントロールパネルを開く（`Win+R`→`mmsys.cpl`）
 2. 「録音」タブを選択
 3. 使用するマイクデバイス（例：EMEET OfficeCore M1A）をダブルクリック
@@ -37,6 +33,7 @@ WindowsではmacOSのBlackHoleに相当する機能として、VB-Audio Virtual 
 5. 「このデバイスを聴く」にチェック
 6. 「このデバイスを使用して再生する」で**「CABLE Input (VB-Audio Virtual Cable)」**を選択
 7. 「OK」をクリック
+
 ### 3. KoeMoji-Goの設定
 
 1. KoeMoji-Goを起動
