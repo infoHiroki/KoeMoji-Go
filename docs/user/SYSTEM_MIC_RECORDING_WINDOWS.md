@@ -28,7 +28,7 @@ WindowsではmacOSのBlackHoleに相当する機能として、VB-Audio Virtual 
 #### マイク音声を含める設定
 1. サウンドコントロールパネルを開く（`Win+R`→`mmsys.cpl`）
 2. 「録音」タブを選択
-3. 使用するマイクデバイス（例：EMEET OfficeCore M1A）をダブルクリック
+3. 使用するマイクデバイス（例：Realtek High Definition Audio、USB マイク等）をダブルクリック
 4. 「聴く」タブを選択
 5. 「このデバイスを聴く」にチェック
 6. 「このデバイスを使用して再生する」で**「CABLE Input (VB-Audio Virtual Cable)」**を選択

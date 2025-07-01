@@ -59,7 +59,7 @@ type GUIApp struct {
 
 	// Recording related fields
 	recorder              *recorder.Recorder
-	recordingDeviceSelect *widget.Select
+	recordingDeviceSelect *widget.SelectEntry
 	recordingDeviceMap    map[string]int
 
 	// UI safety fields

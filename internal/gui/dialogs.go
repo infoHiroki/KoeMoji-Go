@@ -208,8 +208,8 @@ func (app *GUIApp) createRecordingForm() *widget.Form {
 	}
 
 	// Create device selection widget
-	deviceSelect := widget.NewSelect(deviceNames, nil)
-	deviceSelect.SetSelected(selectedDevice)
+	deviceSelect := widget.NewSelectEntry(deviceNames)
+	deviceSelect.SetText(selectedDevice)
 
 	// Store reference for saving
 	app.recordingDeviceSelect = deviceSelect
@@ -281,11 +281,16 @@ func (app *GUIApp) saveConfigFromDialog(whisperModel, language *widget.Select,
 
 	// Update recording configuration
 	if app.recordingDeviceSelect != nil && app.recordingDeviceMap != nil {
-		selectedDevice := app.recordingDeviceSelect.Selected
+		selectedDevice := app.recordingDeviceSelect.Text
 		if deviceID, exists := app.recordingDeviceMap[selectedDevice]; exists {
 			app.Config.RecordingDeviceID = deviceID
 			app.Config.RecordingDeviceName = selectedDevice
+		} else if selectedDevice == "" || selectedDevice == "Default Device" {
+			// Handle empty or default selection
+			app.Config.RecordingDeviceID = -1
+			app.Config.RecordingDeviceName = "既定のマイク"
 		}
+		// If device not found and not empty/default, keep current settings
 	}
 
 	// Save to file
