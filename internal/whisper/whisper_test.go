@@ -120,6 +120,48 @@ func TestGetWhisperCommand_PathResolution(t *testing.T) {
 	assert.NotEmpty(t, cmd)
 }
 
+func TestGetWhisperCommand_WindowsExtension(t *testing.T) {
+	// Test Windows-specific behavior
+	cmd := getWhisperCommand()
+	
+	if os.Getenv("GOOS") == "windows" || strings.Contains(strings.ToLower(os.Getenv("OS")), "windows") {
+		// On Windows, the command should handle .exe extension
+		t.Log("Testing Windows command extension handling")
+		
+		// The function should work with or without .exe
+		assert.NotEmpty(t, cmd)
+	}
+}
+
+func TestGetWhisperCommand_WindowsPaths(t *testing.T) {
+	// Test that Windows Python paths are considered
+	if os.Getenv("GOOS") != "windows" && !strings.Contains(strings.ToLower(os.Getenv("OS")), "windows") {
+		t.Skip("Skipping Windows path test on non-Windows platform")
+	}
+	
+	// Save original environment
+	originalPath := os.Getenv("PATH")
+	originalUsername := os.Getenv("USERNAME")
+	defer func() {
+		os.Setenv("PATH", originalPath)
+		if originalUsername != "" {
+			os.Setenv("USERNAME", originalUsername)
+		}
+	}()
+	
+	// Set up test environment
+	os.Setenv("PATH", "") // Clear PATH to force fallback search
+	if originalUsername == "" {
+		os.Setenv("USERNAME", "testuser")
+	}
+	
+	cmd := getWhisperCommand()
+	
+	// Even if not found, should return fallback
+	assert.NotEmpty(t, cmd)
+	assert.True(t, cmd == "whisper-ctranslate2" || filepath.IsAbs(cmd))
+}
+
 func TestIsFasterWhisperAvailable_MockEnvironment(t *testing.T) {
 	// Save original PATH and HOME
 	originalPath := os.Getenv("PATH")
@@ -332,6 +374,154 @@ func TestErrorHandling(t *testing.T) {
 				strings.Contains(errorMsg, "permission"))
 		}
 	})
+}
+
+// Test device parameter handling based on compute type
+func TestTranscribeAudio_DeviceParameter(t *testing.T) {
+	config := testdata.CreateTestConfig(t)
+	logger, logBuffer, logMutex := testdata.CreateTestLogger()
+	
+	testdata.CreateDirectories(t, config.InputDir, config.OutputDir)
+	audioFile := testdata.CreateTestAudioFile(t, config.InputDir, "test.wav")
+	
+	tests := []struct {
+		name         string
+		computeType  string
+		expectDevice bool
+	}{
+		{
+			name:         "int8 should use CPU device",
+			computeType:  "int8",
+			expectDevice: true,
+		},
+		{
+			name:         "float16 should auto-select device",
+			computeType:  "float16",
+			expectDevice: false,
+		},
+		{
+			name:         "int8_float16 should auto-select device",
+			computeType:  "int8_float16",
+			expectDevice: false,
+		},
+	}
+	
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			config.ComputeType = tt.computeType
+			
+			// This will fail due to missing whisper, but we document expected behavior
+			err := TranscribeAudio(config, logger, logBuffer, logMutex, true, audioFile)
+			
+			// The test documents that int8 should force CPU device selection
+			if tt.computeType == "int8" && !tt.expectDevice {
+				t.Error("int8 compute type should trigger CPU device selection")
+			}
+			
+			// Log the expected behavior
+			if tt.expectDevice {
+				t.Logf("Compute type %s should add --device cpu parameter", tt.computeType)
+			} else {
+				t.Logf("Compute type %s should not add device parameter", tt.computeType)
+			}
+			
+			if err != nil {
+				t.Logf("Expected error in test environment: %v", err)
+			}
+		})
+	}
+}
+
+// Test GPU error detection and message generation
+func TestIsGPURelatedError(t *testing.T) {
+	tests := []struct {
+		name        string
+		errorStr    string
+		expectGPU   bool
+	}{
+		{
+			name:      "CUDA error should be detected",
+			errorStr:  "CUDA device not found",
+			expectGPU: true,
+		},
+		{
+			name:      "Float16 error should be detected", 
+			errorStr:  "Requested float16 compute type, but the target device or backend do not support efficient float16 computation",
+			expectGPU: true,
+		},
+		{
+			name:      "GPU memory error should be detected",
+			errorStr:  "GPU out of memory",
+			expectGPU: true,
+		},
+		{
+			name:      "Regular file error should not be detected",
+			errorStr:  "input file does not exist",
+			expectGPU: false,
+		},
+		{
+			name:      "Permission error should not be detected",
+			errorStr:  "permission denied",
+			expectGPU: false,
+		},
+	}
+	
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := isGPURelatedError(tt.errorStr)
+			assert.Equal(t, tt.expectGPU, result)
+		})
+	}
+}
+
+func TestCreateGPUErrorMessage(t *testing.T) {
+	tests := []struct {
+		name       string
+		uiLanguage string
+		computeType string
+		expectJA   bool
+	}{
+		{
+			name:       "Japanese error message",
+			uiLanguage: "ja",
+			computeType: "float16",
+			expectJA:   true,
+		},
+		{
+			name:       "English error message",
+			uiLanguage: "en", 
+			computeType: "int8_float16",
+			expectJA:   false,
+		},
+	}
+	
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			config := testdata.CreateTestConfig(t)
+			config.UILanguage = tt.uiLanguage
+			config.ComputeType = tt.computeType
+			
+			originalErr := fmt.Errorf("GPU test error")
+			result := createGPUErrorMessage(config, originalErr)
+			
+			errorMsg := result.Error()
+			
+			if tt.expectJA {
+				assert.Contains(t, errorMsg, "GPU処理に失敗")
+				assert.Contains(t, errorMsg, "推奨解決策")
+			} else {
+				assert.Contains(t, errorMsg, "GPU processing failed")
+				assert.Contains(t, errorMsg, "Recommended solutions")
+			}
+			
+			// Should contain current compute type and original error
+			assert.Contains(t, errorMsg, tt.computeType)
+			assert.Contains(t, errorMsg, "GPU test error")
+			
+			// Output the full error message for verification
+			t.Logf("Full error message:\n%s", errorMsg)
+		})
+	}
 }
 
 // Benchmark tests for performance

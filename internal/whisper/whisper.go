@@ -8,6 +8,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"sync"
 	"time"
@@ -24,15 +25,45 @@ func getWhisperCommand() string {
 	}
 
 	// 2. 標準的なインストール場所を検索
-	standardPaths := []string{
-		filepath.Join(os.Getenv("HOME"), ".local", "bin", "whisper-ctranslate2"),                    // macOS user install
-		"/usr/local/bin/whisper-ctranslate2",                                                        // macOS system
-		"/opt/homebrew/bin/whisper-ctranslate2",                                                     // Homebrew Apple Silicon
-		"/usr/local/bin/whisper-ctranslate2",                                                        // Homebrew Intel
-		filepath.Join(os.Getenv("HOME"), "Library", "Python", "3.12", "bin", "whisper-ctranslate2"), // macOS Python 3.12
-		filepath.Join(os.Getenv("HOME"), "Library", "Python", "3.11", "bin", "whisper-ctranslate2"), // macOS Python 3.11
-		filepath.Join(os.Getenv("HOME"), "Library", "Python", "3.10", "bin", "whisper-ctranslate2"), // macOS Python 3.10
-		filepath.Join(os.Getenv("HOME"), "Library", "Python", "3.9", "bin", "whisper-ctranslate2"),  // macOS Python 3.9
+	var standardPaths []string
+	
+	if runtime.GOOS == "windows" {
+		// Windows specific paths
+		username := os.Getenv("USERNAME")
+		if username == "" {
+			username = os.Getenv("USER") // Fallback
+		}
+		
+		// Common Python installation paths on Windows
+		pythonVersions := []string{"312", "311", "310", "39", "38"}
+		
+		for _, version := range pythonVersions {
+			// Standard Python installations
+			standardPaths = append(standardPaths, 
+				filepath.Join(os.Getenv("LOCALAPPDATA"), "Programs", "Python", "Python"+version, "Scripts", "whisper-ctranslate2.exe"),
+				filepath.Join(os.Getenv("APPDATA"), "Python", "Python"+version, "Scripts", "whisper-ctranslate2.exe"),
+			)
+		}
+		
+		// Anaconda/Miniconda paths
+		if username != "" {
+			standardPaths = append(standardPaths,
+				filepath.Join("C:", "Users", username, "anaconda3", "Scripts", "whisper-ctranslate2.exe"),
+				filepath.Join("C:", "Users", username, "miniconda3", "Scripts", "whisper-ctranslate2.exe"),
+			)
+		}
+	} else {
+		// macOS/Linux paths
+		standardPaths = []string{
+			filepath.Join(os.Getenv("HOME"), ".local", "bin", "whisper-ctranslate2"),                    // macOS user install
+			"/usr/local/bin/whisper-ctranslate2",                                                        // macOS system
+			"/opt/homebrew/bin/whisper-ctranslate2",                                                     // Homebrew Apple Silicon
+			"/usr/local/bin/whisper-ctranslate2",                                                        // Homebrew Intel
+			filepath.Join(os.Getenv("HOME"), "Library", "Python", "3.12", "bin", "whisper-ctranslate2"), // macOS Python 3.12
+			filepath.Join(os.Getenv("HOME"), "Library", "Python", "3.11", "bin", "whisper-ctranslate2"), // macOS Python 3.11
+			filepath.Join(os.Getenv("HOME"), "Library", "Python", "3.10", "bin", "whisper-ctranslate2"), // macOS Python 3.10
+			filepath.Join(os.Getenv("HOME"), "Library", "Python", "3.9", "bin", "whisper-ctranslate2"),  // macOS Python 3.9
+		}
 	}
 
 	for _, path := range standardPaths {
@@ -110,15 +141,24 @@ func TranscribeAudio(config *config.Config, log *log.Logger, logBuffer *[]logger
 
 	whisperCmd := getWhisperCommand()
 
-	cmd := createCommand(whisperCmd,
+	// Build command arguments
+	args := []string{
 		"--model", config.WhisperModel,
 		"--language", config.Language,
 		"--output_dir", config.OutputDir,
 		"--output_format", config.OutputFormat,
 		"--compute_type", config.ComputeType,
-		"--verbose", "True", // Enable verbose for progress
-		inputFile,
-	)
+	}
+	
+	// Add device parameter for CPU-specific compute types
+	if config.ComputeType == "int8" {
+		args = append(args, "--device", "cpu")
+	}
+	
+	// Add verbose and input file
+	args = append(args, "--verbose", "True", inputFile)
+	
+	cmd := createCommand(whisperCmd, args...)
 
 	logger.LogDebug(log, logBuffer, logMutex, debugMode, "Whisper command: %s", strings.Join(cmd.Args, " "))
 
@@ -160,6 +200,13 @@ func TranscribeAudio(config *config.Config, log *log.Logger, logBuffer *[]logger
 
 	if err != nil {
 		msg := ui.GetMessages(config)
+		
+		// Check for GPU-related errors and provide detailed guidance
+		errorStr := err.Error()
+		if isGPURelatedError(errorStr) {
+			return createGPUErrorMessage(config, err)
+		}
+		
 		return fmt.Errorf(msg.TranscribeFail, err)
 	}
 
@@ -226,4 +273,83 @@ func formatDuration(d time.Duration) string {
 	} else {
 		return fmt.Sprintf("%ds", seconds)
 	}
+}
+
+// isGPURelatedError checks if the error is related to GPU/CUDA issues
+func isGPURelatedError(errorStr string) bool {
+	errorLower := strings.ToLower(errorStr)
+	
+	// Common GPU-related error patterns
+	gpuErrorPatterns := []string{
+		"cuda",
+		"gpu",
+		"float16",
+		"int8_float16", 
+		"device or backend do not support",
+		"efficient float16 computation",
+		"efficient int8_float16 computation",
+		"nvidia",
+		"cudnn",
+		"cublas",
+		"out of memory",
+		"insufficient memory",
+	}
+	
+	for _, pattern := range gpuErrorPatterns {
+		if strings.Contains(errorLower, pattern) {
+			return true
+		}
+	}
+	
+	return false
+}
+
+// createGPUErrorMessage creates a user-friendly error message with guidance
+func createGPUErrorMessage(config *config.Config, originalErr error) error {
+	var guidance string
+	if config.UILanguage == "ja" {
+		guidance = fmt.Sprintf(`GPU処理に失敗しました。
+
+考えられる原因:
+• NVIDIA CUDA Toolkit未インストール
+• GPU非対応またはVRAMメモリ不足  
+• 古いGPUドライバー
+• compute_type設定とGPUの不整合
+
+推奨解決策:
+1. config.jsonで "compute_type": "int8" に変更 (CPU使用、最も安定)
+2. または、CUDA Toolkit 11.x/12.x をインストール
+3. NVIDIAドライバーを最新版に更新
+
+現在の設定: compute_type="%s"
+元のエラー: %v`, config.ComputeType, originalErr)
+	} else {
+		guidance = fmt.Sprintf(`GPU processing failed.
+
+Possible causes:
+• NVIDIA CUDA Toolkit not installed
+• GPU incompatible or insufficient VRAM
+• Outdated GPU drivers
+• compute_type incompatible with GPU
+
+Recommended solutions:
+1. Change "compute_type": "int8" in config.json (CPU usage, most stable)
+2. Or install CUDA Toolkit 11.x/12.x  
+3. Update NVIDIA drivers to latest version
+
+Current setting: compute_type="%s"
+Original error: %v`, config.ComputeType, originalErr)
+	}
+	
+	return fmt.Errorf(guidance)
+}
+
+// IsGPURelatedErrorForTesting exports isGPURelatedError for testing
+func IsGPURelatedErrorForTesting(errorStr string) bool {
+	return isGPURelatedError(errorStr)
+}
+
+// CreateGPUErrorMessageForTesting exports createGPUErrorMessage for testing
+func CreateGPUErrorMessageForTesting(config *config.Config, originalErr error) error {
+	return createGPUErrorMessage(config, originalErr)
 }
