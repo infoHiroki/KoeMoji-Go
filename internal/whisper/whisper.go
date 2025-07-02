@@ -318,7 +318,7 @@ func createGPUErrorMessage(config *config.Config, originalErr error) error {
 
 推奨解決策:
 1. config.jsonで "compute_type": "int8" に変更 (CPU使用、最も安定)
-2. または、CUDA Toolkit 11.x/12.x をインストール
+2. または、NVIDIA CUDA Toolkit をインストール
 3. NVIDIAドライバーを最新版に更新
 
 現在の設定: compute_type="%s"
@@ -334,7 +334,7 @@ Possible causes:
 
 Recommended solutions:
 1. Change "compute_type": "int8" in config.json (CPU usage, most stable)
-2. Or install CUDA Toolkit 11.x/12.x  
+2. Or install NVIDIA CUDA Toolkit  
 3. Update NVIDIA drivers to latest version
 
 Current setting: compute_type="%s"
