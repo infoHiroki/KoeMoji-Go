@@ -42,8 +42,9 @@ type Config struct {
 	RecordingMaxFileMB int `json:"recording_max_file_mb"` // 0 = unlimited
 }
 
+// GetDefaultConfig returns a config with default values (relative paths preserved)
 func GetDefaultConfig() *Config {
-	config := &Config{
+	return &Config{
 		WhisperModel:        "large-v3",
 		Language:            "ja",
 		UILanguage:          "ja",
@@ -69,10 +70,12 @@ func GetDefaultConfig() *Config {
 		RecordingMaxHours:   0, // Unlimited by default
 		RecordingMaxFileMB:  0, // Unlimited by default
 	}
-	
-	// Resolve paths relative to executable
+}
+
+// GetDefaultConfigResolved returns a config with default values and resolved paths
+func GetDefaultConfigResolved() *Config {
+	config := GetDefaultConfig()
 	ResolveConfigPaths(config)
-	
 	return config
 }
 
@@ -575,6 +578,7 @@ func resetToDefaults(config *Config, reader *bufio.Reader) bool {
 	if choice == "y" || choice == "yes" {
 		defaultConfig := GetDefaultConfig()
 		*config = *defaultConfig
+		// Path resolution will be handled by the caller if needed
 		fmt.Println(msg.ConfigReset)
 		return true
 	}

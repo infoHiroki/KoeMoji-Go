@@ -24,7 +24,8 @@ import (
 	"github.com/hirokitakamura/koemoji-go/internal/whisper"
 )
 
-const version = "1.5.4"
+// version は暫定的に定数として定義（ビルド時に -X フラグで上書き）
+var version = "1.5.4"
 
 // Color constants
 const (

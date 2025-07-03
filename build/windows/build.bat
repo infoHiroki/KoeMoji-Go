@@ -2,9 +2,10 @@
 setlocal enabledelayedexpansion
 
 rem KoeMoji-Go Windows Build Script
-rem Version: 1.5.4
+rem Version: Dynamically extracted from version.go
 
-set VERSION=1.5.4
+rem バージョン情報をversion.goから動的に取得
+for /f "tokens=3 delims==\" " %%i in ('findstr "const Version" ..\..\version.go') do set VERSION=%%i
 set APP_NAME=koemoji-go
 set DIST_DIR=dist
 set SOURCE_DIR=..\..\cmd\koemoji-go
@@ -114,7 +115,7 @@ set CGO_ENABLED=1
 
 rem Build the executable
 cd %SOURCE_DIR%
-go build -ldflags="-s -w -H=windowsgui" -o ..\..\build\windows\%DIST_DIR%\%APP_NAME%.exe .
+go build -ldflags="-s -w -H=windowsgui -X main.version=%VERSION%" -o ..\..\build\windows\%DIST_DIR%\%APP_NAME%.exe .
 if %errorlevel% neq 0 (
     echo Error: Build failed
     echo Make sure you have a C compiler (MinGW-w64 or MSYS2) installed
