@@ -1,0 +1,104 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  create-release:
+    runs-on: ubuntu-latest
+    outputs:
+      upload_url: ${{ steps.create_release.outputs.upload_url }}
+      version: ${{ steps.get_version.outputs.VERSION }}
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Get version from tag
+      id: get_version
+      run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+    
+    - name: Create Release
+      id: create_release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: ${{ github.ref }}
+        release_name: Release ${{ steps.get_version.outputs.VERSION }}
+        draft: false
+        prerelease: false
+        body: |
+          ## KoeMoji-Go v${{ steps.get_version.outputs.VERSION }}
+          
+          ### 変更点
+          - バージョン管理システムの自動化
+          
+          ### ダウンロード
+          - **Windows版**: `KoeMoji-Go_Windows版.zip`
+          - **macOS版 (M1/M2)**: `KoeMoji-Go_Mac_M1M2版.tar.gz`
+
+  build-and-upload:
+    needs: create-release
+    strategy:
+      matrix:
+        include:
+          - os: macos-latest
+            name: macOS
+            artifact: KoeMoji-Go_Mac_M1M2版.tar.gz
+          - os: windows-latest
+            name: Windows
+            artifact: KoeMoji-Go_Windows版.zip
+    
+    runs-on: ${{ matrix.os }}
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: '1.21'
+    
+    # macOS specific
+    - name: Install macOS dependencies
+      if: matrix.os == 'macos-latest'
+      run: |
+        brew install portaudio pkg-config
+    
+    - name: Build macOS
+      if: matrix.os == 'macos-latest'
+      run: |
+        cd build/macos
+        ./build.sh
+    
+    # Windows specific
+    - name: Setup Windows build environment
+      if: matrix.os == 'windows-latest'
+      uses: msys2/setup-msys2@v2
+      with:
+        msystem: UCRT64
+        update: true
+        install: >-
+          git
+          mingw-w64-ucrt-x86_64-gcc
+          mingw-w64-ucrt-x86_64-pkg-config
+          mingw-w64-ucrt-x86_64-portaudio
+    
+    - name: Build Windows
+      if: matrix.os == 'windows-latest'
+      shell: msys2 {0}
+      run: |
+        cd build/windows
+        ./build.bat
+    
+    - name: Upload Release Asset
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ needs.create-release.outputs.upload_url }}
+        asset_path: build/releases/${{ matrix.artifact }}
+        asset_name: ${{ matrix.artifact }}
+        asset_content_type: application/octet-stream
