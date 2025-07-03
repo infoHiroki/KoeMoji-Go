@@ -107,7 +107,7 @@ func (app *GUIApp) loadConfig() {
 	if err != nil {
 		logger.LogError(app.logger, &app.logBuffer, &app.logMutex, "Failed to load config: %v", err)
 		// In GUI mode, use default config and show error dialog later
-		app.Config = config.GetDefaultConfig()
+		app.Config = config.GetDefaultConfigResolved()
 		logger.LogInfo(app.logger, &app.logBuffer, &app.logMutex, "Using default configuration due to config load error")
 		
 		// Show error dialog when window is available
