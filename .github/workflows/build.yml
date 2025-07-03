@@ -27,10 +27,17 @@ jobs:
       run: |
         brew install portaudio pkg-config
     
+    - name: Get version
+      id: get_version
+      run: |
+        VERSION=$(go run scripts/get-version.go)
+        echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
+    
     - name: Build macOS Apple Silicon
       run: |
         mkdir -p build/dist
-        CGO_ENABLED=1 GOOS=darwin GOARCH=arm64 go build -ldflags="-s -w" -o build/dist/koemoji-go-darwin-arm64 ./cmd/koemoji-go
+        VERSION="${{ steps.get_version.outputs.VERSION }}"
+        CGO_ENABLED=1 GOOS=darwin GOARCH=arm64 go build -ldflags="-s -w -X main.version=$VERSION" -o build/dist/koemoji-go-darwin-arm64 ./cmd/koemoji-go
     
     - name: Upload macOS artifacts
       uses: actions/upload-artifact@v4
@@ -64,11 +71,44 @@ jobs:
           mingw-w64-ucrt-x86_64-pkg-config
           mingw-w64-ucrt-x86_64-portaudio
     
+    - name: Get version
+      id: get_version
+      run: |
+        $version = go run scripts/get-version.go
+        echo "VERSION=$version" >> $env:GITHUB_OUTPUT
+      shell: pwsh
+    
+    - name: Update version info
+      run: |
+        # PowerShell でバージョン情報を更新
+        $version = "${{ steps.get_version.outputs.VERSION }}"
+        $versionParts = $version.Split('.')
+        $major = $versionParts[0]
+        $minor = $versionParts[1]
+        $patch = $versionParts[2]
+        
+        # versioninfo.json を更新
+        $versionInfo = Get-Content build/common/templates/windows/versioninfo.json | ConvertFrom-Json
+        $versionInfo.FixedFileInfo.FileVersion.Major = [int]$major
+        $versionInfo.FixedFileInfo.FileVersion.Minor = [int]$minor
+        $versionInfo.FixedFileInfo.FileVersion.Patch = [int]$patch
+        $versionInfo.FixedFileInfo.ProductVersion.Major = [int]$major
+        $versionInfo.FixedFileInfo.ProductVersion.Minor = [int]$minor
+        $versionInfo.FixedFileInfo.ProductVersion.Patch = [int]$patch
+        $versionInfo.StringFileInfo.ProductVersion = $version
+        $versionInfo.StringFileInfo.FileVersion = "$version.0"
+        
+        $versionInfo | ConvertTo-Json -Depth 10 | Set-Content build/common/templates/windows/versioninfo.json
+      shell: pwsh
+    
     - name: Build Windows
       shell: msys2 {0}
       run: |
         export CGO_ENABLED=1
         export CC=gcc
+        
+        # VERSION は GitHub Actions の出力から取得
+        VERSION="${{ steps.get_version.outputs.VERSION }}"
         
         # Install goversioninfo in MSYS2 environment
         go install github.com/josephspurrier/goversioninfo/cmd/goversioninfo@latest
@@ -77,10 +117,10 @@ jobs:
         mkdir -p build/dist
         
         cd build
-        goversioninfo -o resource_windows_amd64.syso templates/windows/versioninfo.json
+        goversioninfo -o resource_windows_amd64.syso common/templates/windows/versioninfo.json
         cp resource_windows_amd64.syso ../cmd/koemoji-go/
         
-        go build -ldflags="-s -w" -o dist/koemoji-go.exe ../cmd/koemoji-go
+        go build -ldflags="-s -w -X main.version=$VERSION" -o dist/koemoji-go.exe ../cmd/koemoji-go
         
         rm -f resource_windows_amd64.syso ../cmd/koemoji-go/resource_windows_amd64.syso
     
