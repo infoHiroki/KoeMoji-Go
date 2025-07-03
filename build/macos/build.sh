@@ -1,7 +1,8 @@
 #!/bin/bash
 set -e
 
-VERSION="1.5.4"
+# バージョン情報をversion.goから動的に取得
+VERSION=$(grep -o 'const Version = "[^"]*"' ../../version.go | cut -d'"' -f2)
 APP_NAME="koemoji-go"
 DIST_DIR="dist"
 SOURCE_DIR="../../cmd/koemoji-go"
@@ -25,7 +26,7 @@ build_arch() {
     echo "🍎 Building macOS $arch..."
     
     if [ "$arch" = "arm64" ]; then
-        GOOS=darwin GOARCH=arm64 go build -ldflags="-s -w" -o "$DIST_DIR/$binary_name" "$SOURCE_DIR"
+        GOOS=darwin GOARCH=arm64 go build -ldflags="-s -w -X main.version=$VERSION" -o "$DIST_DIR/$binary_name" "$SOURCE_DIR"
     else
         echo "❌ Unsupported architecture: $arch"
         return 1
