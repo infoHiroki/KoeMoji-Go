@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-VERSION="1.5.1"
+VERSION="1.5.4"
 APP_NAME="koemoji-go"
 DIST_DIR="dist"
 SOURCE_DIR="../../cmd/koemoji-go"

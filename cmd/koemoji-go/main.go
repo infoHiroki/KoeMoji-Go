@@ -24,7 +24,7 @@ import (
 	"github.com/hirokitakamura/koemoji-go/internal/whisper"
 )
 
-const version = "1.5.1"
+const version = "1.5.4"
 
 // Color constants
 const (
