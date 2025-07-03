@@ -233,9 +233,9 @@ func TestErrorRecovery(t *testing.T) {
 	reporter := testutil.NewTestReporter(t)
 	reporter.Step("Testing error recovery scenarios")
 
-	// Test with non-existent input directory
+	// Test with non-existent input directory in a writable location
 	originalInputDir := env.Config.InputDir
-	env.Config.InputDir = "/nonexistent/directory"
+	env.Config.InputDir = filepath.Join(env.BaseDir, "nonexistent", "directory")
 
 	// This should handle the error gracefully
 	testLogger := log.New(os.Stdout, "", log.LstdFlags)
