@@ -34,10 +34,10 @@ Pythonがない場合は [Python公式ダウンロード](https://www.python.org
 
 #### 🪟 Windows
 
-1. **ダウンロード**: `koemoji-go-windows-1.5.4.zip`
+1. **ダウンロード**: `KoeMoji-Go_Win.zip`
 2. **展開後の構成**:
    ```
-   📁 koemoji-go-windows-1.5.4
+   📁 KoeMoji-Go_Windows
    ├── koemoji-go.exe          # 実行ファイル（アイコン付き）
    ├── libportaudio.dll        # 録音機能用ライブラリ
    ├── libgcc_s_seh-1.dll      # GCCランタイム
