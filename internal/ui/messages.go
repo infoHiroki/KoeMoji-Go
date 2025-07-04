@@ -56,6 +56,8 @@ type Messages struct {
 	InvalidPath     string
 	TranscribeFail  string
 	UnsupportedOS   string
+	WhisperNotFound string
+	WhisperLocation string
 
 	// Recording messages
 	RecordingDevice string
@@ -141,6 +143,8 @@ var messagesEN = Messages{
 	InvalidPath:     "Invalid file path: %v",
 	TranscribeFail:  "Transcription failed: %v",
 	UnsupportedOS:   "Log viewing not supported on this platform",
+	WhisperNotFound: "whisper-ctranslate2 not found. Install with: pip install whisper-ctranslate2",
+	WhisperLocation: "To check installation location: pip show whisper-ctranslate2",
 
 	// Recording messages
 	RecordingDevice: "Recording Device",
@@ -226,6 +230,8 @@ var messagesJA = Messages{
 	InvalidPath:     "無効なファイルパス: %v",
 	TranscribeFail:  "文字起こしに失敗: %v",
 	UnsupportedOS:   "このプラットフォームではログ表示はサポートされていません",
+	WhisperNotFound: "whisper-ctranslate2が見つかりません。インストール: pip install whisper-ctranslate2",
+	WhisperLocation: "インストール場所の確認: pip show whisper-ctranslate2",
 
 	// Recording messages
 	RecordingDevice: "録音デバイス",

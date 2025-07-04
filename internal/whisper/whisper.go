@@ -2,6 +2,7 @@ package whisper
 
 import (
 	"bufio"
+	"errors"
 	"fmt"
 	"io"
 	"log"
@@ -19,8 +20,15 @@ import (
 )
 
 func getWhisperCommand() string {
+	return getWhisperCommandWithDebug(nil, nil, nil, false)
+}
+
+func getWhisperCommandWithDebug(log *log.Logger, logBuffer *[]logger.LogEntry, logMutex *sync.RWMutex, debugMode bool) string {
 	// 1. 通常のPATHで試す
 	if _, err := exec.LookPath("whisper-ctranslate2"); err == nil {
+		if debugMode && log != nil {
+			logger.LogDebug(log, logBuffer, logMutex, debugMode, "Found whisper-ctranslate2 in PATH")
+		}
 		return "whisper-ctranslate2"
 	}
 
@@ -42,7 +50,28 @@ func getWhisperCommand() string {
 			standardPaths = append(standardPaths, 
 				filepath.Join(os.Getenv("LOCALAPPDATA"), "Programs", "Python", "Python"+version, "Scripts", "whisper-ctranslate2.exe"),
 				filepath.Join(os.Getenv("APPDATA"), "Python", "Python"+version, "Scripts", "whisper-ctranslate2.exe"),
+				// pip --user installations (Roaming)
+				filepath.Join(os.Getenv("APPDATA"), "Roaming", "Python", "Python"+version, "Scripts", "whisper-ctranslate2.exe"),
+				// System-wide installations
+				filepath.Join("C:\\", "Python"+version, "Scripts", "whisper-ctranslate2.exe"),
 			)
+			
+			// Also try with dot notation (e.g., Python3.12)
+			versionWithDot := string(version[0]) + "." + version[1:]
+			standardPaths = append(standardPaths,
+				filepath.Join(os.Getenv("LOCALAPPDATA"), "Programs", "Python", "Python"+versionWithDot, "Scripts", "whisper-ctranslate2.exe"),
+				filepath.Join("C:\\", "Python"+versionWithDot, "Scripts", "whisper-ctranslate2.exe"),
+			)
+		}
+		
+		// User profile paths
+		if username != "" {
+			userProfilePaths := []string{
+				filepath.Join(os.Getenv("USERPROFILE"), "AppData", "Local", "Programs", "Python", "Python312", "Scripts", "whisper-ctranslate2.exe"),
+				filepath.Join(os.Getenv("USERPROFILE"), "AppData", "Local", "Programs", "Python", "Python311", "Scripts", "whisper-ctranslate2.exe"),
+				filepath.Join(os.Getenv("USERPROFILE"), "AppData", "Local", "Programs", "Python", "Python310", "Scripts", "whisper-ctranslate2.exe"),
+			}
+			standardPaths = append(standardPaths, userProfilePaths...)
 		}
 		
 		// Anaconda/Miniconda paths
@@ -67,11 +96,20 @@ func getWhisperCommand() string {
 	}
 
 	for _, path := range standardPaths {
+		if debugMode && log != nil {
+			logger.LogDebug(log, logBuffer, logMutex, debugMode, "Checking for whisper-ctranslate2 at: %s", path)
+		}
 		if _, err := os.Stat(path); err == nil {
+			if debugMode && log != nil {
+				logger.LogDebug(log, logBuffer, logMutex, debugMode, "Found whisper-ctranslate2 at: %s", path)
+			}
 			return path
 		}
 	}
 
+	if debugMode && log != nil {
+		logger.LogDebug(log, logBuffer, logMutex, debugMode, "whisper-ctranslate2 not found in any standard location")
+	}
 	return "whisper-ctranslate2" // フォールバック
 }
 
@@ -139,7 +177,7 @@ func TranscribeAudio(config *config.Config, log *log.Logger, logBuffer *[]logger
 		return fmt.Errorf("failed to create output directory: %w", err)
 	}
 
-	whisperCmd := getWhisperCommand()
+	whisperCmd := getWhisperCommandWithDebug(log, logBuffer, logMutex, debugMode)
 
 	// Build command arguments
 	args := []string{
@@ -185,6 +223,11 @@ func TranscribeAudio(config *config.Config, log *log.Logger, logBuffer *[]logger
 	// Start command
 	if err := cmd.Start(); err != nil {
 		done <- true
+		// Check if whisper-ctranslate2 is not found
+		if errors.Is(err, exec.ErrNotFound) || strings.Contains(err.Error(), "executable file not found") {
+			msg := ui.GetMessages(config)
+			return fmt.Errorf("%s\n%s", msg.WhisperNotFound, msg.WhisperLocation)
+		}
 		return fmt.Errorf("failed to start command: %w", err)
 	}
 
