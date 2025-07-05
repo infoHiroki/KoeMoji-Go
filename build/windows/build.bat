@@ -159,14 +159,14 @@ copy libwinpthread-1.dll %APP_NAME%-windows-%VERSION%\
 copy %COMMON_DIR%\assets\config.example.json %APP_NAME%-windows-%VERSION%\config.json
 copy %COMMON_DIR%\assets\README_RELEASE.md %APP_NAME%-windows-%VERSION%\README.md
 
-rem Create ZIP package with user-friendly name
+rem Create ZIP package with new naming convention
 echo Creating ZIP package...
-set FRIENDLY_NAME=KoeMoji-Go_Windows版
-powershell -Command "Compress-Archive -Path '%APP_NAME%-windows-%VERSION%' -DestinationPath '%FRIENDLY_NAME%.zip'"
+set RELEASE_NAME=KoeMoji-Go-v%VERSION%-win
+powershell -Command "Compress-Archive -Path '%APP_NAME%-windows-%VERSION%' -DestinationPath '%RELEASE_NAME%.zip'"
 
 rem Move ZIP to releases directory
 if not exist ..\releases mkdir ..\releases
-move %FRIENDLY_NAME%.zip ..\releases\
+move %RELEASE_NAME%.zip ..\releases\
 
 rem Clean up temporary directory
 rmdir /s /q %APP_NAME%-windows-%VERSION%
@@ -179,7 +179,7 @@ echo   Build completed successfully!
 echo ========================================
 echo.
 echo Distribution file created:
-echo   ..\releases\%FRIENDLY_NAME%.zip
+echo   ..\releases\%RELEASE_NAME%.zip
 echo.
 echo Executable location:
 echo   %DIST_DIR%\%APP_NAME%.exe
