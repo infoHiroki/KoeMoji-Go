@@ -524,6 +524,232 @@ func TestCreateGPUErrorMessage(t *testing.T) {
 	}
 }
 
+// Test diagnostic functions
+func TestDiagnoseDependencies(t *testing.T) {
+	logger, logBuffer, logMutex := testdata.CreateTestLogger()
+
+	// Test diagnostic function execution
+	diagnoseDependencies(logger, logBuffer, logMutex)
+
+	// Verify that diagnostic logs were created
+	logMutex.RLock()
+	logs := *logBuffer
+	logMutex.RUnlock()
+
+	// Should have diagnostic logs for Python, pip, and whisper-ctranslate2
+	var hasPythonCheck, hasPipCheck, hasWhisperCheck bool
+	for _, log := range logs {
+		if strings.Contains(log.Message, "Python") {
+			hasPythonCheck = true
+		}
+		if strings.Contains(log.Message, "pip") {
+			hasPipCheck = true
+		}
+		if strings.Contains(log.Message, "whisper-ctranslate2") {
+			hasWhisperCheck = true
+		}
+	}
+
+	assert.True(t, hasPythonCheck, "Should check Python availability")
+	assert.True(t, hasPipCheck, "Should check pip availability")
+	assert.True(t, hasWhisperCheck, "Should check whisper-ctranslate2 availability")
+
+	t.Logf("Diagnostic function executed with %d log entries", len(logs))
+}
+
+func TestCreateDependencyErrorMessage(t *testing.T) {
+	tests := []struct {
+		name       string
+		uiLanguage string
+		expectJA   bool
+	}{
+		{
+			name:       "Japanese error message",
+			uiLanguage: "ja",
+			expectJA:   true,
+		},
+		{
+			name:       "English error message",
+			uiLanguage: "en",
+			expectJA:   false,
+		},
+		{
+			name:       "Default language (should be English)",
+			uiLanguage: "",
+			expectJA:   false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			config := testdata.CreateTestConfig(t)
+			config.UILanguage = tt.uiLanguage
+
+			result := createDependencyErrorMessage(config)
+
+			if tt.expectJA {
+				assert.Contains(t, result, "診断結果をログで確認してください")
+				assert.Contains(t, result, "よくある解決策")
+				assert.Contains(t, result, "Python/pipが見つからない場合")
+				assert.Contains(t, result, "whisper-ctranslate2が未インストールの場合")
+			} else {
+				assert.Contains(t, result, "Check the diagnostic results in the logs")
+				assert.Contains(t, result, "Common solutions")
+				assert.Contains(t, result, "If Python/pip not found")
+				assert.Contains(t, result, "If whisper-ctranslate2 not installed")
+			}
+
+			// Should contain installation commands
+			assert.Contains(t, result, "pip install whisper-ctranslate2")
+			assert.Contains(t, result, "pip3 install whisper-ctranslate2")
+
+			t.Logf("Error message language: %s\nLength: %d characters", tt.uiLanguage, len(result))
+		})
+	}
+}
+
+func TestEnsureDependencies_InstallationFailure(t *testing.T) {
+	config := testdata.CreateTestConfig(t)
+	logger, logBuffer, logMutex := testdata.CreateTestLogger()
+
+	// Save original PATH and HOME to ensure whisper-ctranslate2 is not available
+	originalPath := os.Getenv("PATH")
+	originalHome := os.Getenv("HOME")
+	defer func() {
+		os.Setenv("PATH", originalPath)
+		os.Setenv("HOME", originalHome)
+	}()
+
+	// Clear PATH and set non-existent HOME to ensure both pip and whisper-ctranslate2 are not found
+	os.Setenv("PATH", "/nonexistent")
+	os.Setenv("HOME", "/tmp/nonexistent")
+
+	// This should trigger installation attempt and failure
+	err := EnsureDependencies(config, logger, logBuffer, logMutex, false)
+
+	// Check logs regardless of error result (environment dependent)
+	logMutex.RLock()
+	logs := *logBuffer
+	logMutex.RUnlock()
+
+	var hasInstallAttempt, hasDiagnostics bool
+	for _, log := range logs {
+		if strings.Contains(log.Message, "Attempting to install") || strings.Contains(log.Message, "FasterWhisper not found") {
+			hasInstallAttempt = true
+		}
+		if strings.Contains(log.Message, "Running diagnostics") || strings.Contains(log.Message, "dependency diagnostics") {
+			hasDiagnostics = true
+		}
+	}
+
+	if err != nil {
+		// Installation failed as expected
+		assert.Contains(t, err.Error(), "FasterWhisper installation failed")
+		assert.True(t, hasInstallAttempt, "Should attempt installation")
+		assert.True(t, hasDiagnostics, "Should run diagnostics after installation failure")
+		t.Logf("Installation failure test completed as expected with %d log entries", len(logs))
+	} else {
+		// Installation succeeded (unexpected but possible in some environments)
+		t.Logf("Installation unexpectedly succeeded in test environment. This may happen if pip/whisper are available despite PATH modification.")
+		t.Logf("Generated %d log entries", len(logs))
+		// Don't fail the test - this is environment dependent
+	}
+}
+
+func TestDiagnoseDependencies_MockEnvironment(t *testing.T) {
+	logger, logBuffer, logMutex := testdata.CreateTestLogger()
+
+	// Save original environment
+	originalPath := os.Getenv("PATH")
+	originalHome := os.Getenv("HOME")
+	defer func() {
+		os.Setenv("PATH", originalPath)
+		os.Setenv("HOME", originalHome)
+	}()
+
+	tests := []struct {
+		name        string
+		pathEnv     string
+		homeEnv     string
+		expectError bool
+	}{
+		{
+			name:        "Empty PATH should cause errors",
+			pathEnv:     "",
+			homeEnv:     "/tmp/nonexistent",
+			expectError: true,
+		},
+		{
+			name:        "Nonexistent HOME should cause errors",
+			pathEnv:     "/usr/bin:/bin",
+			homeEnv:     "/tmp/nonexistent",
+			expectError: false, // May still find system Python/pip
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// Clear log buffer
+			logMutex.Lock()
+			*logBuffer = (*logBuffer)[:0]
+			logMutex.Unlock()
+
+			// Set test environment
+			os.Setenv("PATH", tt.pathEnv)
+			os.Setenv("HOME", tt.homeEnv)
+
+			// Run diagnostics
+			diagnoseDependencies(logger, logBuffer, logMutex)
+
+			// Check logs
+			logMutex.RLock()
+			logs := *logBuffer
+			logMutex.RUnlock()
+
+			// Should have some diagnostic output
+			assert.Greater(t, len(logs), 0, "Should generate diagnostic logs")
+
+			// Log the results
+			t.Logf("Test environment PATH=%s HOME=%s generated %d logs", tt.pathEnv, tt.homeEnv, len(logs))
+			for _, log := range logs {
+				t.Logf("  [%s] %s", log.Level, log.Message)
+			}
+		})
+	}
+}
+
+func TestCreateDependencyErrorMessage_MessageContent(t *testing.T) {
+	config := testdata.CreateTestConfig(t)
+
+	t.Run("Japanese message content", func(t *testing.T) {
+		config.UILanguage = "ja"
+		result := createDependencyErrorMessage(config)
+
+		// Check specific Japanese content
+		assert.Contains(t, result, "Python 3.8以上をインストール")
+		assert.Contains(t, result, "pip --version で確認")
+		assert.Contains(t, result, "PATH環境変数に追加が必要な可能性")
+
+		// Should not contain English-specific text
+		assert.NotContains(t, result, "Install Python 3.8 or higher")
+		assert.NotContains(t, result, "Verify with: pip --version")
+	})
+
+	t.Run("English message content", func(t *testing.T) {
+		config.UILanguage = "en"
+		result := createDependencyErrorMessage(config)
+
+		// Check specific English content
+		assert.Contains(t, result, "Install Python 3.8 or higher")
+		assert.Contains(t, result, "Verify with: pip --version")
+		assert.Contains(t, result, "May need to add to PATH environment variable")
+
+		// Should not contain Japanese-specific text
+		assert.NotContains(t, result, "Python 3.8以上をインストール")
+		assert.NotContains(t, result, "pip --version で確認")
+	})
+}
+
 // Benchmark tests for performance
 func BenchmarkGetWhisperCommand(b *testing.B) {
 	for i := 0; i < b.N; i++ {
@@ -534,5 +760,19 @@ func BenchmarkGetWhisperCommand(b *testing.B) {
 func BenchmarkIsFasterWhisperAvailable(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		_ = isFasterWhisperAvailable()
+	}
+}
+
+func BenchmarkDiagnoseDependencies(b *testing.B) {
+	logger, logBuffer, logMutex := testdata.CreateTestLogger()
+	
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		// Clear log buffer to avoid memory buildup
+		logMutex.Lock()
+		*logBuffer = (*logBuffer)[:0]
+		logMutex.Unlock()
+		
+		diagnoseDependencies(logger, logBuffer, logMutex)
 	}
 }

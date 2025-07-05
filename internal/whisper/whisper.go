@@ -82,7 +82,7 @@ func getWhisperCommandWithDebug(log *log.Logger, logBuffer *[]logger.LogEntry, l
 			)
 		}
 	} else {
-		// macOS/Linux paths
+		// macOS paths
 		standardPaths = []string{
 			filepath.Join(os.Getenv("HOME"), ".local", "bin", "whisper-ctranslate2"),                    // macOS user install
 			"/usr/local/bin/whisper-ctranslate2",                                                        // macOS system
@@ -225,8 +225,12 @@ func TranscribeAudio(config *config.Config, log *log.Logger, logBuffer *[]logger
 		done <- true
 		// Check if whisper-ctranslate2 is not found
 		if errors.Is(err, exec.ErrNotFound) || strings.Contains(err.Error(), "executable file not found") {
+			logger.LogError(log, logBuffer, logMutex, "whisper-ctranslate2 not found. Running diagnostics...")
+			diagnoseDependencies(log, logBuffer, logMutex)
+			
 			msg := ui.GetMessages(config)
-			return fmt.Errorf("%s\n%s", msg.WhisperNotFound, msg.WhisperLocation)
+			detailedMsg := createDependencyErrorMessage(config)
+			return fmt.Errorf("%s\n%s\n%s", msg.WhisperNotFound, msg.WhisperLocation, detailedMsg)
 		}
 		return fmt.Errorf("failed to start command: %w", err)
 	}
@@ -288,6 +292,165 @@ func monitorProgress(log *log.Logger, logBuffer *[]logger.LogEntry, logMutex *sy
 	}
 }
 
+func diagnoseDependencies(log *log.Logger, logBuffer *[]logger.LogEntry, logMutex *sync.RWMutex) {
+	logger.LogInfo(log, logBuffer, logMutex, "Running dependency diagnostics...")
+	
+	// Check Python with platform-specific commands
+	checkPythonAvailability(log, logBuffer, logMutex)
+	
+	// Check pip with platform-specific commands
+	pipFound := checkPipAvailability(log, logBuffer, logMutex)
+	
+	// Check whisper-ctranslate2 installation
+	checkWhisperInstallation(log, logBuffer, logMutex, pipFound)
+	
+	// Check whisper-ctranslate2 executable
+	whisperCmd := getWhisperCommand()
+	if cmd := createCommand(whisperCmd, "--help"); cmd.Run() != nil {
+		logger.LogError(log, logBuffer, logMutex, "whisper-ctranslate2 executable not working: %s", whisperCmd)
+	} else {
+		logger.LogInfo(log, logBuffer, logMutex, "whisper-ctranslate2 executable working: %s", whisperCmd)
+	}
+}
+
+func checkPythonAvailability(log *log.Logger, logBuffer *[]logger.LogEntry, logMutex *sync.RWMutex) bool {
+	var pythonCommands []string
+	
+	if runtime.GOOS == "windows" {
+		// Windows: py launcher is preferred, then python, then python3 (rarely available)
+		pythonCommands = []string{"python", "py", "python3"}
+	} else {
+		// macOS: python3 is preferred, then python (might be python2)
+		pythonCommands = []string{"python3", "python"}
+	}
+	
+	for _, cmd := range pythonCommands {
+		if createCommand(cmd, "--version").Run() == nil {
+			logger.LogInfo(log, logBuffer, logMutex, "Python found: %s", cmd)
+			return true
+		}
+	}
+	
+	logger.LogError(log, logBuffer, logMutex, "Python not found in PATH (tried: %s)", strings.Join(pythonCommands, ", "))
+	return false
+}
+
+func checkPipAvailability(log *log.Logger, logBuffer *[]logger.LogEntry, logMutex *sync.RWMutex) bool {
+	var pipCommands [][]string
+	
+	if runtime.GOOS == "windows" {
+		// Windows: pip, py -m pip, python -m pip
+		pipCommands = [][]string{
+			{"pip", "--version"},
+			{"py", "-m", "pip", "--version"},
+			{"python", "-m", "pip", "--version"},
+		}
+	} else {
+		// macOS: pip3, pip, python3 -m pip, python -m pip
+		pipCommands = [][]string{
+			{"pip3", "--version"},
+			{"pip", "--version"},
+			{"python3", "-m", "pip", "--version"},
+			{"python", "-m", "pip", "--version"},
+		}
+	}
+	
+	for _, cmdArgs := range pipCommands {
+		if createCommand(cmdArgs[0], cmdArgs[1:]...).Run() == nil {
+			cmdStr := strings.Join(cmdArgs[:len(cmdArgs)-1], " ") // Remove --version for display
+			logger.LogInfo(log, logBuffer, logMutex, "pip found: %s", cmdStr)
+			return true
+		}
+	}
+	
+	// Format tried commands for error message
+	var triedCommands []string
+	for _, cmdArgs := range pipCommands {
+		triedCommands = append(triedCommands, strings.Join(cmdArgs[:len(cmdArgs)-1], " "))
+	}
+	
+	logger.LogError(log, logBuffer, logMutex, "pip not found in PATH (tried: %s)", strings.Join(triedCommands, ", "))
+	return false
+}
+
+func checkWhisperInstallation(log *log.Logger, logBuffer *[]logger.LogEntry, logMutex *sync.RWMutex, pipFound bool) {
+	if !pipFound {
+		logger.LogError(log, logBuffer, logMutex, "Cannot check whisper-ctranslate2 installation: pip not available")
+		return
+	}
+	
+	var pipShowCommands [][]string
+	
+	if runtime.GOOS == "windows" {
+		// Windows: pip show, py -m pip show, python -m pip show
+		pipShowCommands = [][]string{
+			{"pip", "show", "whisper-ctranslate2"},
+			{"py", "-m", "pip", "show", "whisper-ctranslate2"},
+			{"python", "-m", "pip", "show", "whisper-ctranslate2"},
+		}
+	} else {
+		// macOS: pip3 show, pip show, python3 -m pip show, python -m pip show
+		pipShowCommands = [][]string{
+			{"pip3", "show", "whisper-ctranslate2"},
+			{"pip", "show", "whisper-ctranslate2"},
+			{"python3", "-m", "pip", "show", "whisper-ctranslate2"},
+			{"python", "-m", "pip", "show", "whisper-ctranslate2"},
+		}
+	}
+	
+	for _, cmdArgs := range pipShowCommands {
+		if createCommand(cmdArgs[0], cmdArgs[1:]...).Run() == nil {
+			cmdStr := strings.Join(cmdArgs[:len(cmdArgs)-1], " ") // Remove package name for display
+			logger.LogInfo(log, logBuffer, logMutex, "whisper-ctranslate2 found via: %s", cmdStr)
+			return
+		}
+	}
+	
+	// Format tried commands for error message
+	var triedCommands []string
+	for _, cmdArgs := range pipShowCommands {
+		triedCommands = append(triedCommands, strings.Join(cmdArgs[:len(cmdArgs)-1], " "))
+	}
+	
+	logger.LogError(log, logBuffer, logMutex, "whisper-ctranslate2 not installed (tried: %s)", strings.Join(triedCommands, ", "))
+}
+
+func createDependencyErrorMessage(config *config.Config) string {
+	if config.UILanguage == "ja" {
+		return `
+診断結果をログで確認してください。
+
+よくある解決策:
+1. Python/pipが見つからない場合:
+   - Python 3.8以上をインストール
+   - pip --version で確認
+
+2. whisper-ctranslate2が未インストールの場合:
+   - pip install whisper-ctranslate2
+   - または pip3 install whisper-ctranslate2
+
+3. インストール済みでも見つからない場合:
+   - pip show whisper-ctranslate2 で場所確認
+   - PATH環境変数に追加が必要な可能性`
+	} else {
+		return `
+Check the diagnostic results in the logs.
+
+Common solutions:
+1. If Python/pip not found:
+   - Install Python 3.8 or higher
+   - Verify with: pip --version
+
+2. If whisper-ctranslate2 not installed:
+   - Run: pip install whisper-ctranslate2
+   - Or: pip3 install whisper-ctranslate2
+
+3. If installed but not found:
+   - Check location: pip show whisper-ctranslate2
+   - May need to add to PATH environment variable`
+	}
+}
+
 func EnsureDependencies(config *config.Config, log *log.Logger, logBuffer *[]logger.LogEntry,
 	logMutex *sync.RWMutex, debugMode bool) error {
 
@@ -295,7 +458,16 @@ func EnsureDependencies(config *config.Config, log *log.Logger, logBuffer *[]log
 		logger.LogInfo(log, logBuffer, logMutex, "FasterWhisper not found. Attempting to install...")
 		if err := installFasterWhisper(log, logBuffer, logMutex); err != nil {
 			logger.LogError(log, logBuffer, logMutex, "FasterWhisper installation failed: %v", err)
+			
+			// Run diagnostics to identify the cause of installation failure
+			logger.LogError(log, logBuffer, logMutex, "Installation failed. Running diagnostics to identify the issue...")
+			diagnoseDependencies(log, logBuffer, logMutex)
+			
+			// Provide detailed error message with solutions
+			detailedMsg := createDependencyErrorMessage(config)
+			logger.LogError(log, logBuffer, logMutex, detailedMsg)
 			logger.LogError(log, logBuffer, logMutex, "Please install manually: pip install faster-whisper whisper-ctranslate2")
+			
 			return fmt.Errorf("FasterWhisper installation failed: %v", err)
 		}
 	} else {
