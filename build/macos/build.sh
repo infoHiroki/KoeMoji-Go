@@ -44,7 +44,7 @@ build_arch() {
 create_package() {
     local arch="$1"
     local binary_name="${APP_NAME}-${arch}"
-    local package_name="${APP_NAME}-macos-${arch}-${VERSION}"
+    local package_name="KoeMoji-Go-v${VERSION}"
     
     echo "📦 Creating $arch package..."
     

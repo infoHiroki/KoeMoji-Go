@@ -130,20 +130,9 @@ if exist temp\resource.syso del temp\resource.syso
 echo.
 echo Build completed successfully!
 
-rem Copy required DLLs
-echo.
+rem Copy required DLLs (same directory)
 echo Copying required DLL files...
-if exist "C:\msys64\mingw64\bin\libportaudio.dll" (
-    echo Using DLLs from MSYS2...
-    copy /Y "C:\msys64\mingw64\bin\libportaudio.dll" "%DIST_DIR%\" >nul
-    copy /Y "C:\msys64\mingw64\bin\libgcc_s_seh-1.dll" "%DIST_DIR%\" >nul
-    copy /Y "C:\msys64\mingw64\bin\libwinpthread-1.dll" "%DIST_DIR%\" >nul
-) else (
-    echo Using local DLL files...
-    copy /Y "libportaudio.dll" "%DIST_DIR%\" >nul
-    copy /Y "libgcc_s_seh-1.dll" "%DIST_DIR%\" >nul
-    copy /Y "libwinpthread-1.dll" "%DIST_DIR%\" >nul
-)
+copy /Y *.dll "%DIST_DIR%\" >nul
 echo DLL files copied.
 
 rem Create distribution package
@@ -151,25 +140,23 @@ echo.
 echo Creating distribution package...
 
 cd %DIST_DIR%
-mkdir %APP_NAME%-windows-%VERSION%
-copy %APP_NAME%.exe %APP_NAME%-windows-%VERSION%\
-copy libportaudio.dll %APP_NAME%-windows-%VERSION%\
-copy libgcc_s_seh-1.dll %APP_NAME%-windows-%VERSION%\
-copy libwinpthread-1.dll %APP_NAME%-windows-%VERSION%\
-copy %COMMON_DIR%\assets\config.example.json %APP_NAME%-windows-%VERSION%\config.json
-copy %COMMON_DIR%\assets\README_RELEASE.md %APP_NAME%-windows-%VERSION%\README.md
+mkdir KoeMoji-Go-v%VERSION%
+copy %APP_NAME%.exe KoeMoji-Go-v%VERSION%\
+copy *.dll KoeMoji-Go-v%VERSION%\
+copy %COMMON_DIR%\assets\config.example.json KoeMoji-Go-v%VERSION%\config.json
+copy %COMMON_DIR%\assets\README_RELEASE.md KoeMoji-Go-v%VERSION%\README.md
 
 rem Create ZIP package with new naming convention
 echo Creating ZIP package...
 set RELEASE_NAME=KoeMoji-Go-v%VERSION%-win
-powershell -Command "Compress-Archive -Path '%APP_NAME%-windows-%VERSION%' -DestinationPath '%RELEASE_NAME%.zip'"
+powershell -Command "Compress-Archive -Path 'KoeMoji-Go-v%VERSION%' -DestinationPath '%RELEASE_NAME%.zip'"
 
 rem Move ZIP to releases directory
 if not exist ..\releases mkdir ..\releases
 move %RELEASE_NAME%.zip ..\releases\
 
 rem Clean up temporary directory
-rmdir /s /q %APP_NAME%-windows-%VERSION%
+rmdir /s /q KoeMoji-Go-v%VERSION%
 
 cd ..
 
