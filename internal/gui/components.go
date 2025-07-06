@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"fyne.io/fyne/v2"
+	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
 	"github.com/hirokitakamura/koemoji-go/internal/logger"
 	"github.com/hirokitakamura/koemoji-go/internal/processor"
@@ -92,10 +93,13 @@ func (app *GUIApp) updateUI() {
 	// Update file counts
 	app.updateFileCounts()
 
-	// Update status label
-	status := "[状態] " + msg.Active
+	// Update status label and icon
+	status := msg.Active
 	if app.isProcessing {
-		status = "[状態] " + msg.Processing
+		status = msg.Processing
+		app.statusIcon.SetResource(theme.WarningIcon())  // ⚠ 処理中
+	} else {
+		app.statusIcon.SetResource(theme.ConfirmIcon())  // ✓ 稼働中
 	}
 
 	app.mu.Lock()
@@ -110,7 +114,7 @@ func (app *GUIApp) updateUI() {
 		status, msg.Queue, queueCount, msg.Processing, processingDisplay)
 
 	// Update files label
-	filesText := fmt.Sprintf("[ファイル] %s: %d → %s: %d → %s: %d",
+	filesText := fmt.Sprintf("%s: %d → %s: %d → %s: %d",
 		msg.Input, app.inputCount, msg.Output, app.outputCount, msg.Archive, app.archiveCount)
 
 	// Update timing label with recording status
@@ -123,32 +127,22 @@ func (app *GUIApp) updateUI() {
 		nextScanStr = nextScan.Format("15:04:05")
 	}
 
-	timingText := fmt.Sprintf("[スキャン] %s: %s | %s: %s | %s: %s",
+	timingText := fmt.Sprintf("%s: %s | %s: %s | %s: %s",
 		msg.Last, lastScanStr, msg.Next, nextScanStr, msg.Uptime, formatDuration(uptime))
 
-	// Add recording status if recording
+	// Add recording status if recording and update icon
 	if isCurrentlyRecording {
 		elapsed := app.getRecordingDuration()
-		timingText += fmt.Sprintf(" | [録音中] %s: %s", msg.Recording, formatDuration(elapsed))
+		timingText += fmt.Sprintf(" | %s: %s", msg.Recording, formatDuration(elapsed))
+		app.timingIcon.SetResource(theme.MediaRecordIcon())  // ⏺ 録音中
+	} else {
+		app.timingIcon.SetResource(theme.SearchIcon())  // 🔍 スキャン
 	}
 
-	// Update UI elements on main thread with importance styling
+	// Update UI elements on main thread
 	app.statusLabel.SetText(statusText)
-	if app.isProcessing {
-		app.statusLabel.Importance = widget.HighImportance  // 処理中は高重要度（赤系）
-	} else {
-		app.statusLabel.Importance = widget.MediumImportance  // 稼働中は中重要度（青系）
-	}
-	
 	app.filesLabel.SetText(filesText)
 	app.timingLabel.SetText(timingText)
-	
-	// Set timing label importance based on recording status
-	if isCurrentlyRecording {
-		app.timingLabel.Importance = widget.HighImportance  // 録音中は高重要度（赤系）
-	} else {
-		app.timingLabel.Importance = widget.MediumImportance   // 通常時は標準色で見やすく
-	}
 	
 	// Apply Bold styling to all labels
 	app.statusLabel.TextStyle = fyne.TextStyle{Bold: true}
