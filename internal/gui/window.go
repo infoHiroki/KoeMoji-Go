@@ -18,24 +18,40 @@ func (app *GUIApp) createWindow() {
 	app.window.CenterOnScreen()
 	app.window.SetMaster()
 
-	// Set window icon (will be implemented later)
-	// app.window.SetIcon(resourceIconPng)
+	// Set window icon
+	app.window.SetIcon(GetAppIcon())
 
 	// Create UI components
 	app.createComponents()
 
-	// Set up the main layout using BorderLayout with bottom padding
+	// Create title with custom app icon
+	titleIcon := widget.NewIcon(GetAppIcon())
+	titleLabel := widget.NewLabelWithStyle("KoeMoji-Go", fyne.TextAlignCenter, fyne.TextStyle{Bold: true})
+	titleContainer := container.NewCenter(
+		container.NewHBox(titleIcon, titleLabel),
+	)
+
+	// Create top section with title and status
+	topSection := container.NewVBox(
+		titleContainer,
+		app.statusWidget,
+	)
+
+	// Set up the main layout using BorderLayout with padding
 	bottomWithPadding := container.NewVBox(
 		app.buttonWidget,
 		widget.NewLabel(""), // Small spacer for bottom margin
 	)
 
-	content := container.NewBorder(
-		app.statusWidget,  // top
-		bottomWithPadding, // bottom with padding
-		nil,               // left
-		nil,               // right
-		app.logWidget,     // center
+	// Add padding to the entire content
+	content := container.NewPadded(
+		container.NewBorder(
+			topSection,        // top (title + status)
+			bottomWithPadding, // bottom with padding
+			nil,               // left
+			nil,               // right
+			app.logWidget,     // center
+		),
 	)
 
 	app.window.SetContent(content)
