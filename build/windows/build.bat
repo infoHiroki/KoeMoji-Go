@@ -4,8 +4,14 @@ setlocal enabledelayedexpansion
 rem KoeMoji-Go Windows Build Script
 rem Version: Dynamically extracted from version.go
 
+rem スクリプトのディレクトリに移動
+cd /d "%~dp0"
+
 rem バージョン情報をversion.goから動的に取得
-for /f "tokens=3 delims==\" " %%i in ('findstr "const Version" ..\..\version.go') do set VERSION=%%i
+for /f "tokens=3 delims== " %%i in ('findstr /C:"const Version" ..\..\version.go') do (
+    set VERSION=%%i
+    set VERSION=!VERSION:"=!
+)
 set APP_NAME=koemoji-go
 set DIST_DIR=dist
 set SOURCE_DIR=..\..\cmd\koemoji-go
@@ -87,23 +93,32 @@ if not exist "%GOPATH_BIN%\goversioninfo.exe" (
 rem Generate Windows resource file
 echo.
 echo Generating Windows resource file...
-cd %COMMON_DIR%\templates\windows
+set CURRENT_DIR=%cd%
+set TEMPLATES_DIR=%~dp0..\common\templates\windows
+set TEMP_DIR=%~dp0temp
+
+rem Change to templates directory for goversioninfo to find the icon
+cd /d "%TEMPLATES_DIR%"
+
 if exist "%GOPATH_BIN%\goversioninfo.exe" (
-    "%GOPATH_BIN%\goversioninfo.exe" -64 -o ..\..\..\windows\temp\resource.syso versioninfo.json
+    "%GOPATH_BIN%\goversioninfo.exe" -64 -o "%TEMP_DIR%\resource.syso" versioninfo.json
 ) else (
-    goversioninfo -64 -o ..\..\..\windows\temp\resource.syso versioninfo.json
+    goversioninfo -64 -o "%TEMP_DIR%\resource.syso" versioninfo.json
 )
-if %errorlevel% neq 0 (
+set ERROR_LEVEL=%errorlevel%
+
+rem Return to original directory
+cd /d "%CURRENT_DIR%"
+
+if %ERROR_LEVEL% neq 0 (
     echo Error: Failed to generate Windows resource file
     echo Make sure goversioninfo is properly installed
-    cd ..\..\..\windows
     exit /b 1
 )
-cd ..\..\..\windows
 
 rem Copy resource file to source directory
 echo Copying resource file to source directory...
-copy temp\resource.syso %SOURCE_DIR%\ >nul
+copy "%~dp0temp\resource.syso" "%~dp0%SOURCE_DIR%\" >nul
 
 rem Build Windows executable
 echo.
@@ -114,37 +129,46 @@ rem Set CGO flags for MinGW
 set CGO_ENABLED=1
 
 rem Build the executable
-cd %SOURCE_DIR%
-go build -ldflags="-s -w -H=windowsgui -X main.version=%VERSION%" -o ..\..\build\windows\%DIST_DIR%\%APP_NAME%.exe .
-if %errorlevel% neq 0 (
+echo Current directory: %cd%
+echo Building from: %~dp0%SOURCE_DIR%
+echo Output to: %~dp0%DIST_DIR%\%APP_NAME%.exe
+cd /d "%~dp0%SOURCE_DIR%"
+echo Changed to: %cd%
+go build -ldflags "-s -w -H=windowsgui -X main.version=%VERSION%" -o "%~dp0%DIST_DIR%\%APP_NAME%.exe" .
+set BUILD_ERROR=%errorlevel%
+cd /d "%~dp0"
+if %BUILD_ERROR% neq 0 (
     echo Error: Build failed
     echo Make sure you have a C compiler (MinGW-w64 or MSYS2) installed
-    cd ..\..\build\windows
     exit /b 1
 )
-cd ..\..\build\windows
 
 rem Clean up resource file
-if exist temp\resource.syso del temp\resource.syso
+if exist "%~dp0temp\resource.syso" del "%~dp0temp\resource.syso"
+if exist "%~dp0%SOURCE_DIR%\resource.syso" del "%~dp0%SOURCE_DIR%\resource.syso"
 
 echo.
 echo Build completed successfully!
 
 rem Copy required DLLs (same directory)
 echo Copying required DLL files...
-copy /Y *.dll "%DIST_DIR%\" >nul
-echo DLL files copied.
+copy /Y "%~dp0*.dll" "%~dp0%DIST_DIR%\" >nul 2>&1
+if %errorlevel% neq 0 (
+    echo Warning: Failed to copy DLL files
+) else (
+    echo DLL files copied.
+)
 
 rem Create distribution package
 echo.
 echo Creating distribution package...
 
-cd %DIST_DIR%
+cd /d "%~dp0%DIST_DIR%"
 mkdir KoeMoji-Go-v%VERSION%
 copy %APP_NAME%.exe KoeMoji-Go-v%VERSION%\
-copy *.dll KoeMoji-Go-v%VERSION%\
-copy %COMMON_DIR%\assets\config.example.json KoeMoji-Go-v%VERSION%\config.json
-copy %COMMON_DIR%\assets\README_RELEASE.md KoeMoji-Go-v%VERSION%\README.md
+copy "%~dp0*.dll" KoeMoji-Go-v%VERSION%\
+copy "%~dp0%COMMON_DIR%\assets\config.example.json" KoeMoji-Go-v%VERSION%\config.json
+copy "%~dp0%COMMON_DIR%\assets\README_RELEASE.md" KoeMoji-Go-v%VERSION%\README.md
 
 rem Create ZIP package with new naming convention
 echo Creating ZIP package...
@@ -158,7 +182,7 @@ move %RELEASE_NAME%.zip ..\releases\
 rem Clean up temporary directory
 rmdir /s /q KoeMoji-Go-v%VERSION%
 
-cd ..
+cd /d "%~dp0"
 
 echo.
 echo ========================================
