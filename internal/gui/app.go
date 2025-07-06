@@ -15,6 +15,7 @@ import (
 	"github.com/hirokitakamura/koemoji-go/internal/config"
 	"github.com/hirokitakamura/koemoji-go/internal/logger"
 	"github.com/hirokitakamura/koemoji-go/internal/recorder"
+	"github.com/hirokitakamura/koemoji-go/internal/ui"
 )
 
 // GUIApp represents the GUI application
@@ -115,10 +116,11 @@ func (app *GUIApp) loadConfig() {
 	// Load configuration
 	cfg, err := config.LoadConfig(app.configPath, app.logger) // Use logger for consistent behavior
 	if err != nil {
-		logger.LogError(app.logger, &app.logBuffer, &app.logMutex, "設定の読み込みに失敗しました: %v", err)
+		msg := ui.GetMessages(config.GetDefaultConfigResolved())
+		logger.LogError(app.logger, &app.logBuffer, &app.logMutex, msg.ConfigLoadError, err)
 		// In GUI mode, use default config and show error dialog later
 		app.Config = config.GetDefaultConfigResolved()
-		logger.LogInfo(app.logger, &app.logBuffer, &app.logMutex, "設定読み込みエラーのためデフォルト設定を使用します")
+		logger.LogInfo(app.logger, &app.logBuffer, &app.logMutex, msg.UsingDefaultConfig)
 		
 		// Show error dialog when window is available
 		go func() {
@@ -137,12 +139,14 @@ func (app *GUIApp) loadConfig() {
 func (app *GUIApp) initLogger() {
 	logFile, err := os.OpenFile("koemoji.log", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
 	if err != nil {
-		log.Fatalf("ログファイルのオープンに失敗しました: %v", err)
+		msg := ui.GetMessages(config.GetDefaultConfigResolved())
+		log.Fatalf(msg.LogFileOpenError, err)
 	}
 
 	// Only timestamps for file logging, no prefix for console
 	app.logger = log.New(io.MultiWriter(logFile), "", log.LstdFlags)
-	logger.LogInfo(app.logger, &app.logBuffer, &app.logMutex, "KoeMoji-Goを開始しました (GUIモード)")
+	msg := ui.GetMessages(config.GetDefaultConfigResolved())
+	logger.LogInfo(app.logger, &app.logBuffer, &app.logMutex, msg.AppStartedGUI)
 }
 
 // ForceCleanup performs immediate resource cleanup for application exit
@@ -159,7 +163,8 @@ func (app *GUIApp) ForceCleanup() {
 	}
 
 	// Log cleanup action
-	logger.LogInfo(app.logger, &app.logBuffer, &app.logMutex, "アプリケーションリソースをクリーンアップしました")
+	msg := ui.GetMessages(app.Config)
+	logger.LogInfo(app.logger, &app.logBuffer, &app.logMutex, msg.ResourceCleanupComplete)
 }
 
 // isUIReady checks if all essential UI components are initialized

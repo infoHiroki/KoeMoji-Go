@@ -88,6 +88,24 @@ type Messages struct {
 	ModelLabel           string
 	PromptTemplateLabel  string
 	RecordingDeviceLabel string
+
+	// Additional GUI messages
+	LogPlaceholder           string
+	LogTitle                 string
+	UsingDefaultConfig       string
+	LogFileOpenError         string
+	AppStartedGUI            string
+	ResourceCleanupComplete  string
+	RecordingDeviceListError string
+	DeviceLoadError          string
+	DefaultDevice            string
+	ConfigSaved              string
+	Success                  string
+	RecordingExitWarning     string
+	RecordingInProgress      string
+	DependencyError          string
+	ConfigError              string
+	ConfigLoadErrorDialog    string
 }
 
 var messagesEN = Messages{
@@ -175,6 +193,24 @@ var messagesEN = Messages{
 	ModelLabel:           "Model",
 	PromptTemplateLabel:  "Prompt Template",
 	RecordingDeviceLabel: "Recording Device",
+
+	// Additional GUI messages
+	LogPlaceholder:           "**Waiting for log entries...**",
+	LogTitle:                 "Logs",
+	UsingDefaultConfig:       "Using default configuration due to config load error",
+	LogFileOpenError:         "Failed to open log file: %v",
+	AppStartedGUI:            "KoeMoji-Go started (GUI mode)",
+	ResourceCleanupComplete:  "Application resources cleaned up",
+	RecordingDeviceListError: "Failed to get recording devices: %v",
+	DeviceLoadError:          "Failed to load recording devices",
+	DefaultDevice:            "Default Device",
+	ConfigSaved:              "Configuration saved",
+	Success:                  "Success",
+	RecordingExitWarning:     "Recording in progress (%s elapsed)\nRecording data will be lost. Do you want to exit?",
+	RecordingInProgress:      "Recording in Progress",
+	DependencyError:          "Audio recognition engine (Whisper) not found: %v\n\nRecording and file management are available, but audio transcription is not possible.\n\nSolution:\npip install faster-whisper whisper-ctranslate2",
+	ConfigError:              "Configuration Error",
+	ConfigLoadErrorDialog:    "Failed to load configuration: %v\n\nUsing default configuration.",
 }
 
 var messagesJA = Messages{
@@ -262,6 +298,24 @@ var messagesJA = Messages{
 	ModelLabel:           "モデル",
 	PromptTemplateLabel:  "プロンプトテンプレート",
 	RecordingDeviceLabel: "録音デバイス",
+
+	// Additional GUI messages
+	LogPlaceholder:           "**ログをここに表示します...**",
+	LogTitle:                 "ログ",
+	UsingDefaultConfig:       "設定読み込みエラーのためデフォルト設定を使用します",
+	LogFileOpenError:         "ログファイルのオープンに失敗しました: %v",
+	AppStartedGUI:            "KoeMoji-Goを開始しました (GUIモード)",
+	ResourceCleanupComplete:  "アプリケーションリソースをクリーンアップしました",
+	RecordingDeviceListError: "録音デバイスの取得に失敗しました: %v",
+	DeviceLoadError:          "録音デバイスの読み込みに失敗しました",
+	DefaultDevice:            "デフォルトデバイス",
+	ConfigSaved:              "設定を保存しました",
+	Success:                  "成功",
+	RecordingExitWarning:     "録音中です（%s経過）\n録音データが失われますが終了しますか？",
+	RecordingInProgress:      "録音中",
+	DependencyError:          "音声認識エンジン（Whisper）が見つかりません: %v\n\n録音とファイル管理は利用できますが、音声ファイルの文字起こしはできません。\n\n解決方法:\npip install faster-whisper whisper-ctranslate2",
+	ConfigError:              "設定エラー",
+	ConfigLoadErrorDialog:    "設定の読み込みに失敗しました: %v\n\nデフォルト設定を使用します。",
 }
 
 // GetMessages returns the messages for the current UI language
