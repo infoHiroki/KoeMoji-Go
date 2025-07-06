@@ -150,47 +150,26 @@ if exist "%~dp0%SOURCE_DIR%\resource.syso" del "%~dp0%SOURCE_DIR%\resource.syso"
 echo.
 echo Build completed successfully!
 
-rem Copy required DLLs (same directory)
-echo Copying required DLL files...
-copy /Y "%~dp0*.dll" "%~dp0%DIST_DIR%\" >nul 2>&1
-if %errorlevel% neq 0 (
-    echo Warning: Failed to copy DLL files
-) else (
-    echo DLL files copied.
-)
-
-rem Create distribution package
-echo.
-echo Creating distribution package...
-
-cd /d "%~dp0%DIST_DIR%"
-mkdir KoeMoji-Go-v%VERSION%
-copy %APP_NAME%.exe KoeMoji-Go-v%VERSION%\
-copy "%~dp0*.dll" KoeMoji-Go-v%VERSION%\
-copy "%~dp0%COMMON_DIR%\assets\config.example.json" KoeMoji-Go-v%VERSION%\config.json
-copy "%~dp0%COMMON_DIR%\assets\README_RELEASE.md" KoeMoji-Go-v%VERSION%\README.md
-
-rem Create ZIP package with new naming convention
-echo Creating ZIP package...
-set RELEASE_NAME=KoeMoji-Go-v%VERSION%-win
-powershell -Command "Compress-Archive -Path 'KoeMoji-Go-v%VERSION%' -DestinationPath '%RELEASE_NAME%.zip'"
-
-rem Move ZIP to releases directory
-if not exist ..\releases mkdir ..\releases
-move %RELEASE_NAME%.zip ..\releases\
-
-rem Clean up temporary directory
-rmdir /s /q KoeMoji-Go-v%VERSION%
-
-cd /d "%~dp0"
-
 echo.
 echo ========================================
-echo   Build completed successfully!
+echo   Manual steps required for distribution:
 echo ========================================
 echo.
-echo Distribution file created:
-echo   ..\releases\%RELEASE_NAME%.zip
+echo 1. Copy required DLL files manually:
+echo    From: %~dp0*.dll
+echo    To:   %~dp0%DIST_DIR%\
+echo.
+echo 2. Create distribution folder manually:
+echo    Folder name: KoeMoji-Go-v%VERSION%-win
+echo.
+echo 3. Copy files to distribution folder:
+echo    - %DIST_DIR%\%APP_NAME%.exe
+echo    - Required DLL files (libportaudio.dll, etc.)
+echo    - config.example.json (rename to config.json)
+echo    - README_RELEASE.md (rename to README.md)
+echo.
+echo 4. Create ZIP file manually:
+echo    ZIP name: KoeMoji-Go-v%VERSION%-win.zip
 echo.
 echo Executable location:
 echo   %DIST_DIR%\%APP_NAME%.exe
