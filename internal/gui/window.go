@@ -14,7 +14,7 @@ import (
 func (app *GUIApp) createWindow() {
 	// Create the main window
 	app.window = app.fyneApp.NewWindow("KoeMoji-Go")
-	app.window.Resize(fyne.NewSize(800, 700))
+	app.window.Resize(fyne.NewSize(900, 750))
 	app.window.CenterOnScreen()
 	app.window.SetMaster()
 
