@@ -18,13 +18,15 @@ import (
 
 // startPeriodicUpdate starts the 5-second periodic UI update
 func (app *GUIApp) startPeriodicUpdate() {
+	msg := ui.GetMessages(app.Config)
+	
 	// Initialize dependencies once
 	if err := processor.EnsureDirectories(app.Config, nil); err != nil {
-		logger.LogError(app.logger, &app.logBuffer, &app.logMutex, "ディレクトリの作成に失敗しました: %v", err)
+		logger.LogError(app.logger, &app.logBuffer, &app.logMutex, msg.DirCreateError, "", err)
 	}
 	
 	if err := whisper.EnsureDependencies(app.Config, nil, &app.logBuffer, &app.logMutex, app.debugMode); err != nil {
-		logger.LogError(app.logger, &app.logBuffer, &app.logMutex, "音声認識エンジン（FasterWhisper）が見つかりません: %v", err)
+		logger.LogError(app.logger, &app.logBuffer, &app.logMutex, msg.WhisperNotFound+": %v", err)
 		logger.LogInfo(app.logger, &app.logBuffer, &app.logMutex, "音声認識機能を除く機能で続行します")
 		
 		// Show dependency error dialog in GUI mode
