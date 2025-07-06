@@ -92,8 +92,11 @@ KoeMoji-Go/
 │   │   └── validate.go  # 設定バリデーション
 │   ├── gui/             # GUIコンポーネント
 │   │   ├── app.go      # Fyneアプリケーション
-│   │   ├── recorder.go # 録音UIコンポーネント
-│   │   └── settings.go # 設定画面
+│   │   ├── components.go # UIコンポーネント更新
+│   │   ├── window.go   # ウィンドウレイアウト
+│   │   ├── resources.go # 埋め込みリソース（アイコン）
+│   │   ├── dialogs.go  # ダイアログ機能
+│   │   └── icon.png    # アプリケーションアイコン
 │   ├── ui/              # TUIコンポーネント
 │   │   └── tui.go      # ターミナルUI実装
 │   ├── processor/       # ファイル処理エンジン
@@ -127,6 +130,9 @@ KoeMoji-Go/
 
 ### 主要技術
 - **GUIフレームワーク**: クロスプラットフォームデスクトップインターフェース用Fyne v2.6.1
+  - アプリアイコン統合（go:embed）
+  - ダークモード自動対応
+  - 統一されたアイコンデザイン
 - **音声処理**: リアルタイム音声録音用PortAudio
 - **音声認識**: FasterWhisper（Python依存）
 - **AI統合**: テキスト要約用OpenAI API
