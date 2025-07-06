@@ -76,14 +76,16 @@ func (app *GUIApp) createComponents() {
 // createStatusPanel creates the status display panel
 func (app *GUIApp) createStatusPanel(msg *ui.Messages) fyne.CanvasObject {
 	// Status line 1: Active/Processing state and queue info
-	statusLabel := widget.NewLabel("🟢 " + msg.Active + " | " + msg.Queue + ": 0 | " + msg.Processing + ": " + msg.None)
+	statusLabel := widget.NewLabel("[状態] " + msg.Active + " | " + msg.Queue + ": 0 | " + msg.Processing + ": " + msg.None)
 	statusLabel.TextStyle = fyne.TextStyle{Bold: true}
 
 	// Status line 2: File counts
-	filesLabel := widget.NewLabel("📁 " + msg.Input + ": 0 → " + msg.Output + ": 0 → " + msg.Archive + ": 0")
+	filesLabel := widget.NewLabel("[ファイル] " + msg.Input + ": 0 → " + msg.Output + ": 0 → " + msg.Archive + ": 0")
+	filesLabel.TextStyle = fyne.TextStyle{Bold: true}
 
 	// Status line 3: Timing info
-	timingLabel := widget.NewLabel("⏰ " + msg.Last + ": " + msg.Never + " | " + msg.Next + ": " + msg.Soon + " | " + msg.Uptime + ": 0s")
+	timingLabel := widget.NewLabel("[スキャン] " + msg.Last + ": " + msg.Never + " | " + msg.Next + ": " + msg.Soon + " | " + msg.Uptime + ": 0s")
+	timingLabel.TextStyle = fyne.TextStyle{Bold: true}
 
 	// Store references for updates
 	app.statusLabel = statusLabel

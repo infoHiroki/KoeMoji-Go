@@ -93,9 +93,9 @@ func (app *GUIApp) updateUI() {
 	app.updateFileCounts()
 
 	// Update status label
-	status := "🟢 " + msg.Active
+	status := "[状態] " + msg.Active
 	if app.isProcessing {
-		status = "🟡 " + msg.Processing
+		status = "[状態] " + msg.Processing
 	}
 
 	app.mu.Lock()
@@ -110,7 +110,7 @@ func (app *GUIApp) updateUI() {
 		status, msg.Queue, queueCount, msg.Processing, processingDisplay)
 
 	// Update files label
-	filesText := fmt.Sprintf("📁 %s: %d → %s: %d → %s: %d",
+	filesText := fmt.Sprintf("[ファイル] %s: %d → %s: %d → %s: %d",
 		msg.Input, app.inputCount, msg.Output, app.outputCount, msg.Archive, app.archiveCount)
 
 	// Update timing label with recording status
@@ -123,19 +123,42 @@ func (app *GUIApp) updateUI() {
 		nextScanStr = nextScan.Format("15:04:05")
 	}
 
-	timingText := fmt.Sprintf("⏰ %s: %s | %s: %s | %s: %s",
+	timingText := fmt.Sprintf("[スキャン] %s: %s | %s: %s | %s: %s",
 		msg.Last, lastScanStr, msg.Next, nextScanStr, msg.Uptime, formatDuration(uptime))
 
 	// Add recording status if recording
 	if isCurrentlyRecording {
 		elapsed := app.getRecordingDuration()
-		timingText += fmt.Sprintf(" | 🔴 %s: %s", msg.Recording, formatDuration(elapsed))
+		timingText += fmt.Sprintf(" | [録音中] %s: %s", msg.Recording, formatDuration(elapsed))
 	}
 
-	// Update UI elements on main thread
+	// Update UI elements on main thread with importance styling
 	app.statusLabel.SetText(statusText)
+	if app.isProcessing {
+		app.statusLabel.Importance = widget.HighImportance  // 処理中は高重要度（赤系）
+	} else {
+		app.statusLabel.Importance = widget.MediumImportance  // 稼働中は中重要度（青系）
+	}
+	
 	app.filesLabel.SetText(filesText)
 	app.timingLabel.SetText(timingText)
+	
+	// Set timing label importance based on recording status
+	if isCurrentlyRecording {
+		app.timingLabel.Importance = widget.HighImportance  // 録音中は高重要度（赤系）
+	} else {
+		app.timingLabel.Importance = widget.MediumImportance   // 通常時は標準色で見やすく
+	}
+	
+	// Apply Bold styling to all labels
+	app.statusLabel.TextStyle = fyne.TextStyle{Bold: true}
+	app.filesLabel.TextStyle = fyne.TextStyle{Bold: true}
+	app.timingLabel.TextStyle = fyne.TextStyle{Bold: true}
+	
+	// Refresh labels to apply styling
+	app.statusLabel.Refresh()
+	app.filesLabel.Refresh()
+	app.timingLabel.Refresh()
 
 	// Update log display
 	app.updateLogDisplay()
