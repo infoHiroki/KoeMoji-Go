@@ -103,7 +103,7 @@ func (app *GUIApp) createStatusPanel(msg *ui.Messages) fyne.CanvasObject {
 // createLogViewer creates the scrollable log display
 func (app *GUIApp) createLogViewer(msg *ui.Messages) fyne.CanvasObject {
 	// Create a rich text widget for log display
-	app.logText = widget.NewRichTextFromMarkdown("**Logs will appear here...**")
+	app.logText = widget.NewRichTextFromMarkdown("**ログをここに表示します...**")
 	app.logText.Wrapping = fyne.TextWrapWord
 
 	// Create scrollable container

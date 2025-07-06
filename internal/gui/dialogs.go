@@ -179,9 +179,9 @@ func (app *GUIApp) createRecordingForm() *widget.Form {
 	// Get available recording devices
 	devices, err := recorder.ListDevices()
 	if err != nil {
-		logger.LogError(app.logger, &app.logBuffer, &app.logMutex, "Failed to list recording devices: %v", err)
+		logger.LogError(app.logger, &app.logBuffer, &app.logMutex, "録音デバイスの取得に失敗しました: %v", err)
 		return widget.NewForm(
-			widget.NewFormItem("Error", widget.NewLabel("Failed to load recording devices")),
+			widget.NewFormItem("エラー", widget.NewLabel("録音デバイスの読み込みに失敗しました")),
 		)
 	}
 
@@ -190,9 +190,9 @@ func (app *GUIApp) createRecordingForm() *widget.Form {
 	var deviceMap = make(map[string]int)
 	var selectedDevice string
 
-	deviceNames = append(deviceNames, "Default Device")
-	deviceMap["Default Device"] = -1
-	selectedDevice = "Default Device"
+	deviceNames = append(deviceNames, "デフォルトデバイス")
+	deviceMap["デフォルトデバイス"] = -1
+	selectedDevice = "デフォルトデバイス"
 
 	for _, device := range devices {
 		deviceNames = append(deviceNames, device.Name)
@@ -204,7 +204,7 @@ func (app *GUIApp) createRecordingForm() *widget.Form {
 
 	// If current device ID is -1, keep "Default Device" selected
 	if app.Config.RecordingDeviceID == -1 {
-		selectedDevice = "Default Device"
+		selectedDevice = "デフォルトデバイス"
 	}
 
 	// Create device selection widget
@@ -285,7 +285,7 @@ func (app *GUIApp) saveConfigFromDialog(whisperModel, language *widget.Select,
 		if deviceID, exists := app.recordingDeviceMap[selectedDevice]; exists {
 			app.Config.RecordingDeviceID = deviceID
 			app.Config.RecordingDeviceName = selectedDevice
-		} else if selectedDevice == "" || selectedDevice == "Default Device" {
+		} else if selectedDevice == "" || selectedDevice == "デフォルトデバイス" {
 			// Handle empty or default selection
 			app.Config.RecordingDeviceID = -1
 			app.Config.RecordingDeviceName = "既定のマイク"
@@ -295,11 +295,11 @@ func (app *GUIApp) saveConfigFromDialog(whisperModel, language *widget.Select,
 
 	// Save to file
 	if err := config.SaveConfig(app.Config, app.configPath); err != nil {
-		logger.LogError(app.logger, &app.logBuffer, &app.logMutex, "Failed to save config: %v", err)
+		logger.LogError(app.logger, &app.logBuffer, &app.logMutex, "設定の保存に失敗しました: %v", err)
 		dialog.ShowError(err, app.window)
 	} else {
-		logger.LogInfo(app.logger, &app.logBuffer, &app.logMutex, "Configuration saved successfully")
-		dialog.ShowInformation("Success", "Configuration saved successfully!", app.window)
+		logger.LogInfo(app.logger, &app.logBuffer, &app.logMutex, "設定を保存しました")
+		dialog.ShowInformation("成功", "設定を保存しました", app.window)
 	}
 }
 
@@ -354,23 +354,23 @@ func formatRecordingDuration(d time.Duration) string {
 
 // showDependencyErrorDialog shows an error dialog for dependency issues
 func (app *GUIApp) showDependencyErrorDialog(err error) {
-	message := fmt.Sprintf("FasterWhisper is not available: %v\n\nThe application will continue with limited functionality.\n\nTo fix this issue, please install:\npip install faster-whisper whisper-ctranslate2", err)
+	message := fmt.Sprintf("音声認識エンジン（Whisper）が見つかりません: %v\n\n録音とファイル管理は利用できますが、音声ファイルの文字起こしはできません。\n\n解決方法:\npip install faster-whisper whisper-ctranslate2", err)
 	
 	// Show error dialog
 	dialog.ShowError(fmt.Errorf(message), app.window)
 	
 	// Log the error
-	logger.LogError(app.logger, &app.logBuffer, &app.logMutex, "Dependency error dialog shown: %v", err)
+	logger.LogError(app.logger, &app.logBuffer, &app.logMutex, "依存関係エラーダイアログを表示しました: %v", err)
 }
 
 // showConfigErrorDialog shows an error dialog for configuration loading issues
 func (app *GUIApp) showConfigErrorDialog(err error) {
-	title := "Configuration Error"
-	message := fmt.Sprintf("Failed to load configuration: %v\n\nUsing default settings instead.", err)
+	title := "設定エラー"
+	message := fmt.Sprintf("設定の読み込みに失敗しました: %v\n\nデフォルト設定を使用します。", err)
 	
 	// Show error dialog
 	dialog.ShowInformation(title, message, app.window)
 	
 	// Log the error
-	logger.LogError(app.logger, &app.logBuffer, &app.logMutex, "Config error dialog shown: %v", err)
+	logger.LogError(app.logger, &app.logBuffer, &app.logMutex, "設定エラーダイアログを表示しました: %v", err)
 }
