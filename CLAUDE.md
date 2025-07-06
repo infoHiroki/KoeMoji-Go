@@ -6,6 +6,14 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 KoeMoji-Goは、Goで書かれた音声・動画ファイル自動文字起こしツールです。GUI（Fyne-based）とTUIの両インターフェースを提供し、FasterWhisperによる音声認識と、オプションのOpenAI API統合によるAI要約機能を備えています。
 
+### 主な特徴
+- **クロスプラットフォーム**: Windows、macOS、Linux対応
+- **二つのUI**: GUI（Fyne）とTUI（Terminal UI）
+- **高精度音声認識**: FasterWhisper（OpenAI Whisperの高速版）
+- **リアルタイム録音**: PortAudio統合による録音機能
+- **AI要約**: OpenAI API連携でテキスト要約生成
+- **ポータブル設計**: 単一実行ファイルで動作（Python依存を除く）
+
 ## 開発コマンド
 
 ### ビルド
@@ -23,6 +31,11 @@ cd build/windows && build.bat
 cd build/macos && ./build.sh clean
 cd build/windows && build.bat clean
 ```
+
+### リリース成果物
+- **macOS**: `KoeMoji-Go-v{VERSION}-mac.tar.gz`
+- **Windows**: `KoeMoji-Go-v{VERSION}-win.zip`
+- **解凍後フォルダ**: `KoeMoji-Go-v{VERSION}/`
 
 ### テスト
 ```bash
@@ -68,18 +81,49 @@ go test ./test
 - **コンテキストベース停止**: Goのcontextパッケージによる優雅な終了処理
 - **依存性注入**: 設定とロガーは関数パラメータ経由で受け渡し
 
-### ディレクトリ構造
-- `/cmd/koemoji-go/` - アプリケーションエントリーポイント
-- `/internal/config/` - JSON永続化による設定管理
-- `/internal/gui/` - Fyneベースの録音状態管理機能付きGUIコンポーネント
-- `/internal/ui/` - キーボードショートカット付きターミナルUIコンポーネント
-- `/internal/processor/` - ファイル監視と順次処理エンジン
-- `/internal/recorder/` - PortAudioベースの録音デバイス選択機能付き録音システム
-- `/internal/whisper/` - FasterWhisper音声認識統合
-- `/internal/llm/` - OpenAI API AI要約統合
-- `/internal/logger/` - スレッドセーフバッファード・ログシステム
-- `/build/` - プラットフォーム固有ビルドスクリプトとアセット
-- `/test/` - 統合テストと手動テスト手順
+### ディレクトリ構造（詳細）
+```
+KoeMoji-Go/
+├── cmd/koemoji-go/         # アプリケーションエントリーポイント
+│   └── main.go            # メイン関数、CLI引数処理
+├── internal/              # 内部パッケージ（外部公開しない）
+│   ├── config/           # 設定管理
+│   │   ├── config.go    # 設定構造体と読み込み
+│   │   └── validate.go  # 設定バリデーション
+│   ├── gui/             # GUIコンポーネント
+│   │   ├── app.go      # Fyneアプリケーション
+│   │   ├── recorder.go # 録音UIコンポーネント
+│   │   └── settings.go # 設定画面
+│   ├── ui/              # TUIコンポーネント
+│   │   └── tui.go      # ターミナルUI実装
+│   ├── processor/       # ファイル処理エンジン
+│   │   └── processor.go # ファイル監視と処理
+│   ├── recorder/        # 録音システム
+│   │   └── recorder.go  # PortAudio統合
+│   ├── whisper/         # 音声認識
+│   │   └── whisper.go   # FasterWhisper呼び出し
+│   ├── llm/            # AI統合
+│   │   └── openai.go   # OpenAI API連携
+│   └── logger/         # ログシステム
+│       └── logger.go   # バッファード・ロガー
+├── build/              # ビルドスクリプトとアセット
+│   ├── common/assets/  # 共通リソース
+│   │   ├── config.example.json
+│   │   └── README_RELEASE.md
+│   ├── macos/         # macOSビルド
+│   │   └── build.sh
+│   └── windows/       # Windowsビルド
+│       ├── build.bat
+│       ├── *.dll      # 必要なDLLファイル
+│       └── icon.ico   # アプリケーションアイコン
+├── test/              # テストファイル
+│   └── manual-test-commands.md
+├── version.go         # バージョン定義
+├── go.mod            # Go依存関係
+├── README.md         # ユーザー向けドキュメント
+├── CLAUDE.md         # このファイル
+└── config.json       # ユーザー設定（実行時生成）
+```
 
 ### 主要技術
 - **GUIフレームワーク**: クロスプラットフォームデスクトップインターフェース用Fyne v2.6.1
@@ -105,7 +149,26 @@ go test ./test
 
 新規インストール時は`config.example.json`をテンプレートとして使用してください。
 
-## ビルドシステム注意事項
+### 設定ファイル例
+```json
+{
+  "input_dir": "./input",
+  "output_dir": "./output",
+  "archive_dir": "./archive",
+  "whisper": {
+    "model": "medium",
+    "language": "ja",
+    "compute_type": "int8"
+  },
+  "openai": {
+    "api_key": "",
+    "enabled": false,
+    "prompt": "以下のテキストを要約してください："
+  }
+}
+```
+
+## ビルドシステム
 
 ### 前提条件
 - **Go 1.21+** コンパイル用
@@ -120,8 +183,73 @@ go test ./test
 
 ### 配布パッケージ化
 ビルドスクリプトは全依存関係を含む実行可能パッケージを作成：
-- macOS: 実行ファイルと設定テンプレートを含む`.tar.gz`
-- Windows: 実行ファイル、DLL、設定テンプレートを含む`.zip`
+- macOS: `KoeMoji-Go-v{VERSION}-mac.tar.gz`
+- Windows: `KoeMoji-Go-v{VERSION}-win.zip`
+- 解凍後フォルダ: `KoeMoji-Go-v{VERSION}/`
+
+### DLL処理（Windows）
+`build.bat`はワイルドカード`*.dll`を使用して自動的にDLLをコピー：
+```batch
+copy /Y *.dll "%DIST_DIR%\" >nul
+```
+
+## よくある問題と解決策
+
+### 1. FasterWhisperインストール問題
+**症状**: 「whisper-ctranslate2が見つかりません」エラー
+**解決策**:
+```bash
+pip install faster-whisper
+# または
+pip3 install faster-whisper
+```
+
+### 2. Windows GPU環境での問題
+**症状**: `compute_type: int8`設定でもGPUが使用される
+**解決策**: config.jsonで明示的にCPU使用を指定（内部で`--device cpu`を自動追加）
+
+### 3. macOS録音許可
+**症状**: 録音開始時にエラー
+**解決策**: システム環境設定 > セキュリティとプライバシー > マイクでアプリを許可
+
+### 4. ファイル処理が始まらない
+**症状**: inputフォルダにファイルを置いても処理されない
+**解決策**: 
+- ファイル形式を確認（サポート形式のみ）
+- ログで詳細確認: `./koemoji-go --debug`
+- 権限を確認
+
+## デバッグとトラブルシューティング
+
+### ログレベル
+```bash
+# 通常ログ
+./koemoji-go
+
+# デバッグログ（詳細）
+./koemoji-go --debug
+```
+
+### ログ出力場所
+- **GUI**: アプリケーション内のログエリア
+- **TUI**: ターミナル画面下部
+- **ファイル**: なし（stdout/stderrのみ）
+
+### よく使うデバッグコマンド
+```bash
+# Whisperコマンドの確認
+which whisper-ctranslate2
+
+# Python環境確認
+python --version
+pip list | grep faster-whisper
+
+# PortAudio確認（macOS）
+brew list portaudio
+
+# DLL確認（Windows）
+dir build\windows\*.dll
+```
 
 ## 重要な実装詳細
 
@@ -147,3 +275,59 @@ go test ./test
 - 長時間録音でのメモリ使用量
 
 包括的なテスト手順については`test/manual-test-commands.md`を参照してください。
+
+## 最近の重要な変更
+
+### v1.5.4での変更
+1. **フォルダ命名規則の統一**
+   - 旧: `koemoji-go-windows-1.5.4`、`koemoji-go-macos-arm64-1.5.4`
+   - 新: `KoeMoji-Go-v1.5.4`（全プラットフォーム共通）
+   - 効果: アップデート時のユーザーデータ保護
+
+2. **Windows DLL処理の簡素化**
+   - 旧: MSYS2パス検出の複雑な条件分岐（14行）
+   - 新: ワイルドカード`*.dll`使用（4行）
+   - 効果: 保守性向上、新DLL自動対応
+
+3. **FasterWhisper自動インストール改善**
+   - Windows実行ファイルパス対応
+   - GPU環境での`--device cpu`自動追加
+   - クロスプラットフォーム対応強化
+
+## Git操作時の注意事項
+
+### ブランチ戦略
+- `main`: 安定版リリース
+- `feature/*`: 新機能開発
+- `fix/*`: バグ修正
+
+### コミットメッセージ規則
+```
+type: 簡潔な説明
+
+- 詳細な変更内容
+- 影響範囲
+
+Co-Authored-By: Claude <noreply@anthropic.com>
+```
+
+### リリースプロセス
+1. version.goのバージョン番号更新
+2. ビルドスクリプト実行
+3. 成果物確認（releases/フォルダ）
+4. GitHubリリース作成
+5. アセットアップロード
+
+## 開発のヒント
+
+1. **設定変更時**: 必ずvalidate.goでバリデーション追加
+2. **新機能追加時**: config.example.json更新を忘れずに
+3. **エラー処理**: ユーザーフレンドリーなメッセージを心がける
+4. **クロスプラットフォーム**: OS固有の処理は明確に分離
+5. **テスト**: 手動テストコマンドをmanual-test-commands.mdに追加
+
+## 連絡先とサポート
+
+- **GitHub Issues**: バグ報告と機能要望
+- **作者**: [@infoHiroki](https://github.com/infoHiroki)
+- **ライセンス**: 個人利用自由、商用利用要連絡
