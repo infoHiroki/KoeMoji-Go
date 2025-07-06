@@ -197,7 +197,7 @@ func (app *GUIApp) showConfigDialog() {
 			}
 			// If Cancel is clicked, changes are discarded automatically
 		}, app.window)
-	configDialog.Resize(fyne.NewSize(900, 550))
+	configDialog.Resize(fyne.NewSize(750, 500))
 
 	configDialog.Show()
 }
