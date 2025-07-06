@@ -134,12 +134,6 @@ func processQueue(config *config.Config, log *log.Logger, logBuffer *[]logger.Lo
 		logger.LogProc(log, logBuffer, logMutex, msg.ProcessingFile, *processingFile)
 		startTime := time.Now()
 
-		// Quick dependency check before processing
-		if !whisper.IsFasterWhisperAvailableForTesting() {
-			logger.LogError(log, logBuffer, logMutex, msg.ProcessFailed, *processingFile, fmt.Errorf("whisper-ctranslate2 not available"))
-			continue
-		}
-
 		if err := whisper.TranscribeAudio(config, log, logBuffer, logMutex, debugMode, filePath); err != nil {
 			logger.LogError(log, logBuffer, logMutex, msg.ProcessFailed, *processingFile, err)
 		} else {
