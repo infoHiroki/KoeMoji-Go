@@ -3,6 +3,7 @@ package config
 import (
 	"os"
 	"path/filepath"
+	"strings"
 )
 
 // GetExecutablePath returns the directory containing the executable
@@ -37,4 +38,25 @@ func ResolveConfigPaths(config *Config) {
 	config.InputDir = ResolvePath(config.InputDir)
 	config.OutputDir = ResolvePath(config.OutputDir)
 	config.ArchiveDir = ResolvePath(config.ArchiveDir)
+}
+
+// GetRelativePath converts absolute path to relative path from executable directory
+func GetRelativePath(absolutePath string) string {
+	exeDir, err := GetExecutablePath()
+	if err != nil {
+		return absolutePath
+	}
+	
+	// Try to get relative path
+	relPath, err := filepath.Rel(exeDir, absolutePath)
+	if err != nil {
+		return absolutePath
+	}
+	
+	// Add "./" prefix if not present and not going up directories
+	if !strings.HasPrefix(relPath, ".") && !strings.HasPrefix(relPath, "..") {
+		return "./" + relPath
+	}
+	
+	return relPath
 }

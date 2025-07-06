@@ -14,7 +14,7 @@ import (
 func (app *GUIApp) createWindow() {
 	// Create the main window
 	app.window = app.fyneApp.NewWindow("KoeMoji-Go")
-	app.window.Resize(fyne.NewSize(800, 700))
+	app.window.Resize(fyne.NewSize(900, 750))
 	app.window.CenterOnScreen()
 	app.window.SetMaster()
 
@@ -123,7 +123,7 @@ func (app *GUIApp) createStatusPanel(msg *ui.Messages) fyne.CanvasObject {
 // createLogViewer creates the scrollable log display
 func (app *GUIApp) createLogViewer(msg *ui.Messages) fyne.CanvasObject {
 	// Create a rich text widget for log display
-	app.logText = widget.NewRichTextFromMarkdown("**ログをここに表示します...**")
+	app.logText = widget.NewRichTextFromMarkdown(msg.LogPlaceholder)
 	app.logText.Wrapping = fyne.TextWrapWord
 
 	// Create scrollable container
@@ -131,7 +131,7 @@ func (app *GUIApp) createLogViewer(msg *ui.Messages) fyne.CanvasObject {
 	logScroll.SetMinSize(fyne.NewSize(750, 400))
 
 	// Create a card container for the log viewer
-	logCard := widget.NewCard("ログ", "", logScroll)
+	logCard := widget.NewCard(msg.LogTitle, "", logScroll)
 
 	return logCard
 }

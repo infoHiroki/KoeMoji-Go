@@ -38,7 +38,12 @@ func (app *GUIApp) showConfigDialog() {
 	if displayName, exists := uiCodeToDisplayMap[app.Config.UILanguage]; exists {
 		uiLanguageSelect.SetSelected(displayName)
 	} else {
-		uiLanguageSelect.SetSelected("日本語") // Default fallback
+		// Default fallback based on current language
+		if app.Config.UILanguage == "en" {
+			uiLanguageSelect.SetSelected("English")
+		} else {
+			uiLanguageSelect.SetSelected("日本語")
+		}
 	}
 
 	// Whisper model selection (dropdown)
@@ -88,7 +93,12 @@ func (app *GUIApp) showConfigDialog() {
 	if displayName, exists := codeToDisplayMap[app.Config.Language]; exists {
 		languageSelect.SetSelected(displayName)
 	} else {
-		languageSelect.SetSelected("日本語") // Default fallback
+		// Default fallback based on current language
+		if app.Config.UILanguage == "en" {
+			languageSelect.SetSelected("English")
+		} else {
+			languageSelect.SetSelected("日本語")
+		}
 	}
 
 	scanIntervalEntry := widget.NewEntry()
@@ -102,20 +112,38 @@ func (app *GUIApp) showConfigDialog() {
 		widget.NewFormItem(msg.ScanIntervalLabel, scanIntervalEntry),
 	)
 
-	// Directory settings
+	// Directory settings - show relative paths for user-friendly display
 	inputDirEntry := widget.NewEntry()
-	inputDirEntry.SetText(app.Config.InputDir)
+	inputDirEntry.SetText(config.GetRelativePath(app.Config.InputDir))
+	inputDirBrowseBtn := widget.NewButton(msg.BrowseBtn, func() {
+		app.showFolderSelectDialog(inputDirEntry)
+	})
+	inputDirBrowseBtn.Resize(fyne.NewSize(80, 40))
+	// Use BorderContainer to give entry field priority over button
+	inputDirContainer := container.NewBorder(nil, nil, nil, inputDirBrowseBtn, inputDirEntry)
 
 	outputDirEntry := widget.NewEntry()
-	outputDirEntry.SetText(app.Config.OutputDir)
+	outputDirEntry.SetText(config.GetRelativePath(app.Config.OutputDir))
+	outputDirBrowseBtn := widget.NewButton(msg.BrowseBtn, func() {
+		app.showFolderSelectDialog(outputDirEntry)
+	})
+	outputDirBrowseBtn.Resize(fyne.NewSize(80, 40))
+	// Use BorderContainer to give entry field priority over button
+	outputDirContainer := container.NewBorder(nil, nil, nil, outputDirBrowseBtn, outputDirEntry)
 
 	archiveDirEntry := widget.NewEntry()
-	archiveDirEntry.SetText(app.Config.ArchiveDir)
+	archiveDirEntry.SetText(config.GetRelativePath(app.Config.ArchiveDir))
+	archiveDirBrowseBtn := widget.NewButton(msg.BrowseBtn, func() {
+		app.showFolderSelectDialog(archiveDirEntry)
+	})
+	archiveDirBrowseBtn.Resize(fyne.NewSize(80, 40))
+	// Use BorderContainer to give entry field priority over button
+	archiveDirContainer := container.NewBorder(nil, nil, nil, archiveDirBrowseBtn, archiveDirEntry)
 
 	dirForm := widget.NewForm(
-		widget.NewFormItem(msg.InputDirLabel, inputDirEntry),
-		widget.NewFormItem(msg.OutputDirLabel, outputDirEntry),
-		widget.NewFormItem(msg.ArchiveDirLabel, archiveDirEntry),
+		widget.NewFormItem(msg.InputDirLabel, inputDirContainer),
+		widget.NewFormItem(msg.OutputDirLabel, outputDirContainer),
+		widget.NewFormItem(msg.ArchiveDirLabel, archiveDirContainer),
 	)
 
 	// LLM settings
@@ -169,7 +197,7 @@ func (app *GUIApp) showConfigDialog() {
 			}
 			// If Cancel is clicked, changes are discarded automatically
 		}, app.window)
-	configDialog.Resize(fyne.NewSize(700, 550))
+	configDialog.Resize(fyne.NewSize(750, 500))
 
 	configDialog.Show()
 }
@@ -178,10 +206,11 @@ func (app *GUIApp) showConfigDialog() {
 func (app *GUIApp) createRecordingForm() *widget.Form {
 	// Get available recording devices
 	devices, err := recorder.ListDevices()
+	msg := ui.GetMessages(app.Config)
 	if err != nil {
-		logger.LogError(app.logger, &app.logBuffer, &app.logMutex, "録音デバイスの取得に失敗しました: %v", err)
+		logger.LogError(app.logger, &app.logBuffer, &app.logMutex, msg.RecordingDeviceListError, err)
 		return widget.NewForm(
-			widget.NewFormItem("エラー", widget.NewLabel("録音デバイスの読み込みに失敗しました")),
+			widget.NewFormItem(msg.ConfigError, widget.NewLabel(msg.DeviceLoadError)),
 		)
 	}
 
@@ -190,9 +219,9 @@ func (app *GUIApp) createRecordingForm() *widget.Form {
 	var deviceMap = make(map[string]int)
 	var selectedDevice string
 
-	deviceNames = append(deviceNames, "デフォルトデバイス")
-	deviceMap["デフォルトデバイス"] = -1
-	selectedDevice = "デフォルトデバイス"
+	deviceNames = append(deviceNames, msg.DefaultDevice)
+	deviceMap[msg.DefaultDevice] = -1
+	selectedDevice = msg.DefaultDevice
 
 	for _, device := range devices {
 		deviceNames = append(deviceNames, device.Name)
@@ -204,7 +233,7 @@ func (app *GUIApp) createRecordingForm() *widget.Form {
 
 	// If current device ID is -1, keep "Default Device" selected
 	if app.Config.RecordingDeviceID == -1 {
-		selectedDevice = "デフォルトデバイス"
+		selectedDevice = msg.DefaultDevice
 	}
 
 	// Create device selection widget
@@ -215,7 +244,6 @@ func (app *GUIApp) createRecordingForm() *widget.Form {
 	app.recordingDeviceSelect = deviceSelect
 	app.recordingDeviceMap = deviceMap
 
-	msg := ui.GetMessages(app.Config)
 	return widget.NewForm(
 		widget.NewFormItem(msg.RecordingDeviceLabel, deviceSelect),
 	)
@@ -271,9 +299,10 @@ func (app *GUIApp) saveConfigFromDialog(whisperModel, language *widget.Select,
 		app.Config.ScanIntervalMinutes = interval
 	}
 
-	app.Config.InputDir = inputDir.Text
-	app.Config.OutputDir = outputDir.Text
-	app.Config.ArchiveDir = archiveDir.Text
+	// Resolve relative paths to absolute paths for internal storage
+	app.Config.InputDir = config.ResolvePath(inputDir.Text)
+	app.Config.OutputDir = config.ResolvePath(outputDir.Text)
+	app.Config.ArchiveDir = config.ResolvePath(archiveDir.Text)
 	app.Config.LLMSummaryEnabled = llmEnabled.Checked
 	app.Config.LLMAPIKey = llmAPIKey.Text
 	app.Config.LLMModel = llmModel.Selected
@@ -285,21 +314,22 @@ func (app *GUIApp) saveConfigFromDialog(whisperModel, language *widget.Select,
 		if deviceID, exists := app.recordingDeviceMap[selectedDevice]; exists {
 			app.Config.RecordingDeviceID = deviceID
 			app.Config.RecordingDeviceName = selectedDevice
-		} else if selectedDevice == "" || selectedDevice == "デフォルトデバイス" {
+		} else if selectedDevice == "" || selectedDevice == ui.GetMessages(app.Config).DefaultDevice {
 			// Handle empty or default selection
 			app.Config.RecordingDeviceID = -1
-			app.Config.RecordingDeviceName = "既定のマイク"
+			app.Config.RecordingDeviceName = ui.GetMessages(app.Config).DefaultDevice
 		}
 		// If device not found and not empty/default, keep current settings
 	}
 
 	// Save to file
+	msg := ui.GetMessages(app.Config)
 	if err := config.SaveConfig(app.Config, app.configPath); err != nil {
-		logger.LogError(app.logger, &app.logBuffer, &app.logMutex, "設定の保存に失敗しました: %v", err)
+		logger.LogError(app.logger, &app.logBuffer, &app.logMutex, msg.ConfigSaveError, err)
 		dialog.ShowError(err, app.window)
 	} else {
-		logger.LogInfo(app.logger, &app.logBuffer, &app.logMutex, "設定を保存しました")
-		dialog.ShowInformation("成功", "設定を保存しました", app.window)
+		logger.LogInfo(app.logger, &app.logBuffer, &app.logMutex, msg.ConfigSaved)
+		dialog.ShowInformation(msg.Success, msg.ConfigSaved, app.window)
 	}
 }
 
@@ -307,14 +337,15 @@ func (app *GUIApp) saveConfigFromDialog(whisperModel, language *widget.Select,
 func (app *GUIApp) showRecordingExitWarning() {
 	// KISS Design: Get duration directly from recorder
 	elapsed := app.getRecordingDuration()
+	msg := ui.GetMessages(app.Config)
 
 	// Create warning message with elapsed time
-	warningMessage := fmt.Sprintf("録音中です（%s経過）\n録音データが失われますが終了しますか？",
+	warningMessage := fmt.Sprintf(msg.RecordingExitWarning,
 		formatRecordingDuration(elapsed))
 
 	// Create warning dialog
 	confirmDialog := dialog.NewConfirm(
-		"録音中",
+		msg.RecordingInProgress,
 		warningMessage,
 		func(confirmed bool) {
 			if confirmed {
@@ -354,7 +385,8 @@ func formatRecordingDuration(d time.Duration) string {
 
 // showDependencyErrorDialog shows an error dialog for dependency issues
 func (app *GUIApp) showDependencyErrorDialog(err error) {
-	message := fmt.Sprintf("音声認識エンジン（Whisper）が見つかりません: %v\n\n録音とファイル管理は利用できますが、音声ファイルの文字起こしはできません。\n\n解決方法:\npip install faster-whisper whisper-ctranslate2", err)
+	msg := ui.GetMessages(app.Config)
+	message := fmt.Sprintf(msg.DependencyError, err)
 	
 	// Show error dialog
 	dialog.ShowError(fmt.Errorf(message), app.window)
@@ -365,12 +397,36 @@ func (app *GUIApp) showDependencyErrorDialog(err error) {
 
 // showConfigErrorDialog shows an error dialog for configuration loading issues
 func (app *GUIApp) showConfigErrorDialog(err error) {
-	title := "設定エラー"
-	message := fmt.Sprintf("設定の読み込みに失敗しました: %v\n\nデフォルト設定を使用します。", err)
+	msg := ui.GetMessages(app.Config)
+	title := msg.ConfigError
+	message := fmt.Sprintf(msg.ConfigLoadErrorDialog, err)
 	
 	// Show error dialog
 	dialog.ShowInformation(title, message, app.window)
 	
 	// Log the error
 	logger.LogError(app.logger, &app.logBuffer, &app.logMutex, "設定エラーダイアログを表示しました: %v", err)
+}
+
+// showFolderSelectDialog shows a folder selection dialog and updates the entry field
+func (app *GUIApp) showFolderSelectDialog(entry *widget.Entry) {
+	dialog.ShowFolderOpen(func(uri fyne.ListableURI, err error) {
+		if err != nil {
+			// User cancelled or error occurred
+			return
+		}
+		if uri == nil {
+			// No folder selected
+			return
+		}
+		
+		// Convert URI to path string
+		selectedPath := uri.Path()
+		
+		// Convert to relative path for display
+		relativePath := config.GetRelativePath(selectedPath)
+		
+		// Update the entry field
+		entry.SetText(relativePath)
+	}, app.window)
 }
