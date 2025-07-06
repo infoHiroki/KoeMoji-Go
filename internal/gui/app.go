@@ -56,6 +56,16 @@ type GUIApp struct {
 	timingLabel  *widget.Label
 	logText      *widget.RichText
 	recordButton *widget.Button
+	
+	// Icon components
+	statusIcon   *widget.Icon
+	filesIcon    *widget.Icon
+	timingIcon   *widget.Icon
+	
+	// Container references for icon+label combinations
+	statusContainer fyne.CanvasObject
+	filesContainer  fyne.CanvasObject
+	timingContainer fyne.CanvasObject
 
 	// Recording related fields
 	recorder              *recorder.Recorder

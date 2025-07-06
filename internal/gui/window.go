@@ -4,6 +4,7 @@ import (
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/layout"
+	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
 
 	"github.com/hirokitakamura/koemoji-go/internal/ui"
@@ -17,24 +18,40 @@ func (app *GUIApp) createWindow() {
 	app.window.CenterOnScreen()
 	app.window.SetMaster()
 
-	// Set window icon (will be implemented later)
-	// app.window.SetIcon(resourceIconPng)
+	// Set window icon
+	app.window.SetIcon(GetAppIcon())
 
 	// Create UI components
 	app.createComponents()
 
-	// Set up the main layout using BorderLayout with bottom padding
+	// Create title with custom app icon
+	titleIcon := widget.NewIcon(GetAppIcon())
+	titleLabel := widget.NewLabelWithStyle("KoeMoji-Go", fyne.TextAlignCenter, fyne.TextStyle{Bold: true})
+	titleContainer := container.NewCenter(
+		container.NewHBox(titleIcon, titleLabel),
+	)
+
+	// Create top section with title and status
+	topSection := container.NewVBox(
+		titleContainer,
+		app.statusWidget,
+	)
+
+	// Set up the main layout using BorderLayout with padding
 	bottomWithPadding := container.NewVBox(
 		app.buttonWidget,
 		widget.NewLabel(""), // Small spacer for bottom margin
 	)
 
-	content := container.NewBorder(
-		app.statusWidget,  // top
-		bottomWithPadding, // bottom with padding
-		nil,               // left
-		nil,               // right
-		app.logWidget,     // center
+	// Add padding to the entire content
+	content := container.NewPadded(
+		container.NewBorder(
+			topSection,        // top (title + status)
+			bottomWithPadding, // bottom with padding
+			nil,               // left
+			nil,               // right
+			app.logWidget,     // center
+		),
 	)
 
 	app.window.SetContent(content)
@@ -76,25 +93,28 @@ func (app *GUIApp) createComponents() {
 // createStatusPanel creates the status display panel
 func (app *GUIApp) createStatusPanel(msg *ui.Messages) fyne.CanvasObject {
 	// Status line 1: Active/Processing state and queue info
-	statusLabel := widget.NewLabel("🟢 " + msg.Active + " | " + msg.Queue + ": 0 | " + msg.Processing + ": " + msg.None)
-	statusLabel.TextStyle = fyne.TextStyle{Bold: true}
+	app.statusIcon = widget.NewIcon(theme.ConfirmIcon())
+	app.statusLabel = widget.NewLabel(msg.Active + " | " + msg.Queue + ": 0 | " + msg.Processing + ": " + msg.None)
+	app.statusLabel.TextStyle = fyne.TextStyle{Bold: true}
+	app.statusContainer = container.NewHBox(app.statusIcon, app.statusLabel)
 
 	// Status line 2: File counts
-	filesLabel := widget.NewLabel("📁 " + msg.Input + ": 0 → " + msg.Output + ": 0 → " + msg.Archive + ": 0")
+	app.filesIcon = widget.NewIcon(theme.FolderIcon())
+	app.filesLabel = widget.NewLabel(msg.Input + ": 0 → " + msg.Output + ": 0 → " + msg.Archive + ": 0")
+	app.filesLabel.TextStyle = fyne.TextStyle{Bold: true}
+	app.filesContainer = container.NewHBox(app.filesIcon, app.filesLabel)
 
 	// Status line 3: Timing info
-	timingLabel := widget.NewLabel("⏰ " + msg.Last + ": " + msg.Never + " | " + msg.Next + ": " + msg.Soon + " | " + msg.Uptime + ": 0s")
-
-	// Store references for updates
-	app.statusLabel = statusLabel
-	app.filesLabel = filesLabel
-	app.timingLabel = timingLabel
+	app.timingIcon = widget.NewIcon(theme.SearchIcon())
+	app.timingLabel = widget.NewLabel(msg.Last + ": " + msg.Never + " | " + msg.Next + ": " + msg.Soon + " | " + msg.Uptime + ": 0s")
+	app.timingLabel.TextStyle = fyne.TextStyle{Bold: true}
+	app.timingContainer = container.NewHBox(app.timingIcon, app.timingLabel)
 
 	// Create a card container for the status panel
 	statusCard := widget.NewCard("", "", container.NewVBox(
-		statusLabel,
-		filesLabel,
-		timingLabel,
+		app.statusContainer,
+		app.filesContainer,
+		app.timingContainer,
 	))
 
 	return statusCard

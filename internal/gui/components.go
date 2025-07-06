@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"fyne.io/fyne/v2"
+	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
 	"github.com/hirokitakamura/koemoji-go/internal/logger"
 	"github.com/hirokitakamura/koemoji-go/internal/processor"
@@ -92,10 +93,13 @@ func (app *GUIApp) updateUI() {
 	// Update file counts
 	app.updateFileCounts()
 
-	// Update status label
-	status := "🟢 " + msg.Active
+	// Update status label and icon
+	status := msg.Active
 	if app.isProcessing {
-		status = "🟡 " + msg.Processing
+		status = msg.Processing
+		app.statusIcon.SetResource(theme.WarningIcon())  // ⚠ 処理中
+	} else {
+		app.statusIcon.SetResource(theme.ConfirmIcon())  // ✓ 稼働中
 	}
 
 	app.mu.Lock()
@@ -110,7 +114,7 @@ func (app *GUIApp) updateUI() {
 		status, msg.Queue, queueCount, msg.Processing, processingDisplay)
 
 	// Update files label
-	filesText := fmt.Sprintf("📁 %s: %d → %s: %d → %s: %d",
+	filesText := fmt.Sprintf("%s: %d → %s: %d → %s: %d",
 		msg.Input, app.inputCount, msg.Output, app.outputCount, msg.Archive, app.archiveCount)
 
 	// Update timing label with recording status
@@ -123,19 +127,32 @@ func (app *GUIApp) updateUI() {
 		nextScanStr = nextScan.Format("15:04:05")
 	}
 
-	timingText := fmt.Sprintf("⏰ %s: %s | %s: %s | %s: %s",
+	timingText := fmt.Sprintf("%s: %s | %s: %s | %s: %s",
 		msg.Last, lastScanStr, msg.Next, nextScanStr, msg.Uptime, formatDuration(uptime))
 
-	// Add recording status if recording
+	// Add recording status if recording and update icon
 	if isCurrentlyRecording {
 		elapsed := app.getRecordingDuration()
-		timingText += fmt.Sprintf(" | 🔴 %s: %s", msg.Recording, formatDuration(elapsed))
+		timingText += fmt.Sprintf(" | %s: %s", msg.Recording, formatDuration(elapsed))
+		app.timingIcon.SetResource(theme.MediaRecordIcon())  // ⏺ 録音中
+	} else {
+		app.timingIcon.SetResource(theme.SearchIcon())  // 🔍 スキャン
 	}
 
 	// Update UI elements on main thread
 	app.statusLabel.SetText(statusText)
 	app.filesLabel.SetText(filesText)
 	app.timingLabel.SetText(timingText)
+	
+	// Apply Bold styling to all labels
+	app.statusLabel.TextStyle = fyne.TextStyle{Bold: true}
+	app.filesLabel.TextStyle = fyne.TextStyle{Bold: true}
+	app.timingLabel.TextStyle = fyne.TextStyle{Bold: true}
+	
+	// Refresh labels to apply styling
+	app.statusLabel.Refresh()
+	app.filesLabel.Refresh()
+	app.timingLabel.Refresh()
 
 	// Update log display
 	app.updateLogDisplay()
