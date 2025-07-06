@@ -7,7 +7,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 KoeMoji-Goは、Goで書かれた音声・動画ファイル自動文字起こしツールです。GUI（Fyne-based）とTUIの両インターフェースを提供し、FasterWhisperによる音声認識と、オプションのOpenAI API統合によるAI要約機能を備えています。
 
 ### 主な特徴
-- **クロスプラットフォーム**: Windows、macOS、Linux対応
+- **クロスプラットフォーム**: Windows、macOS対応（Linux未テスト）
 - **二つのUI**: GUI（Fyne）とTUI（Terminal UI）
 - **高精度音声認識**: FasterWhisper（OpenAI Whisperの高速版）
 - **リアルタイム録音**: PortAudio統合による録音機能
