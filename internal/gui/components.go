@@ -19,12 +19,12 @@ import (
 func (app *GUIApp) startPeriodicUpdate() {
 	// Initialize dependencies once
 	if err := processor.EnsureDirectories(app.Config, nil); err != nil {
-		logger.LogError(app.logger, &app.logBuffer, &app.logMutex, "Failed to create directories: %v", err)
+		logger.LogError(app.logger, &app.logBuffer, &app.logMutex, "ディレクトリの作成に失敗しました: %v", err)
 	}
 	
 	if err := whisper.EnsureDependencies(app.Config, nil, &app.logBuffer, &app.logMutex, app.debugMode); err != nil {
-		logger.LogError(app.logger, &app.logBuffer, &app.logMutex, "FasterWhisper dependency check failed: %v", err)
-		logger.LogInfo(app.logger, &app.logBuffer, &app.logMutex, "Application will continue with limited functionality")
+		logger.LogError(app.logger, &app.logBuffer, &app.logMutex, "音声認識エンジン（FasterWhisper）が見つかりません: %v", err)
+		logger.LogInfo(app.logger, &app.logBuffer, &app.logMutex, "音声認識機能を除く機能で続行します")
 		
 		// Show dependency error dialog in GUI mode
 		go func() {
@@ -49,7 +49,7 @@ func (app *GUIApp) startPeriodicUpdate() {
 		for {
 			select {
 			case <-app.ctx.Done():
-				logger.LogInfo(app.logger, &app.logBuffer, &app.logMutex, "GUI periodic update stopped")
+				logger.LogInfo(app.logger, &app.logBuffer, &app.logMutex, "GUI定期更新を停止しました")
 				return
 			case <-ticker.C:
 				// Use fyne.Do to safely update UI from goroutine
@@ -168,7 +168,7 @@ func (app *GUIApp) updateLogDisplay() {
 	defer app.logMutex.RUnlock()
 
 	if len(app.logBuffer) == 0 {
-		app.logText.ParseMarkdown("**Waiting for log entries...**")
+		app.logText.ParseMarkdown("**ログエントリを待機中...**")
 		return
 	}
 
@@ -206,7 +206,7 @@ func (app *GUIApp) onConfigPressed() {
 	app.showConfigDialog()
 
 	// Log the action
-	logger.LogInfo(app.logger, &app.logBuffer, &app.logMutex, "Configuration dialog opened")
+	logger.LogInfo(app.logger, &app.logBuffer, &app.logMutex, "設定ダイアログを開きました")
 }
 
 // onLogsPressed handles the logs button press
@@ -215,12 +215,12 @@ func (app *GUIApp) onLogsPressed() {
 	ui.DisplayLogs(app.Config)
 
 	// Log the action
-	logger.LogInfo(app.logger, &app.logBuffer, &app.logMutex, "Log file opened")
+	logger.LogInfo(app.logger, &app.logBuffer, &app.logMutex, "ログファイルを開きました")
 }
 
 // onScanPressed handles the scan button press
 func (app *GUIApp) onScanPressed() {
-	logger.LogInfo(app.logger, &app.logBuffer, &app.logMutex, "Manual scan triggered")
+	logger.LogInfo(app.logger, &app.logBuffer, &app.logMutex, "手動スキャンを実行しました")
 
 	// Use existing sync.WaitGroup reference if available, or create minimal scan
 	processor.ScanAndProcess(app.Config, nil, &app.logBuffer, &app.logMutex,
@@ -231,14 +231,14 @@ func (app *GUIApp) onScanPressed() {
 // onInputDirPressed handles the input directory button press
 func (app *GUIApp) onInputDirPressed() {
 	if err := ui.OpenDirectory(app.Config.InputDir); err != nil {
-		logger.LogError(app.logger, &app.logBuffer, &app.logMutex, "Failed to open input directory: %v", err)
+		logger.LogError(app.logger, &app.logBuffer, &app.logMutex, "入力ディレクトリを開けませんでした: %v", err)
 	}
 }
 
 // onOutputDirPressed handles the output directory button press
 func (app *GUIApp) onOutputDirPressed() {
 	if err := ui.OpenDirectory(app.Config.OutputDir); err != nil {
-		logger.LogError(app.logger, &app.logBuffer, &app.logMutex, "Failed to open output directory: %v", err)
+		logger.LogError(app.logger, &app.logBuffer, &app.logMutex, "出力ディレクトリを開けませんでした: %v", err)
 	}
 }
 
@@ -332,7 +332,7 @@ func (app *GUIApp) stopRecording() {
 
 	// KISS Design: Get duration directly from recorder
 	duration := app.getRecordingDuration()
-	logger.LogInfo(app.logger, &app.logBuffer, &app.logMutex, "録音を停止しました: %s (時間: %s)", filename, duration.Round(time.Second))
+	logger.LogInfo(app.logger, &app.logBuffer, &app.logMutex, "録音を停止しました: %s (録音時間: %s)", filename, duration.Round(time.Second))
 
 	// Update button appearance
 	app.updateRecordingUI()
@@ -352,7 +352,7 @@ func (app *GUIApp) updateRecordingUI() {
 	// Use fyne.Do to safely update UI
 	fyne.Do(func() {
 		if isCurrentlyRecording {
-			app.recordButton.SetText("停止")
+			app.recordButton.SetText("録音停止")
 			app.recordButton.Importance = widget.DangerImportance
 		} else {
 			app.recordButton.SetText(msg.RecordCmd)
