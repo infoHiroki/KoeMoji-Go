@@ -115,6 +115,7 @@ func (app *GUIApp) showConfigDialog() {
 	// Directory settings - show relative paths for user-friendly display
 	inputDirEntry := widget.NewEntry()
 	inputDirEntry.SetText(config.GetRelativePath(app.Config.InputDir))
+	inputDirEntry.Resize(fyne.NewSize(400, 40)) // Set minimum width for path visibility
 	inputDirBrowseBtn := widget.NewButton(msg.BrowseBtn, func() {
 		app.showFolderSelectDialog(inputDirEntry)
 	})
@@ -123,6 +124,7 @@ func (app *GUIApp) showConfigDialog() {
 
 	outputDirEntry := widget.NewEntry()
 	outputDirEntry.SetText(config.GetRelativePath(app.Config.OutputDir))
+	outputDirEntry.Resize(fyne.NewSize(400, 40)) // Set minimum width for path visibility
 	outputDirBrowseBtn := widget.NewButton(msg.BrowseBtn, func() {
 		app.showFolderSelectDialog(outputDirEntry)
 	})
@@ -131,6 +133,7 @@ func (app *GUIApp) showConfigDialog() {
 
 	archiveDirEntry := widget.NewEntry()
 	archiveDirEntry.SetText(config.GetRelativePath(app.Config.ArchiveDir))
+	archiveDirEntry.Resize(fyne.NewSize(400, 40)) // Set minimum width for path visibility
 	archiveDirBrowseBtn := widget.NewButton(msg.BrowseBtn, func() {
 		app.showFolderSelectDialog(archiveDirEntry)
 	})
@@ -194,7 +197,7 @@ func (app *GUIApp) showConfigDialog() {
 			}
 			// If Cancel is clicked, changes are discarded automatically
 		}, app.window)
-	configDialog.Resize(fyne.NewSize(750, 550))
+	configDialog.Resize(fyne.NewSize(800, 550))
 
 	configDialog.Show()
 }
