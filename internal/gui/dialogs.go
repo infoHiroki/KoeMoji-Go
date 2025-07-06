@@ -115,17 +115,32 @@ func (app *GUIApp) showConfigDialog() {
 	// Directory settings - show relative paths for user-friendly display
 	inputDirEntry := widget.NewEntry()
 	inputDirEntry.SetText(config.GetRelativePath(app.Config.InputDir))
+	inputDirBrowseBtn := widget.NewButton(msg.BrowseBtn, func() {
+		app.showFolderSelectDialog(inputDirEntry)
+	})
+	inputDirBrowseBtn.Resize(fyne.NewSize(80, 40))
+	inputDirContainer := container.NewHBox(inputDirEntry, inputDirBrowseBtn)
 
 	outputDirEntry := widget.NewEntry()
 	outputDirEntry.SetText(config.GetRelativePath(app.Config.OutputDir))
+	outputDirBrowseBtn := widget.NewButton(msg.BrowseBtn, func() {
+		app.showFolderSelectDialog(outputDirEntry)
+	})
+	outputDirBrowseBtn.Resize(fyne.NewSize(80, 40))
+	outputDirContainer := container.NewHBox(outputDirEntry, outputDirBrowseBtn)
 
 	archiveDirEntry := widget.NewEntry()
 	archiveDirEntry.SetText(config.GetRelativePath(app.Config.ArchiveDir))
+	archiveDirBrowseBtn := widget.NewButton(msg.BrowseBtn, func() {
+		app.showFolderSelectDialog(archiveDirEntry)
+	})
+	archiveDirBrowseBtn.Resize(fyne.NewSize(80, 40))
+	archiveDirContainer := container.NewHBox(archiveDirEntry, archiveDirBrowseBtn)
 
 	dirForm := widget.NewForm(
-		widget.NewFormItem(msg.InputDirLabel, inputDirEntry),
-		widget.NewFormItem(msg.OutputDirLabel, outputDirEntry),
-		widget.NewFormItem(msg.ArchiveDirLabel, archiveDirEntry),
+		widget.NewFormItem(msg.InputDirLabel, inputDirContainer),
+		widget.NewFormItem(msg.OutputDirLabel, outputDirContainer),
+		widget.NewFormItem(msg.ArchiveDirLabel, archiveDirContainer),
 	)
 
 	// LLM settings
@@ -179,7 +194,7 @@ func (app *GUIApp) showConfigDialog() {
 			}
 			// If Cancel is clicked, changes are discarded automatically
 		}, app.window)
-	configDialog.Resize(fyne.NewSize(700, 550))
+	configDialog.Resize(fyne.NewSize(750, 550))
 
 	configDialog.Show()
 }
@@ -388,4 +403,27 @@ func (app *GUIApp) showConfigErrorDialog(err error) {
 	
 	// Log the error
 	logger.LogError(app.logger, &app.logBuffer, &app.logMutex, "設定エラーダイアログを表示しました: %v", err)
+}
+
+// showFolderSelectDialog shows a folder selection dialog and updates the entry field
+func (app *GUIApp) showFolderSelectDialog(entry *widget.Entry) {
+	dialog.ShowFolderOpen(func(uri fyne.ListableURI, err error) {
+		if err != nil {
+			// User cancelled or error occurred
+			return
+		}
+		if uri == nil {
+			// No folder selected
+			return
+		}
+		
+		// Convert URI to path string
+		selectedPath := uri.Path()
+		
+		// Convert to relative path for display
+		relativePath := config.GetRelativePath(selectedPath)
+		
+		// Update the entry field
+		entry.SetText(relativePath)
+	}, app.window)
 }

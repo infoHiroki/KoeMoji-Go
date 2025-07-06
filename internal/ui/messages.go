@@ -88,6 +88,7 @@ type Messages struct {
 	ModelLabel           string
 	PromptTemplateLabel  string
 	RecordingDeviceLabel string
+	BrowseBtn            string
 
 	// Additional GUI messages
 	LogPlaceholder           string
@@ -193,6 +194,7 @@ var messagesEN = Messages{
 	ModelLabel:           "Model",
 	PromptTemplateLabel:  "Prompt Template",
 	RecordingDeviceLabel: "Recording Device",
+	BrowseBtn:            "Browse...",
 
 	// Additional GUI messages
 	LogPlaceholder:           "**Waiting for log entries...**",
@@ -298,6 +300,7 @@ var messagesJA = Messages{
 	ModelLabel:           "モデル",
 	PromptTemplateLabel:  "プロンプトテンプレート",
 	RecordingDeviceLabel: "録音デバイス",
+	BrowseBtn:            "参照...",
 
 	// Additional GUI messages
 	LogPlaceholder:           "**ログをここに表示します...**",
