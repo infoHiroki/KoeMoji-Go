@@ -112,15 +112,15 @@ func (app *GUIApp) showConfigDialog() {
 		widget.NewFormItem(msg.ScanIntervalLabel, scanIntervalEntry),
 	)
 
-	// Directory settings
+	// Directory settings - show relative paths for user-friendly display
 	inputDirEntry := widget.NewEntry()
-	inputDirEntry.SetText(app.Config.InputDir)
+	inputDirEntry.SetText(config.GetRelativePath(app.Config.InputDir))
 
 	outputDirEntry := widget.NewEntry()
-	outputDirEntry.SetText(app.Config.OutputDir)
+	outputDirEntry.SetText(config.GetRelativePath(app.Config.OutputDir))
 
 	archiveDirEntry := widget.NewEntry()
-	archiveDirEntry.SetText(app.Config.ArchiveDir)
+	archiveDirEntry.SetText(config.GetRelativePath(app.Config.ArchiveDir))
 
 	dirForm := widget.NewForm(
 		widget.NewFormItem(msg.InputDirLabel, inputDirEntry),
@@ -281,9 +281,10 @@ func (app *GUIApp) saveConfigFromDialog(whisperModel, language *widget.Select,
 		app.Config.ScanIntervalMinutes = interval
 	}
 
-	app.Config.InputDir = inputDir.Text
-	app.Config.OutputDir = outputDir.Text
-	app.Config.ArchiveDir = archiveDir.Text
+	// Resolve relative paths to absolute paths for internal storage
+	app.Config.InputDir = config.ResolvePath(inputDir.Text)
+	app.Config.OutputDir = config.ResolvePath(outputDir.Text)
+	app.Config.ArchiveDir = config.ResolvePath(archiveDir.Text)
 	app.Config.LLMSummaryEnabled = llmEnabled.Checked
 	app.Config.LLMAPIKey = llmAPIKey.Text
 	app.Config.LLMModel = llmModel.Selected
