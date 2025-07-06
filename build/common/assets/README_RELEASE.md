@@ -1,4 +1,4 @@
-# KoeMoji-Go v1.5.4
+# KoeMoji-Go
 
 音声・動画ファイル自動文字起こしツール
 
@@ -73,7 +73,7 @@ koemoji-go.exe
 ## 詳細情報
 
 - **完全なマニュアル**: https://github.com/infoHiroki/KoeMoji-Go
-- **トラブル解決**: https://github.com/infoHiroki/KoeMoji-Go/blob/main/TROUBLESHOOTING.md
+- **トラブル解決**: https://github.com/infoHiroki/KoeMoji-Go/issues
 
 ## ライセンス
 
