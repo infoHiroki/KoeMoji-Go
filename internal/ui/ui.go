@@ -179,13 +179,19 @@ func DisplayLogs(config *config.Config) {
 }
 
 func OpenDirectory(dirPath string) error {
+	// Convert to absolute path for Windows explorer compatibility
+	absPath, err := filepath.Abs(dirPath)
+	if err != nil {
+		absPath = dirPath // Fallback to original path
+	}
+	
 	var cmd *exec.Cmd
 	switch runtime.GOOS {
 	case "windows":
 		// Explorer doesn't work with HideWindow flag, use regular exec.Command
-		cmd = exec.Command("explorer", dirPath)
+		cmd = exec.Command("explorer", absPath)
 	case "darwin":
-		cmd = createCommand("open", dirPath)
+		cmd = createCommand("open", absPath)
 	default:
 		return fmt.Errorf("opening directories not supported on this platform")
 	}
