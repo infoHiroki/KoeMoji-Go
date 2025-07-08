@@ -124,11 +124,13 @@ func (app *GUIApp) loadConfig() {
 		
 		// Show error dialog when window is available
 		go func() {
-			// Wait for UI to be ready before showing dialog
-			for app.window == nil {
+			// Wait for UI to be ready before showing dialog (max 5 seconds)
+			for i := 0; i < 50 && app.window == nil; i++ {
 				time.Sleep(100 * time.Millisecond)
 			}
-			app.showConfigErrorDialog(err)
+			if app.window != nil {
+				app.showConfigErrorDialog(err)
+			}
 		}()
 		return
 	}
