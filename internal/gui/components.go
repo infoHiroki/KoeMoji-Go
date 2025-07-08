@@ -31,11 +31,13 @@ func (app *GUIApp) startPeriodicUpdate() {
 		
 		// Show dependency error dialog in GUI mode
 		go func() {
-			// Wait for UI to be ready before showing dialog
-			for !app.isUIReady() {
+			// Wait for UI to be ready before showing dialog (max 5 seconds)
+			for i := 0; i < 50 && !app.isUIReady(); i++ {
 				time.Sleep(100 * time.Millisecond)
 			}
-			app.showDependencyErrorDialog(err)
+			if app.isUIReady() {
+				app.showDependencyErrorDialog(err)
+			}
 		}()
 	}
 
