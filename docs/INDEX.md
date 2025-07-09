@@ -1,4 +1,4 @@
-# KoeMoji-Go ドキュメント
+# KoeMoji-Go ドキュメント索引
 
 ## 📁 ドキュメント構成
 
@@ -28,7 +28,6 @@
 - **[DASHBOARD_GUI_DESIGN.md](./design/DASHBOARD_GUI_DESIGN.md)** - GUI設計仕様、ユーザーインターフェース設計原則
 - **[SoundRecorderDesign.md](./design/SoundRecorderDesign.md)** - 音声録音システム設計書（v3.0完全実装版）
 - **[KISS-Design-Principles.md](./design/KISS-Design-Principles.md)** - シンプル設計原則
-- **[SoundRecorderIntegrationPlan.md](./design/SoundRecorderIntegrationPlan.md)** - 録音機能統合計画
 
 ### 🔧 [technical/](./technical/) - 技術ノート
 実装時の技術的課題と解決策を記録したテクニカルノート。
@@ -49,7 +48,7 @@
 
 - **[README.md](../README.md)** - プロジェクト概要とクイックスタート
 - **[TROUBLESHOOTING.md](user/TROUBLESHOOTING.md)** - 問題解決とFAQ
-- **[CLAUDE.md](developer/CLAUDE.md)** - AI開発アシスタント向けプロジェクト情報
+- **[CLAUDE.md](../CLAUDE.md)** - AI開発アシスタント向けプロジェクト情報
 
 ## 📝 ドキュメント利用ガイド
 
