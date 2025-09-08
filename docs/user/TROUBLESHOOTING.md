@@ -49,18 +49,87 @@ pip install faster-whisper whisper-ctranslate2
 ```
 
 ### Q: "whisper-ctranslate2 not found" エラー
+
+#### 基本的な確認手順
 ```bash
 # パッケージ確認
 pip show whisper-ctranslate2
 pip list | grep whisper
 
 # パス確認
-which whisper-ctranslate2        # macOS
+which whisper-ctranslate2        # macOS/Linux
 where whisper-ctranslate2        # Windows
 
-# 再インストール
+# 再インストール（推奨）
 pip uninstall whisper-ctranslate2 faster-whisper
-pip install faster-whisper whisper-ctranslate2
+pip install whisper-ctranslate2
+```
+
+#### Windows環境での詳細なトラブルシューティング
+
+**1. whisper-ctranslate2がインストールされているが見つからない場合**
+
+```bash
+# コマンドプロンプトで実行場所を確認
+where whisper-ctranslate2
+
+# 見つからない場合、Pythonのインストール場所を確認
+where python
+python -c "import sys; print(sys.executable)"
+
+# Pythonのスクリプトフォルダを確認
+python -c "import site; print(site.USER_BASE)"
+```
+
+**2. PATHが通っていない場合の対処**
+
+```bash
+# Pythonスクリプトのパスを確認
+python -m site --user-site
+
+# 通常、以下のようなパスにインストールされます：
+# C:\Users\[ユーザー名]\AppData\Local\Programs\Python\Python312\Scripts\
+# C:\Users\[ユーザー名]\AppData\Roaming\Python\Python312\Scripts\
+```
+
+PATHに追加する方法：
+1. Windowsキー + 「環境変数」で検索
+2. 「環境変数を編集」を選択
+3. ユーザー環境変数の「Path」を編集
+4. 上記のScriptsフォルダのパスを追加
+5. コマンドプロンプトを再起動
+
+**3. 複数のPython環境がある場合**
+
+```bash
+# すべてのPythonを確認
+where python
+
+# 各Pythonでwhisper-ctranslate2を確認
+C:\Python311\python.exe -m pip show whisper-ctranslate2
+C:\Python312\python.exe -m pip show whisper-ctranslate2
+
+# 正しいPythonにインストール
+C:\Python312\python.exe -m pip install whisper-ctranslate2
+```
+
+**4. KoeMoji-Goが検索する標準的なパス**
+
+KoeMoji-Goは以下のパスを自動的に検索します：
+- `%LOCALAPPDATA%\Programs\Python\Python3XX\Scripts\`
+- `%APPDATA%\Python\Python3XX\Scripts\`
+- `%APPDATA%\Roaming\Python\Python3XX\Scripts\`
+- `C:\Python3XX\Scripts\`
+- Anaconda/Miniconda環境のScriptsフォルダ
+
+**5. それでも解決しない場合**
+
+```bash
+# 手動でフルパスを確認して実行
+dir C:\Users\%USERNAME%\AppData\Local\Programs\Python\Python*\Scripts\whisper-ctranslate2.exe /s
+
+# 権限の問題を確認（管理者権限で実行）
+# アンチウイルスソフトがブロックしていないか確認
 ```
 
 ## 実行・操作関連
