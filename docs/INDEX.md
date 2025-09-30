@@ -25,6 +25,8 @@
 ### 📐 [design/](./design/) - 設計ドキュメント
 システム設計と仕様に関する詳細な設計書。
 
+- **[LICENSE_MVP.md](./design/LICENSE_MVP.md)** - ライセンス認証MVP計画（オフライン、Windows版のみ、4週間）
+- **[LICENSE_SPEC.md](./design/LICENSE_SPEC.md)** - ライセンス認証詳細仕様（データ構造、API、フロー図）
 - **[DASHBOARD_GUI_DESIGN.md](./design/DASHBOARD_GUI_DESIGN.md)** - GUI設計仕様、ユーザーインターフェース設計原則
 - **[SoundRecorderDesign.md](./design/SoundRecorderDesign.md)** - 音声録音システム設計書（v3.0完全実装版）
 - **[KISS-Design-Principles.md](./design/KISS-Design-Principles.md)** - シンプル設計原則
