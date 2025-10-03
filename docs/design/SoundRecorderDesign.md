@@ -7,8 +7,8 @@ KoeMoji-GoのTUIに完全統合され、デバイス選択機能・システム�
 ## プロジェクト状況
 - **実装状況**: 100%完了・TUI統合完了
 - **対応プラットフォーム**: macOS/Windows
-- **統合バージョン**: v1.4.0
-- **最終更新**: 2025-06-21
+- **統合バージョン**: v1.5.5
+- **最終更新**: 2025-10-03（デバイス名ベース設定に変更）
 
 ## 基本要件
 - ✅ 音声録音の開始/停止（インタラクティブ制御）
@@ -57,8 +57,8 @@ KoeMoji-GoのTUIに完全統合され、デバイス選択機能・システム�
 ```go
 // ユーザー向けデバイス情報
 type DeviceInfo struct {
-    ID           int     // PortAudio内部のデバイスIndex
-    Name         string  // デバイス表示名
+    ID           int     // PortAudio内部のデバイスIndex（環境依存・保存には使用しない）
+    Name         string  // デバイス表示名（設定保存に使用）
     IsDefault    bool    // デフォルトデバイスかどうか
     MaxChannels  int     // 最大入力チャンネル数
     HostAPI      string  // ホストAPI名（Core Audio, WASAPI等）
@@ -83,7 +83,10 @@ type Recorder struct {
 // 基本的な初期化（デフォルトデバイス使用）
 func NewRecorder() (*Recorder, error)
 
-// デバイス指定初期化
+// デバイス名指定初期化（v1.5.5+推奨）
+func NewRecorderWithDeviceName(deviceName string) (*Recorder, error)
+
+// デバイスID指定初期化（非推奨：環境依存のため）
 func NewRecorderWithDevice(deviceID int) (*Recorder, error)
 
 // 利用可能デバイス一覧取得
@@ -829,7 +832,7 @@ go mod tidy
 - **ファイル管理**: `recording_YYYYMMDD_HHMM.wav`で自動保存
 
 ### 実装箇所
-- **Config**: `RecordingDeviceID`、`RecordingDeviceName`設定追加
+- **Config**: `RecordingDeviceName`設定（v1.5.5で`RecordingDeviceID`を削除）
 - **Messages**: 録音関連メッセージの日英対応
 - **App**: 録音状態管理フィールド追加
 - **UI**: リアルタイム状態表示とコマンド追加
@@ -839,6 +842,83 @@ go mod tidy
 2. 🔴録音中表示でリアルタイム時間更新
 3. 再度`r`キー押下で録音停止・保存
 4. 次回スキャンで自動的に文字起こし対象に
+
+## デバイス設定システム（v1.5.5更新）
+
+### デバイス名ベース設定の採用理由
+
+**問題点（v1.5.4以前）**:
+- `recording_device_id`（デバイスID）はPortAudio内部のインデックス番号
+- デバイスID値は環境によって異なる（接続順序、OS、デバイス構成に依存）
+- 同じconfig.jsonを別環境で使用すると誤ったデバイスを選択
+
+**解決策（v1.5.5以降）**:
+- `recording_device_name`（デバイス名）のみを保存
+- 起動時にデバイス名で検索して実際のデバイスを特定
+- 環境が変わってもデバイス名が同じなら正しく動作
+
+### 設定フィールド
+
+```json
+{
+  "recording_device_name": "",  // 空文字列 = デフォルトデバイス
+  "recording_max_hours": 0,     // 最大録音時間（0 = 無制限）
+  "recording_max_file_mb": 0    // 最大ファイルサイズ（0 = 無制限）
+}
+```
+
+### デバイス選択の流れ
+
+1. **設定画面でデバイス選択**:
+   - `ListDevices()`で利用可能デバイス一覧を取得
+   - ユーザーがデバイス名を選択
+   - `recording_device_name`に保存
+
+2. **録音開始時のデバイス検索**:
+   ```go
+   if app.Config.RecordingDeviceName != "" {
+       // デバイス名で検索
+       app.recorder, err = recorder.NewRecorderWithDeviceName(app.Config.RecordingDeviceName)
+   } else {
+       // デフォルトデバイス使用
+       app.recorder, err = recorder.NewRecorder()
+   }
+   ```
+
+3. **デバイス名による検索処理**:
+   ```go
+   func NewRecorderWithDeviceName(deviceName string) (*Recorder, error) {
+       devices, err := portaudio.Devices()
+       if err != nil {
+           return nil, err
+       }
+
+       // 完全一致でデバイスを検索
+       for _, device := range devices {
+           if device.Name == deviceName && device.MaxInputChannels > 0 {
+               return &Recorder{
+                   deviceInfo: device,
+                   // ...
+               }, nil
+           }
+       }
+
+       return nil, fmt.Errorf("recording device not found: '%s'", deviceName)
+   }
+   ```
+
+### 環境非依存性のメリット
+
+1. **ポータビリティ**: 同じconfig.jsonを異なるマシンで使用可能
+2. **ユーザーフレンドリー**: デバイス名は人間が読める形式
+3. **保守性**: デバイスID番号の管理が不要
+4. **柔軟性**: デバイス接続順序が変わっても影響を受けない
+
+### 注意事項
+
+- デバイス名を変更すると再設定が必要（意図的な仕様）
+- デバイスが見つからない場合は起動時にエラー表示
+- 空文字列の場合は常にシステムデフォルトデバイスを使用
 
 ## ライセンス・配布
 

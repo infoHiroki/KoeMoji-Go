@@ -295,10 +295,11 @@ func (app *App) startRecording() {
 	// Initialize recorder if not already done
 	if app.recorder == nil {
 		var err error
-		if app.Config.RecordingDeviceID == -1 {
-			app.recorder, err = recorder.NewRecorder()
+		// Use device name if specified, otherwise use default device
+		if app.Config.RecordingDeviceName != "" {
+			app.recorder, err = recorder.NewRecorderWithDeviceName(app.Config.RecordingDeviceName)
 		} else {
-			app.recorder, err = recorder.NewRecorderWithDevice(app.Config.RecordingDeviceID)
+			app.recorder, err = recorder.NewRecorder()
 		}
 
 		if err != nil {

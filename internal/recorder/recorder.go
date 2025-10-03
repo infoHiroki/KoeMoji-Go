@@ -100,6 +100,43 @@ func NewRecorderWithDevice(deviceID int) (*Recorder, error) {
 	}, nil
 }
 
+// NewRecorderWithDeviceName creates a recorder using device name
+func NewRecorderWithDeviceName(deviceName string) (*Recorder, error) {
+	err := portaudio.Initialize()
+	if err != nil {
+		return nil, err
+	}
+
+	devices, err := portaudio.Devices()
+	if err != nil {
+		portaudio.Terminate()
+		return nil, err
+	}
+
+	// Find device by exact name match
+	var selectedDevice *portaudio.DeviceInfo
+	for _, device := range devices {
+		if device.Name == deviceName && device.MaxInputChannels > 0 {
+			selectedDevice = device
+			break
+		}
+	}
+
+	if selectedDevice == nil {
+		portaudio.Terminate()
+		return nil, fmt.Errorf("recording device not found: '%s'", deviceName)
+	}
+
+	return &Recorder{
+		samples:     make([]int16, 0, MemoryBufferSize),
+		recording:   false,
+		sampleRate:  SampleRate,
+		deviceInfo:  selectedDevice,
+		maxDuration: 0, // Unlimited by default
+		maxFileSize: 0, // Unlimited by default
+	}, nil
+}
+
 func (r *Recorder) Start() error {
 	r.mutex.Lock()
 	defer r.mutex.Unlock()

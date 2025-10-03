@@ -149,7 +149,7 @@ KoeMoji-Go/
 - **Whisper設定**: モデル選択（tinyからlarge-v3）、言語設定、計算精度
 - **パフォーマンス**: CPU使用制限、処理オプション
 - **ディレクトリ**: 入力/出力/アーカイブパスの設定
-- **録音**: デバイス選択、録音時間/サイズ制限
+- **録音**: デバイス名で指定（環境非依存）、録音時間/サイズ制限
 - **AI機能**: OpenAI APIキーとカスタマイズ可能プロンプト
 - **UI**: カラーサポート、言語設定
 
@@ -158,21 +158,33 @@ KoeMoji-Go/
 ### 設定ファイル例
 ```json
 {
+  "whisper_model": "large-v3",
+  "language": "ja",
   "input_dir": "./input",
   "output_dir": "./output",
   "archive_dir": "./archive",
-  "whisper": {
-    "model": "medium",
-    "language": "ja",
-    "compute_type": "int8"
-  },
-  "openai": {
-    "api_key": "",
-    "enabled": false,
-    "prompt": "以下のテキストを要約してください："
-  }
+  "recording_device_name": "",
+  "llm_summary_enabled": false,
+  "llm_api_key": ""
 }
 ```
+
+### 録音デバイス設定
+
+録音デバイスは**デバイス名**で指定します（v1.5.5以降）：
+
+```json
+{
+  "recording_device_name": "koemoji"  // 集約デバイスの名前
+}
+```
+
+**重要な仕様**:
+- デバイスIDではなく**名前**で管理（環境非依存）
+- 空文字列の場合はデフォルトデバイスを使用
+- 起動時に名前から自動的にデバイスを検索
+- macOS: Audio MIDI設定で作成した集約デバイス名
+- Windows: ステレオミキサーやサウンドデバイス名
 
 ## ビルドシステム
 

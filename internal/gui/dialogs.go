@@ -226,13 +226,13 @@ func (app *GUIApp) createRecordingForm() *widget.Form {
 	for _, device := range devices {
 		deviceNames = append(deviceNames, device.Name)
 		deviceMap[device.Name] = device.ID
-		if device.ID == app.Config.RecordingDeviceID {
+		if device.Name == app.Config.RecordingDeviceName {
 			selectedDevice = device.Name
 		}
 	}
 
-	// If current device ID is -1, keep "Default Device" selected
-	if app.Config.RecordingDeviceID == -1 {
+	// If current device name is empty, keep "Default Device" selected
+	if app.Config.RecordingDeviceName == "" {
 		selectedDevice = msg.DefaultDevice
 	}
 
@@ -311,13 +311,11 @@ func (app *GUIApp) saveConfigFromDialog(whisperModel, language *widget.Select,
 	// Update recording configuration
 	if app.recordingDeviceSelect != nil && app.recordingDeviceMap != nil {
 		selectedDevice := app.recordingDeviceSelect.Text
-		if deviceID, exists := app.recordingDeviceMap[selectedDevice]; exists {
-			app.Config.RecordingDeviceID = deviceID
+		if _, exists := app.recordingDeviceMap[selectedDevice]; exists {
 			app.Config.RecordingDeviceName = selectedDevice
 		} else if selectedDevice == "" || selectedDevice == ui.GetMessages(app.Config).DefaultDevice {
 			// Handle empty or default selection
-			app.Config.RecordingDeviceID = -1
-			app.Config.RecordingDeviceName = ui.GetMessages(app.Config).DefaultDevice
+			app.Config.RecordingDeviceName = ""
 		}
 		// If device not found and not empty/default, keep current settings
 	}
