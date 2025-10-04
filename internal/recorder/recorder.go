@@ -268,6 +268,37 @@ func (r *Recorder) SaveToFile(filename string) error {
 	return SaveWAV(filename, r.samples, int(r.sampleRate), Channels)
 }
 
+// SaveToFileWithNormalization saves recording with optional audio normalization
+func (r *Recorder) SaveToFileWithNormalization(filename string, enableNormalization bool) error {
+	r.mutex.Lock()
+
+	if r.totalSamples == 0 {
+		r.mutex.Unlock()
+		return errors.New("no audio data to save")
+	}
+
+	// Apply normalization if enabled and samples are in memory
+	normalized := false
+	if enableNormalization && r.tempFile == nil && len(r.samples) > 0 {
+		normalized = NormalizeAudio(r.samples)
+	}
+
+	r.mutex.Unlock()
+
+	// Save to file
+	err := r.SaveToFile(filename)
+	if err != nil {
+		return err
+	}
+
+	// Log if normalization was applied
+	if normalized {
+		// Normalization was applied (logged by caller if needed)
+	}
+
+	return nil
+}
+
 func (r *Recorder) Close() error {
 	if r.recording {
 		err := r.Stop()
@@ -481,4 +512,95 @@ func (r *Recorder) SetLimits(maxDuration time.Duration, maxFileSize int64) {
 	defer r.mutex.Unlock()
 	r.maxDuration = maxDuration
 	r.maxFileSize = maxFileSize
+}
+
+// DetectVoiceMeeter searches for VoiceMeeter output device
+// Returns device name if found, empty string otherwise
+func DetectVoiceMeeter() (string, error) {
+	err := portaudio.Initialize()
+	if err != nil {
+		return "", err
+	}
+	defer portaudio.Terminate()
+
+	devices, err := portaudio.Devices()
+	if err != nil {
+		return "", err
+	}
+
+	// Search for VoiceMeeter devices (case-insensitive)
+	voicemeeterKeywords := []string{
+		"voicemeeter output",
+		"voicemeeter input",
+		"voicemeeter aux",
+		"cable output", // VB-CABLE
+	}
+
+	for _, device := range devices {
+		if device.MaxInputChannels > 0 {
+			nameLower := strings.ToLower(device.Name)
+			for _, keyword := range voicemeeterKeywords {
+				if strings.Contains(nameLower, keyword) {
+					return device.Name, nil
+				}
+			}
+		}
+	}
+
+	return "", nil // Not found
+}
+
+// NormalizeAudio applies adaptive peak normalization to samples
+// Returns true if normalization was applied
+func NormalizeAudio(samples []int16) bool {
+	if len(samples) == 0 {
+		return false
+	}
+
+	// Find maximum amplitude
+	var maxAmp int16
+	for _, sample := range samples {
+		abs := sample
+		if abs < 0 {
+			abs = -abs
+		}
+		if abs > maxAmp {
+			maxAmp = abs
+		}
+	}
+
+	// Threshold: only normalize if max amplitude is below 5000
+	// (normal speech should be around 10000-20000)
+	const threshold int16 = 5000
+	if maxAmp >= threshold {
+		return false // No normalization needed
+	}
+
+	// Avoid division by zero
+	if maxAmp == 0 {
+		return false
+	}
+
+	// Target level: -3dB from maximum to avoid clipping
+	const targetLevel int16 = 20000
+	const maxLevel int16 = 32767
+
+	// Calculate gain
+	gain := float64(targetLevel) / float64(maxAmp)
+
+	// Apply gain to all samples with clipping protection
+	for i, sample := range samples {
+		amplified := int32(float64(sample) * gain)
+
+		// Clip to int16 range
+		if amplified > int32(maxLevel) {
+			samples[i] = maxLevel
+		} else if amplified < -int32(maxLevel) {
+			samples[i] = -maxLevel
+		} else {
+			samples[i] = int16(amplified)
+		}
+	}
+
+	return true // Normalization applied
 }

@@ -37,8 +37,9 @@ type Config struct {
 	// Recording settings
 	RecordingDeviceName string `json:"recording_device_name"` // Device name for recording (empty = default device)
 	// Phase 1: Memory-efficient recording limits
-	RecordingMaxHours  int `json:"recording_max_hours"`   // 0 = unlimited
-	RecordingMaxFileMB int `json:"recording_max_file_mb"` // 0 = unlimited
+	RecordingMaxHours          int  `json:"recording_max_hours"`            // 0 = unlimited
+	RecordingMaxFileMB         int  `json:"recording_max_file_mb"`          // 0 = unlimited
+	AudioNormalizationEnabled bool `json:"audio_normalization_enabled"` // Auto-adjust volume for small recordings
 }
 
 // GetDefaultConfig returns a config with default values (relative paths preserved)
@@ -64,9 +65,10 @@ func GetDefaultConfig() *Config {
 		SummaryPromptTemplate: "以下の文字起こしテキストを{language}で詳細に要約してください。\n\n要約には以下の要素を必ず含めてください：\n1. 全体の概要（2-3段落）\n2. 主要なトピックと議論されたポイント（箇条書き）\n3. 重要な結論や決定事項\n4. アクションアイテムやフォローアップが必要な項目（もしあれば）\n5. キーワードやキーフレーズのリスト\n\nできるだけ具体的で、重要な詳細を省略しないようにしてください。\n\n{text}",
 		SummaryLanguage:       "auto",
 		// Recording defaults
-		RecordingDeviceName: "", // Empty = use default device
-		RecordingMaxHours:   0,  // Unlimited by default
-		RecordingMaxFileMB:  0,  // Unlimited by default
+		RecordingDeviceName:       "", // Empty = use default device
+		RecordingMaxHours:          0,  // Unlimited by default
+		RecordingMaxFileMB:         0,  // Unlimited by default
+		AudioNormalizationEnabled: true, // Enable by default for better UX
 	}
 }
 

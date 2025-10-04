@@ -244,8 +244,29 @@ func (app *GUIApp) createRecordingForm() *widget.Form {
 	app.recordingDeviceSelect = deviceSelect
 	app.recordingDeviceMap = deviceMap
 
+	// VoiceMeeter setup button
+	vmButton := widget.NewButton("VoiceMeeter設定を適用", func() {
+		app.applyVoiceMeeterSettings(deviceSelect)
+	})
+
+	// Audio normalization checkbox
+	normalizationCheck := widget.NewCheck("音量自動調整（推奨）", nil)
+	normalizationCheck.SetChecked(app.Config.AudioNormalizationEnabled)
+	app.normalizationCheck = normalizationCheck
+
+	// VoiceMeeter guide container
+	vmGuide := widget.NewLabel("💡 システム音声+マイク同時録音\nVoiceMeeterをインストール済みの方は、\n上のボタンで最適な設定を自動適用できます。")
+	vmGuide.Wrapping = fyne.TextWrapWord
+
+	vmContainer := container.NewVBox(
+		vmGuide,
+		vmButton,
+	)
+
 	return widget.NewForm(
 		widget.NewFormItem(msg.RecordingDeviceLabel, deviceSelect),
+		widget.NewFormItem("", vmContainer),
+		widget.NewFormItem("音量調整", normalizationCheck),
 	)
 }
 
@@ -318,6 +339,11 @@ func (app *GUIApp) saveConfigFromDialog(whisperModel, language *widget.Select,
 			app.Config.RecordingDeviceName = ""
 		}
 		// If device not found and not empty/default, keep current settings
+	}
+
+	// Update audio normalization setting
+	if app.normalizationCheck != nil {
+		app.Config.AudioNormalizationEnabled = app.normalizationCheck.Checked
 	}
 
 	// Save to file
@@ -404,6 +430,38 @@ func (app *GUIApp) showConfigErrorDialog(err error) {
 	
 	// Log the error
 	logger.LogError(app.logger, &app.logBuffer, &app.logMutex, "設定エラーダイアログを表示しました: %v", err)
+}
+
+// applyVoiceMeeterSettings detects and applies VoiceMeeter configuration
+func (app *GUIApp) applyVoiceMeeterSettings(deviceSelect *widget.SelectEntry) {
+	// Detect VoiceMeeter
+	vmDevice, err := recorder.DetectVoiceMeeter()
+	if err != nil {
+		dialog.ShowError(fmt.Errorf("VoiceMeeter検出エラー: %v", err), app.window)
+		return
+	}
+
+	if vmDevice == "" {
+		dialog.ShowInformation(
+			"VoiceMeeterが見つかりません",
+			"VoiceMeeter Outputが見つかりませんでした。\n\nVoiceMeeterがインストール済みか、\n起動しているか確認してください。",
+			app.window,
+		)
+		return
+	}
+
+	// Apply settings
+	deviceSelect.SetText(vmDevice)
+	if app.normalizationCheck != nil {
+		app.normalizationCheck.SetChecked(true)
+	}
+
+	// Show success message
+	dialog.ShowInformation(
+		"設定完了",
+		fmt.Sprintf("✓ VoiceMeeter設定を適用しました\n\n録音デバイス: %s\n音量自動調整: ON", vmDevice),
+		app.window,
+	)
 }
 
 // showFolderSelectDialog shows a folder selection dialog and updates the entry field

@@ -72,6 +72,7 @@ type GUIApp struct {
 	recorder              *recorder.Recorder
 	recordingDeviceSelect *widget.SelectEntry
 	recordingDeviceMap    map[string]int
+	normalizationCheck    *widget.Check
 
 	// UI safety fields
 	uiInitialized bool
