@@ -11,6 +11,21 @@ Copyright (c) 2025 KoeMoji-Go Development Team
 商用目的での使用をご希望の場合は、事前にご連絡ください。
 使用許諾について個別に相談させていただきます。
 
+**商用利用の定義**:
+- 営利企業での業務利用
+- 本ソフトウェアを組み込んだサービスの提供
+- 本ソフトウェアを使った成果物の販売
+- 有償のコンサルティング業務での利用
+
+**サポートサービス**:
+商用利用をご連絡いただいた企業様には、以下のサポートサービスをご提供できます：
+- 導入支援サービス
+- 年間サポート契約
+- カスタマイズ開発
+- DXコンサルティング
+
+詳細は docs/business/COMMERCIAL_USE.md をご覧ください。
+
 ### 禁止事項
 - 本ソフトウェアの再配布（改変の有無を問わず）
 - リバースエンジニアリング、逆コンパイル、逆アセンブル
@@ -38,6 +53,21 @@ Personal use is freely permitted without any restrictions.
 ### Commercial Use
 For commercial use, please contact us in advance.
 We will discuss licensing terms individually.
+
+**Definition of Commercial Use**:
+- Business use in for-profit organizations
+- Providing services incorporating this software
+- Selling products created using this software
+- Use in paid consulting services
+
+**Support Services**:
+Companies that contact us regarding commercial use can receive the following support services:
+- Implementation support
+- Annual support contracts
+- Custom development
+- DX consulting
+
+For details, please see docs/business/COMMERCIAL_USE.md
 
 ### Prohibited Actions
 - Redistribution of this software (with or without modifications)
