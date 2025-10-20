@@ -150,29 +150,60 @@ if exist "%~dp0%SOURCE_DIR%\resource.syso" del "%~dp0%SOURCE_DIR%\resource.syso"
 echo.
 echo Build completed successfully!
 
+rem Copy required DLLs (same directory)
+echo.
+echo Copying required DLL files...
+copy /Y *.dll "%DIST_DIR%\" >nul
+if %errorlevel% neq 0 (
+    echo Warning: Failed to copy DLL files
+    echo Make sure DLL files exist in build\windows directory
+    exit /b 1
+)
+echo DLL files copied.
+
+rem Create distribution package
+echo.
+echo Creating distribution package...
+
+cd /d "%~dp0%DIST_DIR%"
+if not exist "KoeMoji-Go-v%VERSION%" mkdir "KoeMoji-Go-v%VERSION%"
+copy "%APP_NAME%.exe" "KoeMoji-Go-v%VERSION%\" >nul
+copy "*.dll" "KoeMoji-Go-v%VERSION%\" >nul
+copy "%~dp0..\common\assets\config.example.json" "KoeMoji-Go-v%VERSION%\config.json" >nul
+copy "%~dp0..\common\assets\README_RELEASE.md" "KoeMoji-Go-v%VERSION%\README.md" >nul
+
+rem Create ZIP package with new naming convention
+echo Creating ZIP package...
+set RELEASE_NAME=KoeMoji-Go-v%VERSION%-win
+if exist "%RELEASE_NAME%.zip" del "%RELEASE_NAME%.zip"
+powershell -Command "Compress-Archive -Path 'KoeMoji-Go-v%VERSION%' -DestinationPath '%RELEASE_NAME%.zip' -Force"
+if %errorlevel% neq 0 (
+    echo Error: Failed to create ZIP package
+    cd /d "%~dp0"
+    exit /b 1
+)
+
+rem Move ZIP to releases directory
+echo Moving ZIP to releases directory...
+if not exist "%~dp0..\releases" mkdir "%~dp0..\releases"
+move /Y "%RELEASE_NAME%.zip" "%~dp0..\releases\" >nul
+
+rem Clean up temporary distribution directory
+echo Cleaning up temporary files...
+rmdir /s /q "KoeMoji-Go-v%VERSION%"
+
+cd /d "%~dp0"
+
 echo.
 echo ========================================
-echo   Manual steps required for distribution:
+echo   Build completed successfully!
 echo ========================================
 echo.
-echo 1. Copy required DLL files manually:
-echo    From: %~dp0*.dll
-echo    To:   %~dp0%DIST_DIR%\
-echo.
-echo 2. Create distribution folder manually:
-echo    Folder name: KoeMoji-Go-v%VERSION%-win
-echo.
-echo 3. Copy files to distribution folder:
-echo    - %DIST_DIR%\%APP_NAME%.exe
-echo    - Required DLL files (libportaudio.dll, etc.)
-echo    - config.example.json (rename to config.json)
-echo    - README_RELEASE.md (rename to README.md)
-echo.
-echo 4. Create ZIP file manually:
-echo    ZIP name: KoeMoji-Go-v%VERSION%-win.zip
+echo Distribution file created:
+echo   build\releases\%RELEASE_NAME%.zip
 echo.
 echo Executable location:
-echo   %DIST_DIR%\%APP_NAME%.exe
+echo   build\windows\%DIST_DIR%\%APP_NAME%.exe
 echo.
 
 exit /b 0
