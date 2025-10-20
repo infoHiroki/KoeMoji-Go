@@ -529,11 +529,12 @@ func DetectVoiceMeeter() (string, error) {
 	}
 
 	// Search for VoiceMeeter devices (case-insensitive)
+	// Simplified keywords to match all VoiceMeeter versions (Basic/Banana/Potato)
 	voicemeeterKeywords := []string{
-		"voicemeeter output",
-		"voicemeeter input",
-		"voicemeeter aux",
-		"cable output", // VB-CABLE
+		"voicemeeter", // Matches all VoiceMeeter devices
+		"vb-audio",    // VB-Audio products (VoiceMeeter, VB-CABLE)
+		"vaio",        // VoiceMeeter VAIO virtual device
+		"cable output", // VB-CABLE (legacy support)
 	}
 
 	for _, device := range devices {
