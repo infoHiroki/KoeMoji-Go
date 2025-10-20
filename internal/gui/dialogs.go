@@ -2,6 +2,7 @@ package gui
 
 import (
 	"fmt"
+	"runtime"
 	"strconv"
 	"time"
 
@@ -244,30 +245,39 @@ func (app *GUIApp) createRecordingForm() *widget.Form {
 	app.recordingDeviceSelect = deviceSelect
 	app.recordingDeviceMap = deviceMap
 
-	// VoiceMeeter setup button
-	vmButton := widget.NewButton("VoiceMeeter設定を適用", func() {
-		app.applyVoiceMeeterSettings(deviceSelect)
-	})
-
 	// Audio normalization checkbox
 	normalizationCheck := widget.NewCheck("音量自動調整（推奨）", nil)
 	normalizationCheck.SetChecked(app.Config.AudioNormalizationEnabled)
 	app.normalizationCheck = normalizationCheck
 
-	// VoiceMeeter guide container
-	vmGuide := widget.NewLabel("💡 システム音声+マイク同時録音\nVoiceMeeterをインストール済みの方は、\n上のボタンで最適な設定を自動適用できます。")
-	vmGuide.Wrapping = fyne.TextWrapWord
-
-	vmContainer := container.NewVBox(
-		vmGuide,
-		vmButton,
-	)
-
-	return widget.NewForm(
+	// Create form items
+	formItems := []*widget.FormItem{
 		widget.NewFormItem(msg.RecordingDeviceLabel, deviceSelect),
-		widget.NewFormItem("", vmContainer),
-		widget.NewFormItem("音量調整", normalizationCheck),
-	)
+	}
+
+	// VoiceMeeter integration (Windows only)
+	if runtime.GOOS == "windows" {
+		// VoiceMeeter setup button
+		vmButton := widget.NewButton("VoiceMeeter設定を適用", func() {
+			app.applyVoiceMeeterSettings(deviceSelect)
+		})
+
+		// VoiceMeeter guide container
+		vmGuide := widget.NewLabel("💡 システム音声+マイク同時録音\nVoiceMeeterをインストール済みの方は、\n上のボタンで最適な設定を自動適用できます。")
+		vmGuide.Wrapping = fyne.TextWrapWord
+
+		vmContainer := container.NewVBox(
+			vmGuide,
+			vmButton,
+		)
+
+		formItems = append(formItems, widget.NewFormItem("", vmContainer))
+	}
+
+	// Add audio normalization to all platforms
+	formItems = append(formItems, widget.NewFormItem("音量調整", normalizationCheck))
+
+	return widget.NewForm(formItems...)
 }
 
 // saveConfigFromDialog saves the configuration from dialog form entries
