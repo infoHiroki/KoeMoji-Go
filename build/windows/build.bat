@@ -82,7 +82,7 @@ if exist %DIST_DIR% rmdir /s /q %DIST_DIR%
 mkdir %DIST_DIR%
 if not exist temp mkdir temp
 
-rem Check for goversioninfo
+rem Check for goversioninfo (optional - icon embedding)
 echo.
 echo Checking for goversioninfo...
 if not exist "%GOPATH_BIN%\goversioninfo.exe" (
@@ -90,35 +90,46 @@ if not exist "%GOPATH_BIN%\goversioninfo.exe" (
     go install github.com/josephspurrier/goversioninfo/cmd/goversioninfo@latest
 )
 
-rem Generate Windows resource file
+rem Generate Windows resource file (optional - will continue without icon if fails)
 echo.
 echo Generating Windows resource file...
 set CURRENT_DIR=%cd%
 set TEMPLATES_DIR=%~dp0..\common\templates\windows
 set TEMP_DIR=%~dp0temp
+set RESOURCE_GENERATED=0
 
 rem Change to templates directory for goversioninfo to find the icon
 cd /d "%TEMPLATES_DIR%"
 
 if exist "%GOPATH_BIN%\goversioninfo.exe" (
     "%GOPATH_BIN%\goversioninfo.exe" -64 -o "%TEMP_DIR%\resource.syso" versioninfo.json
+    if %errorlevel% equ 0 (
+        set RESOURCE_GENERATED=1
+        echo [OK] Resource file generated successfully
+    ) else (
+        echo [WARNING] goversioninfo failed - continuing without icon
+    )
 ) else (
     goversioninfo -64 -o "%TEMP_DIR%\resource.syso" versioninfo.json
+    if %errorlevel% equ 0 (
+        set RESOURCE_GENERATED=1
+        echo [OK] Resource file generated successfully
+    ) else (
+        echo [WARNING] goversioninfo failed - continuing without icon
+    )
 )
-set ERROR_LEVEL=%errorlevel%
 
 rem Return to original directory
 cd /d "%CURRENT_DIR%"
 
-if %ERROR_LEVEL% neq 0 (
-    echo Error: Failed to generate Windows resource file
-    echo Make sure goversioninfo is properly installed
-    exit /b 1
+rem Copy resource file to source directory (only if generated successfully)
+if %RESOURCE_GENERATED% equ 1 (
+    echo Copying resource file to source directory...
+    copy "%~dp0temp\resource.syso" "%~dp0%SOURCE_DIR%\" >nul
+    echo [OK] Icon will be embedded in executable
+) else (
+    echo [INFO] Building without embedded icon
 )
-
-rem Copy resource file to source directory
-echo Copying resource file to source directory...
-copy "%~dp0temp\resource.syso" "%~dp0%SOURCE_DIR%\" >nul
 
 rem Build Windows executable
 echo.
@@ -138,8 +149,8 @@ go build -ldflags "-s -w -H=windowsgui -X main.version=%VERSION%" -o "%~dp0%DIST
 set BUILD_ERROR=%errorlevel%
 cd /d "%~dp0"
 if %BUILD_ERROR% neq 0 (
-    echo Error: Build failed
-    echo Make sure you have a C compiler (MinGW-w64 or MSYS2) installed
+    echo [ERROR] Build failed
+    echo Make sure you have a C compiler ^(MinGW-w64 or MSYS2^) available
     exit /b 1
 )
 
@@ -205,5 +216,6 @@ echo.
 echo Executable location:
 echo   build\windows\%DIST_DIR%\%APP_NAME%.exe
 echo.
-
+echo Press any key to close...
+pause >nul
 exit /b 0
