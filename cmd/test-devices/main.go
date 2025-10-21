@@ -8,7 +8,7 @@ import (
 )
 
 func main() {
-	fmt.Println("=== PortAudio デバイス情報 ===\n")
+	fmt.Println("=== PortAudio デバイス情報 ===")
 
 	err := portaudio.Initialize()
 	if err != nil {
@@ -37,7 +37,8 @@ func main() {
 		// VoiceMeeter関連デバイスを強調表示
 		nameLower := device.Name
 		if contains(nameLower, "voicemeeter") || contains(nameLower, "vb-audio") || contains(nameLower, "vaio") || contains(nameLower, "cable") {
-			fmt.Printf("  ⚡ VoiceMeeter関連デバイスの可能性\n\n")
+			fmt.Println("  ⚡ VoiceMeeter関連デバイスの可能性")
+			fmt.Println()
 		}
 	}
 

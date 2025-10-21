@@ -58,7 +58,6 @@ func NewTestEnvironment(t *testing.T) *TestEnvironment {
 		InputDir:            inputDir,
 		OutputDir:           outputDir,
 		ArchiveDir:          archiveDir,
-		RecordingDeviceID:   -1,
 		RecordingDeviceName: "Test Device",
 	}
 

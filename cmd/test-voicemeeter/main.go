@@ -8,7 +8,7 @@ import (
 )
 
 func main() {
-	fmt.Println("=== VoiceMeeter検出テスト ===\n")
+	fmt.Println("=== VoiceMeeter検出テスト ===")
 
 	deviceName, err := recorder.DetectVoiceMeeter()
 	if err != nil {
@@ -25,7 +25,9 @@ func main() {
 		os.Exit(1)
 	}
 
-	fmt.Println("✅ VoiceMeeter検出成功！\n")
+	fmt.Println("✅ VoiceMeeter検出成功！")
+	fmt.Println()
 	fmt.Printf("検出されたデバイス名: %s\n", deviceName)
-	fmt.Println("\n=== テスト完了 ===")
+	fmt.Println()
+	fmt.Println("=== テスト完了 ===")
 }

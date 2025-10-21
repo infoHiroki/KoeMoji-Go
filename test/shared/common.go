@@ -35,7 +35,6 @@ func CreateTestConfig(t *testing.T) *config.Config {
 		LLMModel:            "gpt-4o",
 		LLMMaxTokens:        4096,
 		SummaryLanguage:     "auto",
-		RecordingDeviceID:   -1,
 		RecordingDeviceName: "既定のマイク",
 		RecordingMaxHours:   0,
 		RecordingMaxFileMB:  0,
