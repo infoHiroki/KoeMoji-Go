@@ -240,6 +240,148 @@ KoeMoji-Go は PortAudio を使用した録音機能を持つため、CGO（C言
 2. プラットフォーム固有のランナーを使用した self-hosted runners
 3. 録音機能を別プロセスとして分離
 
+## トラブルシューティング
+
+### ビルドスクリプトが途中で落ちる
+
+**症状:**
+- `build.bat`をダブルクリックするとウィンドウが即座に閉じる
+- エラーメッセージが確認できない
+
+**原因:**
+- goversioninfo実行時のエラー
+- パス指定の問題
+- バッチファイル内のコマンドエラー
+
+**解決方法:**
+
+1. **コマンドプロンプトから実行してエラー確認**
+   ```cmd
+   cd C:\dev\KoeMoji-Go\build\windows
+   build.bat
+   ```
+
+2. **環境チェックツールの実行**
+   ```cmd
+   cd C:\dev\KoeMoji-Go\build\windows
+   check_env.bat
+   ```
+   すべての項目が`[OK]`であることを確認
+
+3. **段階的テスト**
+   - Goビルドのみ: `test_go_build.bat`
+   - パッケージングのみ: `test_packaging_only.bat`
+
+### goversioninfo エラー
+
+**症状:**
+```
+Error: Failed to generate Windows resource file
+```
+
+**原因:**
+- goversioninfoがインストールされていない
+- アイコンファイルが見つからない
+
+**解決方法:**
+
+1. **goversioninfoの手動インストール**
+   ```cmd
+   go install github.com/josephspurrier/goversioninfo/cmd/goversioninfo@latest
+   ```
+
+2. **アイコンなしでビルド（v1.6.0以降）**
+   - build.batは自動的にアイコンなしで続行
+   - `[WARNING] goversioninfo failed - continuing without icon`が表示される
+   - 機能には影響なし
+
+### DLLコピーエラー
+
+**症状:**
+```
+Warning: Failed to copy DLL files
+```
+
+**原因:**
+- DLLファイルが`build/windows/`ディレクトリに存在しない
+- PortAudioがインストールされていない
+
+**解決方法:**
+
+1. **PortAudioの再インストール**
+   ```bash
+   # MSYS2 MinGW64で実行
+   pacman -S mingw-w64-x86_64-portaudio
+   ```
+
+2. **DLLの手動コピー**
+   ```cmd
+   copy C:\msys64\mingw64\bin\libportaudio.dll build\windows\
+   copy C:\msys64\mingw64\bin\libgcc_s_seh-1.dll build\windows\
+   copy C:\msys64\mingw64\bin\libwinpthread-1.dll build\windows\
+   ```
+
+### ZIP作成エラー
+
+**症状:**
+```
+Error: Failed to create ZIP package
+```
+
+**原因:**
+- PowerShellの実行ポリシー制限
+- ディスク容量不足
+
+**解決方法:**
+
+1. **実行ポリシーの確認**
+   ```powershell
+   Get-ExecutionPolicy
+   ```
+   `Restricted`の場合は変更:
+   ```powershell
+   Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
+   ```
+
+2. **手動でZIP作成**
+   ```cmd
+   cd build\windows\dist
+   powershell -Command "Compress-Archive -Path 'KoeMoji-Go-v1.6.0' -DestinationPath 'KoeMoji-Go-v1.6.0-win.zip' -Force"
+   ```
+
+### アイコンが埋め込まれない
+
+**症状:**
+- exeファイルにアイコンが表示されない
+- Windowsエクスプローラーで確認するとデフォルトアイコンが表示される
+
+**原因:**
+- goversioninfoが失敗した
+- versioninfo.jsonの設定が間違っている
+
+**確認方法:**
+```cmd
+# exeのプロパティを確認
+右クリック → プロパティ → 詳細タブ
+```
+
+**解決方法:**
+
+1. **ビルドログでgoversioninfoの状態を確認**
+   - `[OK] Icon will be embedded in executable` → 成功
+   - `[WARNING] goversioninfo failed` → 失敗（機能には影響なし）
+
+2. **versioninfo.jsonの確認**
+   ```cmd
+   type build\common\templates\windows\versioninfo.json
+   ```
+   `IconPath`が正しく設定されているか確認
+
+### 詳細なトラブルシューティング情報
+
+より詳細な情報は以下のドキュメントを参照してください：
+- [v1.6.0 Build System Fix](../progress/v1.6.0-build-system-fix.md) - ビルドシステムの問題と解決の詳細記録
+
 ## 今後の改善点
 
 1. **GitHub Actions対応**: CI/CDパイプラインでの自動ビルド
