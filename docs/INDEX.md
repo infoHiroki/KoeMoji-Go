@@ -49,6 +49,7 @@
 
 - **[v1.6.0-build-system-fix.md](./progress/v1.6.0-build-system-fix.md)** - Windowsビルドシステム修正の詳細記録（問題分析、解決策、検証、教訓）
 - **[v1.6.0-voicemeeter-issue.md](./progress/v1.6.0-voicemeeter-issue.md)** - VoiceMeeter統合機能の開発記録と問題解決
+- **[v1.6.0-voicemeeter-verification.md](./progress/v1.6.0-voicemeeter-verification.md)** - VoiceMeeter Banana実環境検証記録（設定手順、テスト結果、問題と解決策）
 - **[voicemeeter-background-verification.md](./progress/voicemeeter-background-verification.md)** - VoiceMeeterバックグラウンド起動検証手順
 
 ## 🗂️ その他の重要なドキュメント

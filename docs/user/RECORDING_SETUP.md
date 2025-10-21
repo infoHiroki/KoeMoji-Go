@@ -85,33 +85,97 @@ Windowsでシステムサウンドとマイクを同時に録音するには、V
 ### VoiceMeeterのインストール
 
 1. [VoiceMeeter公式サイト](https://vb-audio.com/Voicemeeter/)にアクセス
-2. **VoiceMeeter Basic**（無料版）をダウンロード
+2. **VoiceMeeter**（Basic、Banana、Potatoのいずれか）をダウンロード
+   - **Basic**: 基本機能のみ
+   - **Banana**: 推奨（Virtual Inputs 2つ、より柔軟）
+   - **Potato**: 上級者向け
 3. インストーラーを実行
 4. **システム再起動**（重要）
 
-### VoiceMeeterの設定
+### VoiceMeeterの基本用語
 
-#### 1. 基本設定
-1. **VoiceMeeter**を起動
-2. **Hardware Input 1**: マイクを選択
-3. **Hardware Input 2**: 「WDM: スピーカー」を選択
-4. **A1**: 使用するスピーカー/ヘッドホンを選択
+#### 出力バスの種類
 
-#### 2. 入力設定
-- **Input 1（マイク）**: 
-  - A1: ON（スピーカーに出力）
-  - B1: ON（VoiceMeeter Outputに送信）
-- **Input 2（システム音）**:
-  - A1: ON（スピーカーに出力）  
-  - B1: ON（VoiceMeeter Outputに送信）
+**A系（A1, A2, A3）** = ハードウェア出力（スピーカー/ヘッドフォン）
+- 用途: 音を聞くため（モニタリング）
+- 設定: 物理デバイスを指定
+- 例: A1に「Speakers (Realtek)」を設定
 
-#### 3. Windowsサウンド設定
-1. **再生デバイス設定**
-   - 設定 → システム → サウンド
-   - 出力デバイス: 「VoiceMeeter Input (VB-Audio VoiceMeeter VAIO)」
+**B系（B1, B2）** = 仮想出力（録音用）
+- 用途: 録音デバイスとしてWindowsに公開
+- 設定: 何も指定しない（自動的にWindowsに表示される）
+- 例: B1 → Windowsに「VoiceMeeter Output」として表示
 
-2. **録音デバイス設定**
-   - KoeMoji-Goでは「VoiceMeeter Output」を使用
+#### ルーティングボタン
+
+各入力チャンネルの下部にあるボタン：
+- **A1ボタン（緑）**: A1（スピーカー）に音を送る → 音が聞こえる
+- **B1ボタン（緑）**: B1（仮想出力）に音を送る → 録音できる
+- **両方ON**: スピーカーで聞きながら録音可能
+
+### VoiceMeeterの設定（詳細手順）
+
+#### ステップ1: Windowsサウンド設定（出力）
+
+1. **Windowsの設定を開く**
+   - 設定 → システム → サウンド → 出力
+
+2. **出力デバイスを変更**
+   ```
+   出力デバイス: Voicemeeter Input (VB-Audio Voicemeeter VAIO)
+   ```
+
+**効果**: YouTubeやブラウザの音がVoiceMeeterに送られます
+
+#### ステップ2: Windowsサウンド設定（入力）
+
+1. **Windowsの設定を開く**
+   - 設定 → システム → サウンド → 入力
+
+2. **入力デバイスを変更**
+   ```
+   入力デバイス: Voicemeeter Out B1 (VB-Audio Voicemeeter VAIO)
+   ```
+
+**重要**:
+- ❌ **A1を選択しない**（A1はスピーカー出力用）
+- ✅ **B1を選択**（B1は録音出力用）
+
+#### ステップ3: VoiceMeeter設定
+
+##### 3-1. MASTER SECTION（右側）
+
+**A1（Hardware Out）**:
+```
+物理スピーカー/ヘッドフォンを選択
+例: Speakers (Realtek High Definition Audio)
+```
+
+**B1（Virtual Output）**:
+```
+何も設定しない（自動的にWindowsに表示される）
+```
+
+##### 3-2. VIRTUAL INPUTS（中央）
+
+**Voicemeeter Input（システム音が入力される場所）**:
+- 下部のボタン: **A1 = ON（緑）**, **B1 = ON（緑）**
+- 効果: システム音がスピーカーから聞こえる + 録音される
+
+**Voicemeeter AUX I**（Bananaの場合、使用する場合）:
+- 下部のボタン: **A1 = ON**, **B1 = ON**
+
+##### 3-3. HARDWARE INPUT 1（左側）
+
+**Stereo Input 1（マイク）**:
+1. 上部をクリックしてマイクデバイスを選択
+2. 下部のボタン:
+   - **A1 = OFF（グレー）** ← **重要！**
+   - **B1 = ON（緑）**
+
+**注意**:
+- ❌ **A1をONにしない**（自分の声がスピーカーから聞こえてハウリングする）
+- ✅ **B1のみON**（録音のみに送る）
 
 ### KoeMoji-Goでの設定
 
@@ -220,6 +284,43 @@ brew reinstall portaudio pkg-config
 2. Windows音量ミキサーでアプリ音量を確認
 3. VoiceMeeter再起動
 
+### 自分の声がスピーカーから聞こえる（Windows + VoiceMeeter）
+
+**症状**:
+- マイクに話すと、自分の声がスピーカーから聞こえる
+- ハウリングやエコーが発生する
+
+**原因**:
+- VoiceMeeterのHARDWARE INPUT 1（マイク）のA1ボタンがONになっている
+
+**解決策**:
+1. VoiceMeeterを開く
+2. HARDWARE INPUT 1（マイク）の下部ボタンを確認
+3. **A1をクリックしてOFF（グレー）にする**
+4. **B1はON（緑）のまま**
+
+**正しい設定**:
+```
+HARDWARE INPUT 1（マイク）:
+- A1: OFF（グレー） ← 自分の声を聞かない
+- B1: ON（緑）     ← 録音する
+```
+
+### VoiceMeeter Out A1で録音できない（Windows）
+
+**症状**:
+- Windowsの入力デバイスを「Voicemeeter Out A1」に設定している
+- 録音がうまく動作しない
+
+**原因**:
+- A1はスピーカー出力用で、録音用ではない
+- 録音にはB1を使用する必要がある
+
+**解決策**:
+1. Windowsの設定 → システム → サウンド → 入力
+2. **入力デバイスを「Voicemeeter Out B1」に変更**
+3. KoeMoji-Goを再起動
+
 ### 録音音量が小さい/大きい
 
 #### 共通
@@ -231,6 +332,7 @@ brew reinstall portaudio pkg-config
 
 #### Windows
 - VoiceMeeter → Hardware Inputのフェーダー調整
+- マイクとシステム音のバランス調整が可能
 
 ### デバイスが認識されない
 
