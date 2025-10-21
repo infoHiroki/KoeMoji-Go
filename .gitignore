@@ -67,6 +67,9 @@ build/windows/temp/
 build/windows/KoeMoji-Go-v*/
 build/macos/dist/
 build/macos/KoeMoji-Go-v*/
+build/releases/*.zip
+build/releases/*.tar.gz
+build/releases/KoeMoji-Go-v*/
 
 # 学習用ドキュメント（オプション）
 # docs/creative/LYNCH_NARRATIVE.md
