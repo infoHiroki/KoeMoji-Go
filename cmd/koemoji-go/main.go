@@ -25,7 +25,7 @@ import (
 )
 
 // version は暫定的に定数として定義（ビルド時に -X フラグで上書き）
-var version = "1.5.4"
+var version = "dev"
 
 // Color constants
 const (
