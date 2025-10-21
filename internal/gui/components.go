@@ -147,16 +147,6 @@ func (app *GUIApp) updateUI() {
 	app.statusLabel.SetText(statusText)
 	app.filesLabel.SetText(filesText)
 	app.timingLabel.SetText(timingText)
-	
-	// Apply Bold styling to all labels
-	app.statusLabel.TextStyle = fyne.TextStyle{Bold: true}
-	app.filesLabel.TextStyle = fyne.TextStyle{Bold: true}
-	app.timingLabel.TextStyle = fyne.TextStyle{Bold: true}
-	
-	// Refresh labels to apply styling
-	app.statusLabel.Refresh()
-	app.filesLabel.Refresh()
-	app.timingLabel.Refresh()
 
 	// Update log display
 	app.updateLogDisplay()

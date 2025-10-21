@@ -95,19 +95,16 @@ func (app *GUIApp) createStatusPanel(msg *ui.Messages) fyne.CanvasObject {
 	// Status line 1: Active/Processing state and queue info
 	app.statusIcon = widget.NewIcon(theme.ConfirmIcon())
 	app.statusLabel = widget.NewLabel(msg.Active + " | " + msg.Queue + ": 0 | " + msg.Processing + ": " + msg.None)
-	app.statusLabel.TextStyle = fyne.TextStyle{Bold: true}
 	app.statusContainer = container.NewHBox(app.statusIcon, app.statusLabel)
 
 	// Status line 2: File counts
 	app.filesIcon = widget.NewIcon(theme.FolderIcon())
 	app.filesLabel = widget.NewLabel(msg.Input + ": 0 → " + msg.Output + ": 0 → " + msg.Archive + ": 0")
-	app.filesLabel.TextStyle = fyne.TextStyle{Bold: true}
 	app.filesContainer = container.NewHBox(app.filesIcon, app.filesLabel)
 
 	// Status line 3: Timing info
 	app.timingIcon = widget.NewIcon(theme.SearchIcon())
 	app.timingLabel = widget.NewLabel(msg.Last + ": " + msg.Never + " | " + msg.Next + ": " + msg.Soon + " | " + msg.Uptime + ": 0s")
-	app.timingLabel.TextStyle = fyne.TextStyle{Bold: true}
 	app.timingContainer = container.NewHBox(app.timingIcon, app.timingLabel)
 
 	// Create a card container for the status panel
