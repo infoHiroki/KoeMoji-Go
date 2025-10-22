@@ -19,5 +19,6 @@
     "summary_language": "auto",
     "recording_device_name": "",
     "recording_max_hours": 0,
-    "recording_max_file_mb": 0
+    "recording_max_file_mb": 0,
+    "audio_normalization_enabled": true
 }

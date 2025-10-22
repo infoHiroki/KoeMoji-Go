@@ -2,22 +2,22 @@
     "FixedFileInfo": {
         "FileVersion": {
             "Major": 1,
-            "Minor": 5,
-            "Patch": 4,
+            "Minor": 6,
+            "Patch": 0,
             "Build": 0
         },
         "ProductVersion": {
             "Major": 1,
-            "Minor": 5,
-            "Patch": 4,
+            "Minor": 6,
+            "Patch": 0,
             "Build": 0
         }
     },
     "StringFileInfo": {
         "FileDescription": "KoeMoji-Go Audio/Video Transcription Tool",
         "ProductName": "KoeMoji-Go",
-        "ProductVersion": "1.5.4",
-        "FileVersion": "1.5.4.0",
+        "ProductVersion": "1.6.0",
+        "FileVersion": "1.6.0.0",
         "OriginalFilename": "koemoji-go.exe",
         "InternalName": "koemoji-go",
         "CompanyName": "KoeMoji-Go Development Team",

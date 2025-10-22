@@ -44,6 +44,14 @@
 - **[GO_LANGUAGE_ESSAY.md](./creative/GO_LANGUAGE_ESSAY.md)** - Go言語学習エッセイ
 - **[LYNCH_NARRATIVE.md](./creative/LYNCH_NARRATIVE.md)** - 芸術的解釈によるコードベース説明
 
+### 📊 [progress/](./progress/) - 開発進捗記録
+バージョンごとの開発進捗と問題解決の記録。
+
+- **[v1.6.0-build-system-fix.md](./progress/v1.6.0-build-system-fix.md)** - Windowsビルドシステム修正の詳細記録（問題分析、解決策、検証、教訓）
+- **[v1.6.0-voicemeeter-issue.md](./progress/v1.6.0-voicemeeter-issue.md)** - VoiceMeeter統合機能の開発記録と問題解決
+- **[v1.6.0-voicemeeter-verification.md](./progress/v1.6.0-voicemeeter-verification.md)** - VoiceMeeter Banana実環境検証記録（設定手順、テスト結果、問題と解決策）
+- **[voicemeeter-background-verification.md](./progress/voicemeeter-background-verification.md)** - VoiceMeeterバックグラウンド起動検証手順
+
 ## 🗂️ その他の重要なドキュメント
 
 プロジェクトルートには以下の重要なドキュメントがあります：

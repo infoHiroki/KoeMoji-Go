@@ -44,7 +44,7 @@ build_arch() {
 create_package() {
     local arch="$1"
     local binary_name="${APP_NAME}-${arch}"
-    local package_name="KoeMoji-Go-v${VERSION}"
+    local package_name="koemoji-go-${VERSION}"
     
     echo "📦 Creating $arch package..."
     
@@ -63,7 +63,7 @@ create_package() {
     cp "$COMMON_DIR/assets/README_RELEASE.md" "$package_name/README.md"
     
     # Create tar.gz with new naming convention
-    release_name="KoeMoji-Go-v${VERSION}-mac"
+    release_name="koemoji-go-${VERSION}-macos"
     tar -czf "../releases/${release_name}.tar.gz" "$package_name"
     
     # Clean up temporary directory
@@ -81,7 +81,7 @@ case "${1:-}" in
     "clean")
         echo "🧹 Cleaning macOS build artifacts..."
         rm -rf $DIST_DIR
-        rm -rf ../releases/KoeMoji-Go-v*-mac.tar.gz
+        rm -rf ../releases/koemoji-go-*-macos.tar.gz
         echo "✅ Clean completed"
         exit 0
         ;;
@@ -129,5 +129,5 @@ echo ""
 echo "🎉 macOS build completed successfully!"
 echo ""
 echo "📦 Distribution file created in: ../releases/"
-echo "   - KoeMoji-Go-v${VERSION}-mac.tar.gz"
+echo "   - koemoji-go-${VERSION}-macos.tar.gz"
 echo ""

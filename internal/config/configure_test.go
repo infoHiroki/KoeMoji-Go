@@ -464,14 +464,12 @@ func TestConfigureRecordingDevice(t *testing.T) {
 	// We test the user input handling logic only
 
 	config := GetDefaultConfig()
-	config.RecordingDeviceID = -1
 	config.RecordingDeviceName = "既定のマイク"
 
 	// Test keep current (empty input)
 	reader := testdata.CreateMockReader("")
 	changed := configureRecordingDevice(config, reader)
 
-	assert.Equal(t, -1, config.RecordingDeviceID)
 	assert.Equal(t, "既定のマイク", config.RecordingDeviceName)
 	assert.False(t, changed)
 
@@ -499,7 +497,7 @@ func TestResetToDefaults(t *testing.T) {
 		LLMAPIKey:           "test-key",
 		LLMModel:            "gpt-3.5-turbo",
 		LLMMaxTokens:        1000,
-		RecordingDeviceID:   5,
+		RecordingDeviceName: "Custom Microphone",
 	}
 
 	// Confirm reset

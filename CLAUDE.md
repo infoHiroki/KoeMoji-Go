@@ -232,10 +232,29 @@ pip3 install faster-whisper
 
 ### 4. ファイル処理が始まらない
 **症状**: inputフォルダにファイルを置いても処理されない
-**解決策**: 
+**解決策**:
 - ファイル形式を確認（サポート形式のみ）
 - ログで詳細確認: `./koemoji-go --debug`
 - 権限を確認
+
+### 5. Windowsビルドが途中で落ちる（v1.6.0で修正済み）
+**症状**: `build.bat`実行時にウィンドウが即座に閉じる
+**原因**: goversioninfo実行時のエラー、パス指定の問題
+**解決策**:
+```cmd
+# コマンドプロンプトから実行してエラー確認
+cd build\windows
+build.bat
+
+# 環境チェック
+check_env.bat
+
+# 段階的テスト
+test_go_build.bat        # Goビルドのみ
+test_packaging_only.bat  # パッケージングのみ
+```
+
+**詳細**: [docs/progress/v1.6.0-build-system-fix.md](docs/progress/v1.6.0-build-system-fix.md)
 
 ## デバッグとトラブルシューティング
 

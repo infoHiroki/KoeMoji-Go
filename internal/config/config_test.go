@@ -223,11 +223,11 @@ func TestRecordingConfig_Validation(t *testing.T) {
 	config := GetDefaultConfig()
 
 	// Test recording settings
-	config.RecordingDeviceID = -1 // Default device
+	config.RecordingDeviceName = "" // Default device (empty string)
 	config.RecordingMaxHours = 2
 	config.RecordingMaxFileMB = 100
 
-	assert.GreaterOrEqual(t, config.RecordingDeviceID, -1)
+	assert.Equal(t, "", config.RecordingDeviceName) // Empty = default
 	assert.GreaterOrEqual(t, config.RecordingMaxHours, 0)
 	assert.GreaterOrEqual(t, config.RecordingMaxFileMB, 0)
 }
@@ -464,7 +464,6 @@ func TestCompleteConfigRoundTrip(t *testing.T) {
 		LLMMaxTokens:          2048,
 		SummaryPromptTemplate: "Summarize this text: {text} in {language}",
 		SummaryLanguage:       "en",
-		RecordingDeviceID:     5,
 		RecordingDeviceName:   "Test Microphone",
 		RecordingMaxHours:     3,
 		RecordingMaxFileMB:    200,
@@ -499,7 +498,6 @@ func TestCompleteConfigRoundTrip(t *testing.T) {
 	assert.Equal(t, originalConfig.LLMMaxTokens, loadedConfig.LLMMaxTokens)
 	assert.Equal(t, originalConfig.SummaryPromptTemplate, loadedConfig.SummaryPromptTemplate)
 	assert.Equal(t, originalConfig.SummaryLanguage, loadedConfig.SummaryLanguage)
-	assert.Equal(t, originalConfig.RecordingDeviceID, loadedConfig.RecordingDeviceID)
 	assert.Equal(t, originalConfig.RecordingDeviceName, loadedConfig.RecordingDeviceName)
 	assert.Equal(t, originalConfig.RecordingMaxHours, loadedConfig.RecordingMaxHours)
 	assert.Equal(t, originalConfig.RecordingMaxFileMB, loadedConfig.RecordingMaxFileMB)
@@ -608,17 +606,17 @@ func TestPromptTemplateValidation(t *testing.T) {
 func TestRecordingConfigurationValidation(t *testing.T) {
 	config := GetDefaultConfig()
 
-	t.Run("DeviceIDValidation", func(t *testing.T) {
-		// -1 means default device
-		config.RecordingDeviceID = -1
-		assert.Equal(t, -1, config.RecordingDeviceID)
+	t.Run("DeviceNameValidation", func(t *testing.T) {
+		// Empty string means default device
+		config.RecordingDeviceName = ""
+		assert.Equal(t, "", config.RecordingDeviceName)
 
-		// Valid device IDs should be >= 0
-		config.RecordingDeviceID = 0
-		assert.GreaterOrEqual(t, config.RecordingDeviceID, -1)
+		// Valid device names
+		config.RecordingDeviceName = "Built-in Microphone"
+		assert.NotEmpty(t, config.RecordingDeviceName)
 
-		config.RecordingDeviceID = 5
-		assert.GreaterOrEqual(t, config.RecordingDeviceID, -1)
+		config.RecordingDeviceName = "VoiceMeeter Output"
+		assert.NotEmpty(t, config.RecordingDeviceName)
 	})
 
 	t.Run("RecordingLimitsValidation", func(t *testing.T) {
@@ -679,7 +677,7 @@ func TestConfigMigration(t *testing.T) {
 		assert.Equal(t, "ja", config.UILanguage)         // Default
 		assert.False(t, config.LLMSummaryEnabled)        // Default
 		assert.Equal(t, "openai", config.LLMAPIProvider) // Default
-		assert.Equal(t, -1, config.RecordingDeviceID)    // Default
+		assert.Equal(t, "", config.RecordingDeviceName)    // Default (empty = default device)
 	})
 
 	t.Run("FutureConfigWithExtraFields", func(t *testing.T) {

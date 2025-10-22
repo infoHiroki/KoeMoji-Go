@@ -82,7 +82,7 @@ if exist %DIST_DIR% rmdir /s /q %DIST_DIR%
 mkdir %DIST_DIR%
 if not exist temp mkdir temp
 
-rem Check for goversioninfo
+rem Check for goversioninfo (optional - icon embedding)
 echo.
 echo Checking for goversioninfo...
 if not exist "%GOPATH_BIN%\goversioninfo.exe" (
@@ -90,35 +90,46 @@ if not exist "%GOPATH_BIN%\goversioninfo.exe" (
     go install github.com/josephspurrier/goversioninfo/cmd/goversioninfo@latest
 )
 
-rem Generate Windows resource file
+rem Generate Windows resource file (optional - will continue without icon if fails)
 echo.
 echo Generating Windows resource file...
 set CURRENT_DIR=%cd%
 set TEMPLATES_DIR=%~dp0..\common\templates\windows
 set TEMP_DIR=%~dp0temp
+set RESOURCE_GENERATED=0
 
 rem Change to templates directory for goversioninfo to find the icon
 cd /d "%TEMPLATES_DIR%"
 
 if exist "%GOPATH_BIN%\goversioninfo.exe" (
     "%GOPATH_BIN%\goversioninfo.exe" -64 -o "%TEMP_DIR%\resource.syso" versioninfo.json
+    if %errorlevel% equ 0 (
+        set RESOURCE_GENERATED=1
+        echo [OK] Resource file generated successfully
+    ) else (
+        echo [WARNING] goversioninfo failed - continuing without icon
+    )
 ) else (
     goversioninfo -64 -o "%TEMP_DIR%\resource.syso" versioninfo.json
+    if %errorlevel% equ 0 (
+        set RESOURCE_GENERATED=1
+        echo [OK] Resource file generated successfully
+    ) else (
+        echo [WARNING] goversioninfo failed - continuing without icon
+    )
 )
-set ERROR_LEVEL=%errorlevel%
 
 rem Return to original directory
 cd /d "%CURRENT_DIR%"
 
-if %ERROR_LEVEL% neq 0 (
-    echo Error: Failed to generate Windows resource file
-    echo Make sure goversioninfo is properly installed
-    exit /b 1
+rem Copy resource file to source directory (only if generated successfully)
+if %RESOURCE_GENERATED% equ 1 (
+    echo Copying resource file to source directory...
+    copy "%~dp0temp\resource.syso" "%~dp0%SOURCE_DIR%\" >nul
+    echo [OK] Icon will be embedded in executable
+) else (
+    echo [INFO] Building without embedded icon
 )
-
-rem Copy resource file to source directory
-echo Copying resource file to source directory...
-copy "%~dp0temp\resource.syso" "%~dp0%SOURCE_DIR%\" >nul
 
 rem Build Windows executable
 echo.
@@ -138,8 +149,8 @@ go build -ldflags "-s -w -H=windowsgui -X main.version=%VERSION%" -o "%~dp0%DIST
 set BUILD_ERROR=%errorlevel%
 cd /d "%~dp0"
 if %BUILD_ERROR% neq 0 (
-    echo Error: Build failed
-    echo Make sure you have a C compiler (MinGW-w64 or MSYS2) installed
+    echo [ERROR] Build failed
+    echo Make sure you have a C compiler ^(MinGW-w64 or MSYS2^) available
     exit /b 1
 )
 
@@ -150,29 +161,61 @@ if exist "%~dp0%SOURCE_DIR%\resource.syso" del "%~dp0%SOURCE_DIR%\resource.syso"
 echo.
 echo Build completed successfully!
 
+rem Copy required DLLs (same directory)
+echo.
+echo Copying required DLL files...
+copy /Y *.dll "%DIST_DIR%\" >nul
+if %errorlevel% neq 0 (
+    echo Warning: Failed to copy DLL files
+    echo Make sure DLL files exist in build\windows directory
+    exit /b 1
+)
+echo DLL files copied.
+
+rem Create distribution package
+echo.
+echo Creating distribution package...
+
+cd /d "%~dp0%DIST_DIR%"
+if not exist "koemoji-go-%VERSION%" mkdir "koemoji-go-%VERSION%"
+copy "%APP_NAME%.exe" "koemoji-go-%VERSION%\" >nul
+copy "*.dll" "koemoji-go-%VERSION%\" >nul
+copy "%~dp0..\common\assets\config.example.json" "koemoji-go-%VERSION%\config.json" >nul
+copy "%~dp0..\common\assets\README_RELEASE.md" "koemoji-go-%VERSION%\README.md" >nul
+
+rem Create ZIP package with new naming convention
+echo Creating ZIP package...
+set RELEASE_NAME=koemoji-go-%VERSION%-windows
+if exist "%RELEASE_NAME%.zip" del "%RELEASE_NAME%.zip"
+powershell -Command "Compress-Archive -Path 'koemoji-go-%VERSION%' -DestinationPath '%RELEASE_NAME%.zip' -Force"
+if %errorlevel% neq 0 (
+    echo Error: Failed to create ZIP package
+    cd /d "%~dp0"
+    exit /b 1
+)
+
+rem Move ZIP to releases directory
+echo Moving ZIP to releases directory...
+if not exist "%~dp0..\releases" mkdir "%~dp0..\releases"
+move /Y "%RELEASE_NAME%.zip" "%~dp0..\releases\" >nul
+
+rem Clean up temporary distribution directory
+echo Cleaning up temporary files...
+rmdir /s /q "koemoji-go-%VERSION%"
+
+cd /d "%~dp0"
+
 echo.
 echo ========================================
-echo   Manual steps required for distribution:
+echo   Build completed successfully!
 echo ========================================
 echo.
-echo 1. Copy required DLL files manually:
-echo    From: %~dp0*.dll
-echo    To:   %~dp0%DIST_DIR%\
-echo.
-echo 2. Create distribution folder manually:
-echo    Folder name: KoeMoji-Go-v%VERSION%-win
-echo.
-echo 3. Copy files to distribution folder:
-echo    - %DIST_DIR%\%APP_NAME%.exe
-echo    - Required DLL files (libportaudio.dll, etc.)
-echo    - config.example.json (rename to config.json)
-echo    - README_RELEASE.md (rename to README.md)
-echo.
-echo 4. Create ZIP file manually:
-echo    ZIP name: KoeMoji-Go-v%VERSION%-win.zip
+echo Distribution file created:
+echo   build\releases\%RELEASE_NAME%.zip
 echo.
 echo Executable location:
-echo   %DIST_DIR%\%APP_NAME%.exe
+echo   build\windows\%DIST_DIR%\%APP_NAME%.exe
 echo.
-
+echo Press any key to close...
+pause >nul
 exit /b 0

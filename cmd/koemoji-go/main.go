@@ -25,7 +25,7 @@ import (
 )
 
 // version は暫定的に定数として定義（ビルド時に -X フラグで上書き）
-var version = "1.5.4"
+var version = "dev"
 
 // Color constants
 const (
@@ -357,9 +357,9 @@ func (app *App) stopRecording() {
 	now := time.Now()
 	filename := fmt.Sprintf("recording_%s.wav", now.Format("20060102_1504"))
 
-	// Save to input directory
+	// Save to input directory with normalization
 	outputPath := filepath.Join(app.Config.InputDir, filename)
-	err = app.recorder.SaveToFile(outputPath)
+	err = app.recorder.SaveToFileWithNormalization(outputPath, app.Config.AudioNormalizationEnabled)
 	if err != nil {
 		logger.LogError(app.logger, &app.logBuffer, &app.logMutex, "録音ファイルの保存に失敗: %v", err)
 		return
