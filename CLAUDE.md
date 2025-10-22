@@ -21,8 +21,12 @@ KoeMoji-Goは、Goで書かれた音声・動画ファイル自動文字起こ�
 # 開発用ビルド
 go build -o koemoji-go ./cmd/koemoji-go
 
-# macOS配布用ビルド
-cd build/macos && ./build.sh
+# macOS配布用ビルド（v1.7.0以降）
+cd build/macos
+./build.sh dmg    # DMG版（.app）
+./build.sh cli    # CLI版（tar.gz）
+./build.sh all    # 両方
+./build.sh app    # .appのみ（テスト用）
 
 # Windows配布用ビルド（MSYS2/MinGW64が必要）
 cd build/windows && build.bat
@@ -32,12 +36,18 @@ cd build/macos && ./build.sh clean
 cd build/windows && build.bat clean
 ```
 
-### リリース成果物（v1.6.1以降の命名規則）
-- **macOS**: `koemoji-go-{VERSION}-macos.tar.gz`
-- **Windows**: `koemoji-go-{VERSION}-windows.zip`
-- **解凍後フォルダ**: `koemoji-go-{VERSION}/`
+### リリース成果物（v1.7.0以降の命名規則）
+**macOS**:
+- **DMG版（推奨）**: `koemoji-go-{VERSION}-macos.dmg`
+- **CLI版**: `koemoji-go-{VERSION}-macos-cli.tar.gz`
 
-**注**: v1.6.0以前は`KoeMoji-Go-v{VERSION}-win.zip`形式を使用していました。
+**Windows**:
+- `koemoji-go-{VERSION}-windows.zip`
+
+**変更履歴**:
+- v1.7.0: macOS DMG版追加（.app形式）
+- v1.6.1: 命名規則変更（`-win`→`-windows`）
+- v1.6.0以前: `KoeMoji-Go-v{VERSION}-win.zip`形式
 
 ### テスト
 ```bash
@@ -202,9 +212,22 @@ KoeMoji-Go/
 - **CGO**: PortAudio統合に必須
 
 ### 配布パッケージ化
-ビルドスクリプトは全依存関係を含む実行可能パッケージを作成：
-- macOS: `koemoji-go-{VERSION}-macos.tar.gz`
-- Windows: `koemoji-go-{VERSION}-windows.zip`
+
+**macOS（v1.7.0以降）**:
+- **DMG版（推奨）**: `koemoji-go-{VERSION}-macos.dmg`
+  - .appバンドル形式（ダブルクリック起動）
+  - GUIユーザー、非技術者向け
+  - Launchpad、Dockに表示
+  - ビルド: `cd build/macos && ./build.sh dmg`
+
+- **CLI版**: `koemoji-go-{VERSION}-macos-cli.tar.gz`
+  - 単一バイナリ形式
+  - 技術者、自動化用途向け
+  - ターミナルから実行
+  - ビルド: `cd build/macos && ./build.sh cli`
+
+**Windows**:
+- `koemoji-go-{VERSION}-windows.zip`
 - 解凍後フォルダ: `koemoji-go-{VERSION}/`
 
 ### DLL処理（Windows）

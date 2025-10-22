@@ -1,5 +1,7 @@
 [Details]
 Icon = "Icon.png"
 Name = "KoeMoji-Go"
-ID = "com.koemoji.koemoji-go"
-Category = "Developer Tools"
+ID = "com.hirokitakamura.koemoji-go"
+Category = "Productivity"
+Version = "1.7.0"
+Build = 1
