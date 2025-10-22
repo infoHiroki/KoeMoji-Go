@@ -177,17 +177,17 @@ echo.
 echo Creating distribution package...
 
 cd /d "%~dp0%DIST_DIR%"
-if not exist "KoeMoji-Go-v%VERSION%" mkdir "KoeMoji-Go-v%VERSION%"
-copy "%APP_NAME%.exe" "KoeMoji-Go-v%VERSION%\" >nul
-copy "*.dll" "KoeMoji-Go-v%VERSION%\" >nul
-copy "%~dp0..\common\assets\config.example.json" "KoeMoji-Go-v%VERSION%\config.json" >nul
-copy "%~dp0..\common\assets\README_RELEASE.md" "KoeMoji-Go-v%VERSION%\README.md" >nul
+if not exist "koemoji-go-%VERSION%" mkdir "koemoji-go-%VERSION%"
+copy "%APP_NAME%.exe" "koemoji-go-%VERSION%\" >nul
+copy "*.dll" "koemoji-go-%VERSION%\" >nul
+copy "%~dp0..\common\assets\config.example.json" "koemoji-go-%VERSION%\config.json" >nul
+copy "%~dp0..\common\assets\README_RELEASE.md" "koemoji-go-%VERSION%\README.md" >nul
 
 rem Create ZIP package with new naming convention
 echo Creating ZIP package...
-set RELEASE_NAME=KoeMoji-Go-v%VERSION%-win
+set RELEASE_NAME=koemoji-go-%VERSION%-windows
 if exist "%RELEASE_NAME%.zip" del "%RELEASE_NAME%.zip"
-powershell -Command "Compress-Archive -Path 'KoeMoji-Go-v%VERSION%' -DestinationPath '%RELEASE_NAME%.zip' -Force"
+powershell -Command "Compress-Archive -Path 'koemoji-go-%VERSION%' -DestinationPath '%RELEASE_NAME%.zip' -Force"
 if %errorlevel% neq 0 (
     echo Error: Failed to create ZIP package
     cd /d "%~dp0"
@@ -201,7 +201,7 @@ move /Y "%RELEASE_NAME%.zip" "%~dp0..\releases\" >nul
 
 rem Clean up temporary distribution directory
 echo Cleaning up temporary files...
-rmdir /s /q "KoeMoji-Go-v%VERSION%"
+rmdir /s /q "koemoji-go-%VERSION%"
 
 cd /d "%~dp0"
 
