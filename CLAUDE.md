@@ -32,10 +32,12 @@ cd build/macos && ./build.sh clean
 cd build/windows && build.bat clean
 ```
 
-### リリース成果物
-- **macOS**: `KoeMoji-Go-v{VERSION}-mac.tar.gz`
-- **Windows**: `KoeMoji-Go-v{VERSION}-win.zip`
-- **解凍後フォルダ**: `KoeMoji-Go-v{VERSION}/`
+### リリース成果物（v1.6.1以降の命名規則）
+- **macOS**: `koemoji-go-{VERSION}-macos.tar.gz`
+- **Windows**: `koemoji-go-{VERSION}-windows.zip`
+- **解凍後フォルダ**: `koemoji-go-{VERSION}/`
+
+**注**: v1.6.0以前は`KoeMoji-Go-v{VERSION}-win.zip`形式を使用していました。
 
 ### テスト
 ```bash
@@ -201,9 +203,9 @@ KoeMoji-Go/
 
 ### 配布パッケージ化
 ビルドスクリプトは全依存関係を含む実行可能パッケージを作成：
-- macOS: `KoeMoji-Go-v{VERSION}-mac.tar.gz`
-- Windows: `KoeMoji-Go-v{VERSION}-win.zip`
-- 解凍後フォルダ: `KoeMoji-Go-v{VERSION}/`
+- macOS: `koemoji-go-{VERSION}-macos.tar.gz`
+- Windows: `koemoji-go-{VERSION}-windows.zip`
+- 解凍後フォルダ: `koemoji-go-{VERSION}/`
 
 ### DLL処理（Windows）
 `build.bat`はワイルドカード`*.dll`を使用して自動的にDLLをコピー：
@@ -314,6 +316,36 @@ dir build\windows\*.dll
 包括的なテスト手順については`test/manual-test-commands.md`を参照してください。
 
 ## 最近の重要な変更
+
+### v1.6.1での変更（2025-01-22）
+1. **Windows GUI 日本語文字化け修正**
+   - Fyne + Windows + 日本語 + Boldスタイルの組み合わせで文字化けが発生
+   - `internal/gui/components.go`, `internal/gui/window.go`からBoldスタイルを削除
+   - 通常フォントでの表示に変更
+
+2. **ビルド成果物の命名規則変更**
+   - 旧: `KoeMoji-Go-v1.6.0-win.zip`
+   - 新: `koemoji-go-1.6.1-windows.zip`
+   - 理由: `-win`サフィックスがアンチウイルスソフトに誤検知される問題への対応
+   - 全て小文字、プラットフォーム名を明確に（`windows`, `macos`）
+
+### v1.6.0での変更（2025-01-21）
+1. **VoiceMeeter統合機能**（Windows専用）
+   - システム音声+マイクの同時録音対応
+   - VoiceMeeter自動検出機能
+   - 音量自動正規化機能（閾値5000、目標20000）
+   - GUI設定ダイアログに「VoiceMeeter設定を適用」ボタン追加
+
+2. **Windowsビルドシステム修正**
+   - goversioninfo実行時のエラー修正
+   - アイコン埋め込み機能の復元
+   - ビルドスクリプトの自動化改善
+
+### v1.5.5での変更
+1. **録音デバイス設定の改善**
+   - デバイスIDから名前ベースの指定に変更
+   - 環境非依存の設定を実現
+   - 空文字列でデフォルトデバイスを使用
 
 ### v1.5.4での変更
 1. **フォルダ命名規則の統一**
