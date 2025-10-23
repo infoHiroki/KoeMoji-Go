@@ -23,13 +23,13 @@ go build -o koemoji-go ./cmd/koemoji-go
 
 # macOS配布用ビルド（v1.7.0以降）
 cd build/macos
-./build.sh dmg    # DMG版（.app）
-./build.sh cli    # CLI版（tar.gz）
+./build.sh dmg    # DMG版（.app）→ koemoji-go-macos-1.7.0.dmg
+./build.sh cli    # CLI版（tar.gz）→ koemoji-go-macos-1.7.0-cli.tar.gz
 ./build.sh all    # 両方
 ./build.sh app    # .appのみ（テスト用）
 
 # Windows配布用ビルド（MSYS2/MinGW64が必要）
-cd build/windows && build.bat
+cd build/windows && build.bat  # → koemoji-go-windows-1.7.0.zip
 
 # ビルド成果物のクリーンアップ
 cd build/macos && ./build.sh clean
@@ -38,13 +38,14 @@ cd build/windows && build.bat clean
 
 ### リリース成果物（v1.7.0以降の命名規則）
 **macOS**:
-- **DMG版（推奨）**: `koemoji-go-{VERSION}-macos.dmg`
-- **CLI版**: `koemoji-go-{VERSION}-macos-cli.tar.gz`
+- **DMG版（推奨）**: `koemoji-go-macos-{VERSION}.dmg`
+- **CLI版**: `koemoji-go-macos-{VERSION}-cli.tar.gz`
 
 **Windows**:
-- `koemoji-go-{VERSION}-windows.zip`
+- `koemoji-go-windows-{VERSION}.zip`
 
 **変更履歴**:
+- v1.7.0: 命名規則変更（プラットフォーム名を中央に配置、ウイルス検知回避強化）
 - v1.7.0: macOS DMG版追加（.app形式）
 - v1.6.1: 命名規則変更（`-win`→`-windows`）
 - v1.6.0以前: `KoeMoji-Go-v{VERSION}-win.zip`形式
@@ -214,20 +215,20 @@ KoeMoji-Go/
 ### 配布パッケージ化
 
 **macOS（v1.7.0以降）**:
-- **DMG版（推奨）**: `koemoji-go-{VERSION}-macos.dmg`
+- **DMG版（推奨）**: `koemoji-go-macos-{VERSION}.dmg`
   - .appバンドル形式（ダブルクリック起動）
   - GUIユーザー、非技術者向け
   - Launchpad、Dockに表示
   - ビルド: `cd build/macos && ./build.sh dmg`
 
-- **CLI版**: `koemoji-go-{VERSION}-macos-cli.tar.gz`
+- **CLI版**: `koemoji-go-macos-{VERSION}-cli.tar.gz`
   - 単一バイナリ形式
   - 技術者、自動化用途向け
   - ターミナルから実行
   - ビルド: `cd build/macos && ./build.sh cli`
 
 **Windows**:
-- `koemoji-go-{VERSION}-windows.zip`
+- `koemoji-go-windows-{VERSION}.zip`
 - 解凍後フォルダ: `koemoji-go-{VERSION}/`
 
 ### DLL処理（Windows）

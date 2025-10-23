@@ -2,6 +2,5 @@
 Icon = "Icon.png"
 Name = "KoeMoji-Go"
 ID = "com.hirokitakamura.koemoji-go"
-Category = "Productivity"
 Version = "1.7.0"
-Build = 1
+Build = 4

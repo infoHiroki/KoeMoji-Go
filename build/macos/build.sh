@@ -109,7 +109,7 @@ build_app() {
 # Function to build DMG package
 build_dmg() {
     local arch="$1"
-    local release_name="koemoji-go-${VERSION}-macos"
+    local release_name="koemoji-go-macos-${VERSION}"
 
     echo "💿 Building DMG package..."
 
@@ -133,7 +133,7 @@ build_cli() {
     local arch="$1"
     local binary_name="${APP_NAME}-${arch}"
     local package_name="koemoji-go-${VERSION}"
-    local release_name="koemoji-go-${VERSION}-macos-cli"
+    local release_name="koemoji-go-macos-${VERSION}-cli"
 
     echo "🖥️  Building CLI version for $arch..."
 
@@ -174,8 +174,8 @@ case "${1:-}" in
     "clean")
         echo "🧹 Cleaning macOS build artifacts..."
         rm -rf $DIST_DIR
-        rm -rf ../releases/koemoji-go-*-macos.dmg
-        rm -rf ../releases/koemoji-go-*-macos-cli.tar.gz
+        rm -rf ../releases/koemoji-go-macos-*.dmg
+        rm -rf ../releases/koemoji-go-macos-*-cli.tar.gz
         echo "✅ Clean completed"
         exit 0
         ;;
@@ -236,7 +236,7 @@ case "$BUILD_TYPE" in
         echo "🎉 macOS DMG build completed successfully!"
         echo ""
         echo "📦 Distribution file created in: ../releases/"
-        echo "   - koemoji-go-${VERSION}-macos.dmg"
+        echo "   - koemoji-go-macos-${VERSION}.dmg"
         ;;
     "cli")
         build_cli "arm64"
@@ -244,7 +244,7 @@ case "$BUILD_TYPE" in
         echo "🎉 macOS CLI build completed successfully!"
         echo ""
         echo "📦 Distribution file created in: ../releases/"
-        echo "   - koemoji-go-${VERSION}-macos-cli.tar.gz"
+        echo "   - koemoji-go-macos-${VERSION}-cli.tar.gz"
         ;;
     "all")
         build_dmg "arm64"
@@ -253,8 +253,8 @@ case "$BUILD_TYPE" in
         echo "🎉 macOS build completed successfully!"
         echo ""
         echo "📦 Distribution files created in: ../releases/"
-        echo "   - koemoji-go-${VERSION}-macos.dmg"
-        echo "   - koemoji-go-${VERSION}-macos-cli.tar.gz"
+        echo "   - koemoji-go-macos-${VERSION}.dmg"
+        echo "   - koemoji-go-macos-${VERSION}-cli.tar.gz"
         ;;
 esac
 
