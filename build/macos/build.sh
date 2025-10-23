@@ -1,13 +1,16 @@
 #!/bin/bash
 set -e
 
+# スクリプトのディレクトリを取得
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+
 # バージョン情報をversion.goから動的に取得
-VERSION=$(grep -o 'const Version = "[^"]*"' ../../version.go | cut -d'"' -f2)
+VERSION=$(grep -o 'const Version = "[^"]*"' "$PROJECT_ROOT/version.go" | cut -d'"' -f2)
 APP_NAME="koemoji-go"
 DIST_DIR="dist"
-SOURCE_DIR="../../cmd/koemoji-go"
-COMMON_DIR="../common"
-PROJECT_ROOT="../.."
+SOURCE_DIR="$PROJECT_ROOT/cmd/koemoji-go"
+COMMON_DIR="$SCRIPT_DIR/../common"
 
 # Function to show usage
 show_usage() {
@@ -32,8 +35,8 @@ build_arch() {
 
     if [ "$arch" = "arm64" ]; then
         cd "$PROJECT_ROOT"
-        GOOS=darwin GOARCH=arm64 go build -ldflags="-s -w -X main.version=$VERSION" -o "build/macos/$DIST_DIR/$binary_name" "$SOURCE_DIR"
-        cd build/macos
+        GOOS=darwin GOARCH=arm64 go build -ldflags="-s -w -X main.version=$VERSION" -o "$SCRIPT_DIR/$DIST_DIR/$binary_name" ./cmd/koemoji-go
+        cd "$SCRIPT_DIR"
     else
         echo "❌ Unsupported architecture: $arch"
         return 1
@@ -73,23 +76,22 @@ build_app() {
     cd "$PROJECT_ROOT"
 
     echo "Running fyne package..."
-    $FYNE_CMD package -os darwin -icon Icon.png \
-        -name KoeMoji-Go \
-        -appID com.hirokitakamura.koemoji-go \
-        -release \
-        -src cmd/koemoji-go
+    $FYNE_CMD package -os darwin \
+        --icon "$PROJECT_ROOT/Icon.png" \
+        --release \
+        --src cmd/koemoji-go
 
     # Move .app to dist directory
     if [ -d "KoeMoji-Go.app" ]; then
-        rm -rf "build/macos/$DIST_DIR/KoeMoji-Go.app"
-        mv "KoeMoji-Go.app" "build/macos/$DIST_DIR/"
+        rm -rf "$SCRIPT_DIR/$DIST_DIR/KoeMoji-Go.app"
+        mv "KoeMoji-Go.app" "$SCRIPT_DIR/$DIST_DIR/"
         echo "✅ .app bundle created: $DIST_DIR/KoeMoji-Go.app"
     else
         echo "❌ Failed to create .app bundle"
         exit 1
     fi
 
-    cd build/macos
+    cd "$SCRIPT_DIR"
 }
 
 # Function to build DMG package
