@@ -130,7 +130,7 @@ func runTUIMode(configPath string, debugMode bool, configMode bool) {
 }
 
 func parseFlags() (string, bool, bool, bool, bool, bool) {
-	configPath := flag.String("config", "config.json", "Path to config file")
+	configPath := flag.String("config", config.GetConfigFilePath(), "Path to config file")
 	debugMode := flag.Bool("debug", false, "Enable debug mode")
 	showVersion := flag.Bool("version", false, "Show version")
 	showHelp := flag.Bool("help", false, "Show help")
@@ -161,7 +161,15 @@ func showHelpText() {
 }
 
 func (app *App) initLogger() {
-	logFile, err := os.OpenFile("koemoji.log", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
+	logPath := config.GetLogFilePath()
+
+	// Ensure log directory exists
+	logDir := filepath.Dir(logPath)
+	if err := os.MkdirAll(logDir, 0755); err != nil {
+		log.Fatalf("Failed to create log directory: %v", err)
+	}
+
+	logFile, err := os.OpenFile(logPath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
 	if err != nil {
 		log.Fatalf("Failed to open log file: %v", err)
 	}

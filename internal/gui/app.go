@@ -5,6 +5,7 @@ import (
 	"io"
 	"log"
 	"os"
+	"path/filepath"
 	"sync"
 	"time"
 
@@ -140,7 +141,16 @@ func (app *GUIApp) loadConfig() {
 
 // initLogger initializes the logger (consistent with TUI mode)
 func (app *GUIApp) initLogger() {
-	logFile, err := os.OpenFile("koemoji.log", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
+	logPath := config.GetLogFilePath()
+
+	// Ensure log directory exists
+	logDir := filepath.Dir(logPath)
+	if err := os.MkdirAll(logDir, 0755); err != nil {
+		msg := ui.GetMessages(config.GetDefaultConfigResolved())
+		log.Fatalf(msg.LogFileOpenError, err)
+	}
+
+	logFile, err := os.OpenFile(logPath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
 	if err != nil {
 		msg := ui.GetMessages(config.GetDefaultConfigResolved())
 		log.Fatalf(msg.LogFileOpenError, err)
