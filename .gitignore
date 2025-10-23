@@ -71,6 +71,7 @@ build/macos/KoeMoji-Go-v*/
 build/macos/koemoji-go-*/
 build/releases/*.zip
 build/releases/*.tar.gz
+build/releases/*.dmg
 build/releases/KoeMoji-Go-v*/
 build/releases/koemoji-go-*/
 
