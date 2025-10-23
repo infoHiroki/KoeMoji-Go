@@ -432,11 +432,115 @@ Co-Authored-By: Claude <noreply@anthropic.com>
 シンプルに保つ。複雑な解決策より単純な解決策を選ぶ。
 
 ### リリースプロセス
-1. version.goのバージョン番号更新
-2. ビルドスクリプト実行
-3. 成果物確認（releases/フォルダ）
-4. GitHubリリース作成
-5. アセットアップロード
+
+#### **1. バージョン番号の更新**
+```bash
+# version.go を編集
+const Version = "1.7.0"  # 新しいバージョンに変更
+```
+
+#### **2. ビルド実行**
+```bash
+# macOS
+cd build/macos
+./build.sh clean
+./build.sh all  # DMG + CLI版
+
+# Windows（Windows環境で）
+cd build\windows
+build.bat clean
+build.bat
+```
+
+#### **3. 成果物確認**
+```bash
+ls -lh build/releases/
+# koemoji-go-macos-1.7.0.dmg
+# koemoji-go-macos-1.7.0-cli.tar.gz
+# koemoji-go-windows-1.7.0.zip（Windows環境でビルド後）
+```
+
+#### **4. Gitタグ作成とプッシュ**
+```bash
+# アノテーション付きタグ作成
+git tag -a v1.7.0 -m "v1.7.0 - 主な変更内容"
+
+# リモートにプッシュ
+git push origin v1.7.0
+```
+
+#### **5. GitHubリリース作成とアセットアップロード**
+
+**方法A: gh CLI使用（推奨）**
+```bash
+# リリース作成と同時にアセットアップロード
+gh release create v1.7.0 \
+  --title "v1.7.0 - タイトル" \
+  --notes "リリースノート（詳細）" \
+  build/releases/koemoji-go-macos-1.7.0.dmg \
+  build/releases/koemoji-go-macos-1.7.0-cli.tar.gz
+
+# または、既存リリースに追加アップロード（Windows版など）
+gh release upload v1.7.0 build/releases/koemoji-go-windows-1.7.0.zip
+
+# リリース確認
+gh release view v1.7.0
+```
+
+**方法B: 手動アップロード**
+1. https://github.com/infoHiroki/KoeMoji-Go/releases にアクセス
+2. 「Draft a new release」をクリック
+3. タグを選択（v1.7.0）
+4. リリースノートを記入
+5. ファイルをドラッグ&ドロップ
+6. 「Publish release」をクリック
+
+**gh CLIの便利なコマンド:**
+```bash
+# リリース一覧
+gh release list
+
+# 特定リリースの詳細表示
+gh release view v1.7.0
+
+# アセット削除（間違えた場合）
+gh release delete-asset v1.7.0 ファイル名.zip
+
+# リリース削除（やり直す場合）
+gh release delete v1.7.0
+```
+
+#### **6. リリースノートのテンプレート**
+```markdown
+## 🎉 v1.X.Xの主な変更
+
+### ✨ 新機能
+- 機能1
+- 機能2
+
+### 🔧 変更内容
+- 変更1
+- 変更2
+
+### 🐛 バグ修正
+- 修正1
+- 修正2
+
+---
+
+## 📦 ダウンロード
+
+### macOS
+- **DMG版（推奨）**: 一般ユーザー向け
+- **CLI版**: 技術者・自動化用途向け
+
+### Windows
+- ZIP形式
+
+---
+
+**Full Changelog**: https://github.com/infoHiroki/KoeMoji-Go/compare/v1.X.X...v1.Y.Y
+```
 
 ## 開発のヒント
 
