@@ -72,14 +72,17 @@ build_app() {
         FYNE_CMD="fyne"
     fi
 
-    # Use fyne package to create .app bundle
+    # Use fyne package to create .app bundle from existing binary
+    local binary_name="${APP_NAME}-${arch}"
+    local binary_path="$SCRIPT_DIR/$DIST_DIR/$binary_name"
+
     cd "$PROJECT_ROOT"
 
     echo "Running fyne package..."
     $FYNE_CMD package -os darwin \
         --icon "$PROJECT_ROOT/Icon.png" \
-        --release \
-        --src cmd/koemoji-go
+        --executable "$binary_path" \
+        --release
 
     # Move .app to dist directory
     if [ -d "KoeMoji-Go.app" ]; then
