@@ -56,8 +56,18 @@ build_app() {
 
     echo "📱 Building .app bundle for $arch..."
 
-    # Build binary first
-    build_arch "$arch"
+    # Build binary with correct name for .app bundle
+    echo "🍎 Building macOS $arch binary for .app..."
+    cd "$PROJECT_ROOT"
+    local app_binary_path="$SCRIPT_DIR/$DIST_DIR/$APP_NAME"
+    GOOS=darwin GOARCH=$arch go build -ldflags="-s -w -X main.version=$VERSION" -o "$app_binary_path" ./cmd/koemoji-go
+    cd "$SCRIPT_DIR"
+
+    if [ $? -ne 0 ]; then
+        echo "❌ Failed to build binary for .app"
+        return 1
+    fi
+    echo "✅ Binary built for .app bundle"
 
     # Check if fyne is available
     if ! command -v fyne &> /dev/null; then
@@ -73,8 +83,7 @@ build_app() {
     fi
 
     # Use fyne package to create .app bundle from existing binary
-    local binary_name="${APP_NAME}-${arch}"
-    local binary_path="$SCRIPT_DIR/$DIST_DIR/$binary_name"
+    local binary_path="$app_binary_path"
 
     cd "$PROJECT_ROOT"
 
