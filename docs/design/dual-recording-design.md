@@ -198,12 +198,87 @@ macOS: 集約デバイス自動作成
 | 保守性 | ⭐⭐⭐ | ⭐⭐ | ⭐ |
 | セキュリティ | ⭐⭐⭐ | ⭐⭐⭐ | ⭐ |
 
-**決定**: **アプローチ1（デュアルストリーム + ソフトウェアミキサー）**
+**初期決定**: **アプローチ1（デュアルストリーム + ソフトウェアミキサー）**
 
 **理由**:
 - クロスプラットフォーム対応が最優先
 - 既存コードとの親和性が高い
 - 保守性・拡張性に優れる
+
+### 4.5 【重要】プラットフォーム別の現実的評価（2025-10-23追記）
+
+#### macOS環境の評価
+
+**結論**: **既に実現可能、追加実装は不要**
+
+**現状**:
+- ✅ 既存機能で対応済み（v1.5.5以降）
+- ✅ Audio MIDI設定で集約デバイス作成 → KoeMoji-Goで選択
+- ✅ macOS標準機能のみで実現
+- ✅ 追加ソフト不要
+
+**必要な改善**: ユーザーガイドの充実のみ（工数: 1-2日）
+- Audio MIDI設定での集約デバイス作成手順
+- スクリーンショット・動画付きドキュメント
+- アプリから「セットアップガイドを開く」ボタン
+
+**代替手段**: BlackHole（オープンソース仮想デバイス）
+- `brew install blackhole-2ch` でインストール
+- 集約デバイスと組み合わせて使用
+
+---
+
+#### Windows環境の評価
+
+**結論**: **WASAPI Loopback方式が最適**（アプローチ2を推奨に変更）
+
+**重要な発見**:
+- ✅ **go-wcaライブラリが実在**: github.com/moutend/go-wca
+- ✅ **CGO不要**: pure Go bindings
+- ✅ **Loopbackサンプル存在**: LoopbackCaptureSharedEventDriven
+- ✅ **Stereo Mix不要**: WASAPI Loopbackで直接システム音声キャプチャ
+- ✅ **Windows標準機能**: 20年の実績（Vista以降）
+
+**技術的難易度**: ★★★☆☆（中）
+- go-wca学習コスト: 1-2日
+- バッファ同期実装: 避けられない課題
+- マイク側: 既存PortAudioコード活用
+
+**方式の変更**:
+```
+【旧案】デュアルストリーム（PortAudio × 2）
+システム音声: PortAudio（Stereo Mix） → ユーザーが有効化必要
+マイク:       PortAudio              → 既存コード
+
+【新案】WASAPI Loopback + PortAudio
+システム音声: WASAPI Loopback（go-wca） → Stereo Mix不要！
+マイク:       PortAudio（既存）       → そのまま
+                    ↓
+            リアルタイムミックス
+```
+
+**利点**:
+- VoiceMeeter依存を完全に削除
+- Stereo Mix有効化問題を根本解決
+- ユーザー設定が最小限
+
+**欠点**:
+- Windows専用コード（ただしmacOSは別実装不要）
+- 新ライブラリ依存（go-wca）
+
+---
+
+#### 【決定】技術選択の変更
+
+| プラットフォーム | 採用方式 | 理由 |
+|-----------------|----------|------|
+| **Windows** | WASAPI Loopback（アプローチ2） | Stereo Mix不要、現実的 |
+| **macOS** | 既存機能（集約デバイス） | 既に実現可能 |
+
+**実装方針**:
+- Windows: go-wcaでシステム音声、PortAudioでマイク
+- macOS: ガイド充実のみ（追加実装不要）
+- クロスプラットフォーム: プラットフォーム分岐で対応
 
 ---
 
@@ -583,9 +658,47 @@ func showRecordingSettingsDialog() {
 
 ## 11. 実装ロードマップ
 
+### Phase 0: go-wca技術検証（1-2日）【最優先】
+
+**目標**: WASAPI Loopback方式の実現可能性確認
+
+**作業内容**:
+- [ ] go-wcaライブラリのインストール
+  ```bash
+  go get github.com/moutend/go-wca
+  ```
+- [ ] Loopbackサンプルコードの実行
+  - サンプル: `LoopbackCaptureSharedEventDriven`
+  - システム音声がキャプチャできるか確認
+- [ ] 既存PortAudioマイク録音との並行実行テスト
+  - 2つのストリームが同時に動くか
+  - タイミングのずれを観察
+- [ ] 簡易ミキサー実装
+  - 2つのバッファを加算合成
+  - WAVファイル出力
+- [ ] 音質・レイテンシの評価
+
+**成果物**:
+- 動作する最小限のプロトタイプ（100行程度）
+- Go/No-Go判定レポート
+
+**判断基準**:
+| 項目 | 合格基準 | 不合格時の対応 |
+|------|----------|----------------|
+| システム音声キャプチャ | 正常に録音できる | VoiceMeeter統合維持 |
+| マイク同時録音 | 並行動作する | 別アプリ開発を検討 |
+| 音質 | 劣化なし | サンプルレート調整 |
+| レイテンシ | 200ms以下 | バッファ調整 |
+
+**次のステップ**:
+- ✅ 合格 → Phase 1へ進む
+- ❌ 不合格 → 別アプリ開発 or VoiceMeeter統合強化
+
+---
+
 ### Phase 1: プロトタイプ検証（1-2週間）
 
-**目標**: 技術的実現可能性の検証
+**目標**: 技術的実現可能性の検証（Phase 0合格後）
 
 - [ ] デュアルストリーム基本実装
 - [ ] 簡易ミキサー実装
@@ -737,5 +850,99 @@ func showRecordingSettingsDialog() {
 
 ---
 
+## 🔄 引き継ぎメモ（Windows環境作業用）
+
+### 現在の状況（2025-10-23 macOS環境での調査完了）
+
+**決定事項**:
+- ✅ Windows実装方式: **WASAPI Loopback + PortAudio**
+- ✅ macOS: 既存機能で実現可能、ガイド充実のみ
+- ✅ go-wcaライブラリの実在を確認
+
+**次のステップ（Windows環境で実施）**:
+1. **Phase 0技術検証**（1-2日）
+   - go-wcaのインストール: `go get github.com/moutend/go-wca`
+   - Loopbackサンプル実行
+   - システム音声キャプチャ確認
+   - マイクとの並行録音テスト
+   - Go/No-Go判定
+
+2. **判定後の分岐**:
+   - ✅ 成功 → Phase 1実装へ（設計書のロードマップ通り）
+   - ❌ 失敗 → 別アプリ開発 or VoiceMeeter統合強化
+
+### 重要なリンク
+
+**技術資料**:
+- go-wcaリポジトリ: https://github.com/moutend/go-wca
+- Loopbackサンプル: `_example/LoopbackCaptureSharedEventDriven`
+- NAudio技術レポート: 調査済み（本設計書に反映）
+
+**関連ドキュメント**:
+- VoiceMeeter統合設計: `docs/design/VoiceMeeterIntegration.md`
+- 既存recorder実装: `internal/recorder/recorder.go`
+
+### 技術的な注意点
+
+**バッファ同期の課題**:
+- WASAPI LoopbackとPortAudioのコールバックタイミングがずれる可能性
+- リングバッファまたはタイムスタンプ同期が必要
+- Phase 0で実際に確認すること
+
+**サンプルレート**:
+- WASAPI Loopbackは通常48kHz（システム設定依存）
+- PortAudioマイクは44.1kHzまたは48kHz
+- 不一致時はリサンプリング必要
+
+**CGO依存**:
+- go-wcaは**CGO不要**（pure Go）
+- PortAudioは**CGO必要**（既存の依存）
+- ビルド環境は既存と同じ
+
+### トラブルシューティング
+
+**もしPhase 0で問題が発生したら**:
+
+| 問題 | 原因候補 | 対処法 |
+|------|----------|--------|
+| go-wcaがインストールできない | Windows SDK不足 | Visual Studio Build Tools確認 |
+| システム音声が録音できない | デバイスアクセス権限 | マイク・オーディオ権限確認 |
+| 音が途切れる | バッファサイズ不足 | バッファサイズ増加 |
+| 同期がずれる | 根本的な課題 | 別アプリ開発を検討 |
+
+### 開発環境要件（Windows）
+
+**必須**:
+- Go 1.21+
+- Windows 10/11
+- Visual Studio Build Tools（PortAudio用）
+- オーディオ出力デバイス（テスト用）
+
+**推奨**:
+- 複数のオーディオソース（音楽、動画など）
+- マイクデバイス
+- Git for Windows
+
+### コミット戦略
+
+**Phase 0の作業**:
+```
+feature/dual-recording-system ブランチで作業継続
+
+コミット例:
+- "🔬 test: go-wcaインストールと動作確認"
+- "🔬 test: WASAPI Loopbackサンプル実行"
+- "🔬 test: システム音声キャプチャ検証"
+- "📝 docs: Phase 0検証結果レポート"
+```
+
+**Go/No-Go判定後**:
+- ✅ 成功時: Phase 1の実装コミットを開始
+- ❌ 失敗時: 設計書に判定結果を記録してクローズ
+
+---
+
 **最終更新**: 2025-10-23
-**次回レビュー**: Phase 1完了時
+**調査担当**: macOS環境
+**次回作業**: Windows環境でPhase 0技術検証
+**ブランチ**: `feature/dual-recording-system`
