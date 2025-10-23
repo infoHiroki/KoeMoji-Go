@@ -1,7 +1,7 @@
 # macOS DMG配布の技術的課題と解決策
 
-**作成日**: 2025-10-23  
-**状態**: 調査完了・実装保留
+**作成日**: 2025-10-23
+**状態**: 調査完了・実装保留（現在は解決策3「CLI版のみ配布」を採用中）
 
 ---
 
@@ -148,11 +148,17 @@ xattr -d com.apple.quarantine /Applications/KoeMoji-Go.app
 - コマンドの意味が理解できない
 - タイプミスでエラーになる
 
-### 2. 右クリック→「開く」が機能しない
+### 2. 右クリック→「開く」が機能しない（macOS Sequoia の変更）
 
 通常、**右クリック→「開く」でQuarantine警告を回避できる**はずだが、今回は**同じエラーが表示された**。
 
-これは、**コード署名がない（Ad-hoc署名のみ）アプリに対するmacOS Sequoia以降の厳しい制限**と推測される。
+**原因**: macOS Sequoia（2024年リリース）から、Gatekeeperのポリシーが大幅に変更された。
+
+- **変更前（Sonoma以前）**: 右クリック→「開く」でQuarantine警告を回避可能
+- **変更後（Sequoia以降）**: 未公証アプリの右クリック回避機能が**完全に削除**
+- **現在の回避方法**: システム設定 > プライバシーとセキュリティで個別に例外追加するしか方法がない
+
+この変更により、**Ad-hoc署名のみのアプリは、一般ユーザーにとって事実上起動不可能**になった。
 
 ### 3. READMEを読まない
 
@@ -207,24 +213,76 @@ DMGに`install.sh`を同梱し、以下の手順をREADMEに記載：
 
 #### 内容
 
-Apple Developer Program（年間13,800円）に加入し、以下を実施：
+Apple Developer Program（年間$99 = 約12,000-14,800円）に加入し、以下を実施：
 
 1. **Developer ID証明書取得**
-2. **コード署名**
+2. **コード署名**（Hardened Runtime有効化）
 3. **公証（Notarization）**
+
+#### なぜこれで解決するのか
+
+**Gatekeeperの動作原理**:
+```
+ダウンロードされたファイル
+→ ブラウザが com.apple.quarantine 属性を付与
+→ 初回起動時にGatekeeperがチェック
+→ 公証済み: ✅ 起動許可（ダブルクリックで即起動）
+→ 未公証: ❌ 起動拒否（Sequoia以降）
+```
+
+**重要**: 公証されたアプリは、Quarantine属性があっても**Gatekeeperがブロックしません**。GitHubからダウンロードしても、普通にダブルクリックで起動できます。
+
+#### 具体的な実装手順
+
+既存の`build/macos/build.sh`に以下を追加するだけ：
+
+```bash
+# 1. Developer ID証明書でコード署名（--options runtimeが重要）
+codesign --force --options runtime --deep \
+  --sign "Developer ID Application: Your Name (TEAM_ID)" \
+  -i "com.hirokitakamura.koemoji-go" KoeMoji-Go.app
+
+# 2. DMGを作成
+hdiutil create -srcfolder KoeMoji-Go.app -volname "KoeMoji-Go" KoeMoji-Go.dmg
+
+# 3. DMGに署名
+codesign --sign "Developer ID Application: Your Name (TEAM_ID)" KoeMoji-Go.dmg
+
+# 4. 公証申請（平均30秒で完了！）
+xcrun notarytool submit KoeMoji-Go.dmg \
+  --keychain-profile "notary-profile" \
+  --wait
+
+# 5. チケットを添付
+xcrun stapler staple KoeMoji-Go.dmg
+```
+
+**初回セットアップ**（一度だけ）:
+```bash
+# 認証情報を保存
+xcrun notarytool store-credentials "notary-profile" \
+  --apple-id "your-apple-id@example.com" \
+  --team-id "TEAM_ID" \
+  --password "app-specific-password"
+```
 
 #### メリット
 - **完全に解決**（ダブルクリックで起動可能）
 - ユーザー体験が最高
 - macOSの標準的な配布方法
+- **公証は高速**（平均30秒）
+- 実装は既存のビルドスクリプトに追加するだけ
 
 #### デメリット
-- **年間13,800円のコスト**
-- 公証プロセスに時間がかかる（初回は数十分）
+- **年間コスト**: $99（約12,000-14,800円、為替次第）
+- 初回セットアップに手間がかかる
 - Apple IDの2要素認証が必要
+- Developer ID証明書の取得が必要（Account Holderのみ）
 
 #### 評価
 ⭐⭐⭐⭐⭐ （唯一の根本的解決策）
+
+**技術的には完全に実装可能で、コストのみが判断ポイント**
 
 ---
 
@@ -253,21 +311,41 @@ Apple Developer Program（年間13,800円）に加入し、以下を実施：
 
 ## 結論と今後の方針
 
-### 短期的な対応（即座に実施）
+### 現在の状況（2025-10-23時点）
 
-**DMG配布を一旦保留**する。
+**採用している解決策: 解決策3（CLI版のみ配布）**
 
 1. **v1.7.0リリースを削除**（完了）
 2. **本ドキュメントを作成**して経緯を記録
-3. **CLI版（tar.gz）のみ**を推奨（v1.6.1を継続使用）
+3. **CLI版（tar.gz）のみ**を配布中（v1.6.1ベース）
+
+### 今後の判断基準
+
+**Apple Developer Program加入を検討する際のポイント**:
+
+1. **ターゲットユーザー**
+   - 技術者のみ → CLI版で十分
+   - 一般ユーザーも含む → Apple Developer Program必須
+
+2. **年間コストの許容度**
+   - $99（約12,000-14,800円/年）が負担 → CLI版継続
+   - 許容できる → 最高のUX提供可能
+
+3. **開発継続意欲**
+   - 長期的に開発・サポート → 投資価値あり
+   - 短期的なプロジェクト → CLI版で十分
+
+4. **ユーザー数の見込み**
+   - 多数のユーザーが見込める → 投資回収しやすい
+   - 少数ユーザー → CLI版で十分
 
 ### 中期的な対応（検討中）
 
 **Apple Developer Program加入を検討**する。
 
-- **メリット**: 完全に解決、ユーザー体験向上
-- **コスト**: 年間13,800円
-- **判断基準**: ユーザー数、収益、開発継続意欲
+- **メリット**: 完全に解決、ユーザー体験向上、公証は高速（30秒）
+- **コスト**: 年間$99（約12,000-14,800円）
+- **実装難易度**: 低（既存のbuild.shに追加するだけ）
 
 ### 長期的な展望
 
@@ -286,7 +364,11 @@ Apple Developer Program（年間13,800円）に加入し、以下を実施：
 - **Gatekeeper**: ダウンロードされたアプリを検証
 - **Quarantine属性**: インターネットからのファイルに自動付与
 - **コード署名**: Developer ID証明書が必要
-- **公証**: Apple のサーバーでマルウェアスキャン
+- **公証（Notarization）**: Apple のサーバーでマルウェアスキャン
+  - 最新ツール: `xcrun notarytool`（2023年11月以降）
+  - 廃止されたツール: `xcrun altool`（2023年11月廃止）
+  - 処理速度: 平均30秒
+- **macOS Sequoia（2024年〜）**: 右クリック→「開く」回避機能を削除
 
 ### Ad-hoc署名の限界
 
@@ -308,6 +390,15 @@ Apple Developer Program（年間13,800円）に加入し、以下を実施：
 
 - [Notarizing macOS Software Before Distribution](https://developer.apple.com/documentation/security/notarizing_macos_software_before_distribution)
 - [Gatekeeper and runtime protection](https://support.apple.com/guide/security/gatekeeper-and-runtime-protection-sec5599b66df/web)
+- [Signing Mac Software with Developer ID](https://developer.apple.com/developer-id/)
+
+### macOS Sequoiaの変更
+
+- [Gatekeeper and notarization in Sequoia – The Eclectic Light Company](https://eclecticlight.co/2024/08/10/gatekeeper-and-notarization-in-sequoia/)
+
+### Fyne + macOS公証の実装例
+
+- [Build, package, sign, image, sign again, notarize, and staple a fyne.io app for MacOS](https://gist.github.com/blockpane/fe03eb0839fac417b92cd7eb98cdf356)
 
 ### 関連Issue
 
@@ -328,6 +419,12 @@ Apple Developer Program（年間13,800円）に加入し、以下を実施：
 
 ---
 
-**作成者**: Claude Code + Hiroki Takamura  
+**作成者**: Claude Code + Hiroki Takamura
 **更新履歴**:
 - 2025-10-23: 初版作成
+- 2025-10-23: 追加調査完了、Apple Developer Program加入による解決方法を詳細化
+  - macOS Sequoiaでの右クリック回避機能削除を確認
+  - 公証の速度（平均30秒）、notarytool使用を明記
+  - Gatekeeperの動作原理を追加
+  - 具体的な実装手順とコマンド例を追加
+  - 現在の配布方法（CLI版のみ）を明記
