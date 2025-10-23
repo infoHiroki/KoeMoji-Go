@@ -35,10 +35,10 @@ ln -s /Applications "$DMG_DIR/Applications"
 
 # Copy README for .app users
 echo "Adding README..."
-if [ -f "$COMMON_DIR/assets/README_APP.md" ]; then
-    cp "$COMMON_DIR/assets/README_APP.md" "$DMG_DIR/README.txt"
+if [ -f "$COMMON_DIR/assets/README.txt" ]; then
+    cp "$COMMON_DIR/assets/README.txt" "$DMG_DIR/README.txt"
 else
-    # If README_APP.md doesn't exist yet, create a minimal one
+    # If README.txt doesn't exist yet, create a minimal one
     cat > "$DMG_DIR/README.txt" << 'EOF'
 # KoeMoji-Go
 
