@@ -104,6 +104,58 @@ build_app() {
     fi
 
     cd "$SCRIPT_DIR"
+
+    # Bundle PortAudio library for self-contained distribution
+    echo "📦 Bundling PortAudio library..."
+    local app_path="$SCRIPT_DIR/$DIST_DIR/KoeMoji-Go.app"
+    local frameworks_dir="$app_path/Contents/Frameworks"
+    local portaudio_src="/opt/homebrew/opt/portaudio/lib/libportaudio.2.dylib"
+
+    # Check if PortAudio library exists
+    if [ ! -f "$portaudio_src" ]; then
+        echo "❌ Error: PortAudio library not found at $portaudio_src"
+        echo "Please install: brew install portaudio"
+        exit 1
+    fi
+
+    # Create Frameworks directory
+    mkdir -p "$frameworks_dir"
+
+    # Copy PortAudio library to bundle
+    cp "$portaudio_src" "$frameworks_dir/"
+
+    # Update library references in binary using install_name_tool
+    install_name_tool -change \
+        "$portaudio_src" \
+        "@executable_path/../Frameworks/libportaudio.2.dylib" \
+        "$app_path/Contents/MacOS/koemoji-go"
+
+    # Update library ID in the bundled library
+    install_name_tool -id \
+        "@executable_path/../Frameworks/libportaudio.2.dylib" \
+        "$frameworks_dir/libportaudio.2.dylib"
+
+    echo "✅ PortAudio library bundled successfully"
+
+    # Add microphone permission to Info.plist
+    echo "🎤 Adding microphone permission to Info.plist..."
+    /usr/libexec/PlistBuddy -c "Add :NSMicrophoneUsageDescription string 'KoeMoji-Goはマイクを使用して音声を録音し、文字起こしを行います。録音機能を使用するにはマイクへのアクセスを許可してください。'" "$app_path/Contents/Info.plist" 2>/dev/null || \
+    /usr/libexec/PlistBuddy -c "Set :NSMicrophoneUsageDescription 'KoeMoji-Goはマイクを使用して音声を録音し、文字起こしを行います。録音機能を使用するにはマイクへのアクセスを許可してください。'" "$app_path/Contents/Info.plist"
+    echo "✅ Microphone permission added to Info.plist"
+
+    # Re-sign the app with ad-hoc signature (required after install_name_tool)
+    echo "✍️  Re-signing app bundle with ad-hoc signature..."
+    codesign --force --deep --sign - "$app_path"
+
+    if [ $? -eq 0 ]; then
+        echo "✅ App bundle signed successfully"
+    else
+        echo "⚠️  Warning: Code signing failed, but continuing..."
+    fi
+
+    # Verify the changes
+    echo "🔍 Verifying library dependencies..."
+    otool -L "$app_path/Contents/MacOS/koemoji-go" | grep portaudio
 }
 
 # Function to build DMG package

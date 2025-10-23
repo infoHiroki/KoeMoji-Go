@@ -106,6 +106,8 @@ func LoadConfig(configPath string, logger *log.Logger) (*Config, error) {
 		if logger != nil {
 			logger.Printf("[INFO] Config file not found in any location, using defaults")
 		}
+		// Resolve paths even for default config
+		ResolveConfigPaths(config)
 		return config, nil
 	}
 	defer file.Close()

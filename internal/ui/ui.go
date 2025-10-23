@@ -134,10 +134,11 @@ func displayCommands(config *config.Config) {
 	fmt.Print("> ")
 }
 
-func DisplayLogs(config *config.Config) {
-	msg := GetMessages(config)
+func DisplayLogs(cfg *config.Config) {
+	msg := GetMessages(cfg)
+	logPath := config.GetLogFilePath()
 
-	if _, err := os.Stat("koemoji.log"); os.IsNotExist(err) {
+	if _, err := os.Stat(logPath); os.IsNotExist(err) {
 		fmt.Println(msg.FileNotFound)
 		return
 	}
@@ -146,19 +147,23 @@ func DisplayLogs(config *config.Config) {
 	case "windows":
 		// Try to open with PowerShell to jump to end, fallback to regular notepad
 		powershellCmd := createCommand("powershell", "-Command",
-			`notepad koemoji.log; Start-Sleep -Milliseconds 500; Add-Type -AssemblyName System.Windows.Forms; [System.Windows.Forms.SendKeys]::SendWait("^{END}")`)
+			fmt.Sprintf(`notepad "%s"; Start-Sleep -Milliseconds 500; Add-Type -AssemblyName System.Windows.Forms; [System.Windows.Forms.SendKeys]::SendWait("^{END}")`, logPath))
 		if err := powershellCmd.Run(); err != nil {
 			// Fallback to regular notepad if PowerShell fails
-			fallbackCmd := createCommand("notepad", "koemoji.log")
+			fallbackCmd := createCommand("notepad", logPath)
 			if fallbackErr := fallbackCmd.Run(); fallbackErr != nil {
 				fmt.Printf(msg.LogFileError, fallbackErr)
 			}
 		}
 	case "darwin":
-		// Get absolute path for AppleScript
-		absPath, err := filepath.Abs("koemoji.log")
-		if err != nil {
-			absPath = "koemoji.log"
+		// Get absolute path for AppleScript (logPath is already absolute)
+		absPath := logPath
+		if !filepath.IsAbs(logPath) {
+			var err error
+			absPath, err = filepath.Abs(logPath)
+			if err != nil {
+				absPath = logPath
+			}
 		}
 
 		// Try to open with AppleScript to jump to end, fallback to regular open
@@ -167,7 +172,7 @@ func DisplayLogs(config *config.Config) {
 			"-e", `tell application "TextEdit" to goto paragraph -1`)
 		if err := appleScriptCmd.Run(); err != nil {
 			// Fallback to regular open if AppleScript fails
-			fallbackCmd := createCommand("open", "koemoji.log")
+			fallbackCmd := createCommand("open", logPath)
 			if fallbackErr := fallbackCmd.Run(); fallbackErr != nil {
 				fmt.Printf(msg.LogFileError, fallbackErr)
 			}
