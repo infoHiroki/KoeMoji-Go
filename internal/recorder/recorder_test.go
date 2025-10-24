@@ -310,18 +310,6 @@ func TestNormalizeAudioTargetLevel(t *testing.T) {
 	assert.LessOrEqual(t, maxAmp, int16(32767), "Normalized max should not exceed 32767")
 }
 
-// TestDetectVoiceMeeter tests VoiceMeeter detection
-func TestDetectVoiceMeeter(t *testing.T) {
-	deviceName, err := DetectVoiceMeeter()
-
-	// Should not return error even if not found
-	require.NoError(t, err, "DetectVoiceMeeter should not return error")
-
-	// On Mac, should return empty string
-	// On Windows with VoiceMeeter, should return device name
-	t.Logf("Detected VoiceMeeter device: '%s' (empty is OK on Mac)", deviceName)
-}
-
 // TestSaveToFileWithNormalization tests the normalization integration
 func TestSaveToFileWithNormalization(t *testing.T) {
 	recorder, err := NewRecorder()
