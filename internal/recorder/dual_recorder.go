@@ -108,10 +108,11 @@ func (dr *DualRecorder) SetVolumes(systemVol, micVol float64) {
 	dr.mutex.Lock()
 	defer dr.mutex.Unlock()
 
-	if systemVol >= 0.0 && systemVol <= 1.0 {
+	// Allow volume range 0.0 - 2.0 (0% - 200%)
+	if systemVol >= 0.0 && systemVol <= 2.0 {
 		dr.systemVolume = systemVol
 	}
-	if micVol >= 0.0 && micVol <= 1.0 {
+	if micVol >= 0.0 && micVol <= 2.0 {
 		dr.micVolume = micVol
 	}
 }
