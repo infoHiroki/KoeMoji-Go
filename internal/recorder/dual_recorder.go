@@ -3,10 +3,8 @@
 package recorder
 
 import (
-	"encoding/binary"
 	"errors"
 	"fmt"
-	"os"
 	"sync"
 	"time"
 	"unsafe"
@@ -280,10 +278,8 @@ func (dr *DualRecorder) GetElapsedTime() time.Duration {
 
 // captureSystemAudio captures system audio using WASAPI Loopback
 func (dr *DualRecorder) captureSystemAudio() error {
-	// COM initialization
-	if err := ole.CoInitializeEx(0, ole.COINIT_MULTITHREADED); err != nil {
-		return fmt.Errorf("COM init failed: %w", err)
-	}
+	// COM initialization (ignore error if already initialized)
+	ole.CoInitializeEx(0, ole.COINIT_MULTITHREADED)
 	defer ole.CoUninitialize()
 
 	// Get device enumerator
