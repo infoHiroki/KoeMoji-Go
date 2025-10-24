@@ -138,11 +138,20 @@ func (dr *DualRecorder) Start() error {
 	dr.startTime = time.Now()
 	dr.done = make(chan bool)
 
+	// Recreate channels in case they were closed
+	dr.systemSamples = make(chan int16, 96000)
+	dr.micSamples = make(chan int16, 88200)
+
 	// Start system audio capture
 	if dr.systemAudioEnabled {
 		dr.wg.Add(1)
 		go func() {
-			defer dr.wg.Done()
+			defer func() {
+				if r := recover(); r != nil {
+					fmt.Printf("System audio capture panic: %v\n", r)
+				}
+				dr.wg.Done()
+			}()
 			if err := dr.captureSystemAudio(); err != nil {
 				fmt.Printf("System audio capture error: %v\n", err)
 			}
@@ -153,7 +162,12 @@ func (dr *DualRecorder) Start() error {
 	if dr.micEnabled {
 		dr.wg.Add(1)
 		go func() {
-			defer dr.wg.Done()
+			defer func() {
+				if r := recover(); r != nil {
+					fmt.Printf("Microphone capture panic: %v\n", r)
+				}
+				dr.wg.Done()
+			}()
 			if err := dr.captureMicrophone(); err != nil {
 				fmt.Printf("Microphone capture error: %v\n", err)
 			}
@@ -163,7 +177,12 @@ func (dr *DualRecorder) Start() error {
 	// Start mixer
 	dr.wg.Add(1)
 	go func() {
-		defer dr.wg.Done()
+		defer func() {
+			if r := recover(); r != nil {
+				fmt.Printf("Mixer panic: %v\n", r)
+			}
+			dr.wg.Done()
+		}()
 		dr.mixAudio()
 	}()
 

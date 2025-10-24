@@ -370,6 +370,12 @@ func (app *GUIApp) stopRecording() {
 	duration := app.getRecordingDuration()
 	logger.LogInfo(app.logger, &app.logBuffer, &app.logMutex, "録音を停止しました: %s (録音時間: %s)", filename, duration.Round(time.Second))
 
+	// Close and cleanup recorder to ensure fresh state next time
+	if err := app.recorder.Close(); err != nil {
+		logger.LogError(app.logger, &app.logBuffer, &app.logMutex, "録音のクリーンアップに失敗: %v", err)
+	}
+	app.recorder = nil
+
 	// Update button appearance
 	app.updateRecordingUI()
 }
