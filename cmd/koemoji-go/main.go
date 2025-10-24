@@ -122,9 +122,15 @@ func runTUIMode(configPath string, debugMode bool, configMode bool) {
 
 	if err := whisper.EnsureDependencies(app.Config, app.logger, &app.logBuffer, &app.logMutex, app.debugMode); err != nil {
 		logger.LogError(app.logger, &app.logBuffer, &app.logMutex, "FasterWhisper dependency check failed: %v", err)
-		fmt.Fprintf(os.Stderr, "Warning: FasterWhisper is not available: %v\n", err)
-		fmt.Fprintf(os.Stderr, "Please install manually: pip install faster-whisper whisper-ctranslate2\n")
-		fmt.Fprintf(os.Stderr, "The application will continue with limited functionality.\n")
+		fmt.Fprintf(os.Stderr, "Warning: FasterWhisper automatic installation failed: %v\n", err)
+		fmt.Fprintf(os.Stderr, "\nPossible causes:\n")
+		fmt.Fprintf(os.Stderr, "  • Python 3.12 not installed\n")
+		fmt.Fprintf(os.Stderr, "  • Network connection issue\n")
+		fmt.Fprintf(os.Stderr, "  • Insufficient permissions\n")
+		fmt.Fprintf(os.Stderr, "\nSolution:\n")
+		fmt.Fprintf(os.Stderr, "  1. Install Python 3.12\n")
+		fmt.Fprintf(os.Stderr, "  2. Restart the application\n")
+		fmt.Fprintf(os.Stderr, "\nThe application will continue with limited functionality.\n")
 	}
 	app.run()
 }

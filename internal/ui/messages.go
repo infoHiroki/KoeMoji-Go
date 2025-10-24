@@ -210,7 +210,7 @@ var messagesEN = Messages{
 	Success:                  "Success",
 	RecordingExitWarning:     "Recording in progress (%s elapsed)\nRecording data will be lost. Do you want to exit?",
 	RecordingInProgress:      "Recording in Progress",
-	DependencyError:          "Audio recognition engine (Whisper) not found: %v\n\nRecording and file management are available, but audio transcription is not possible.\n\nSolution:\npip install faster-whisper whisper-ctranslate2",
+	DependencyError:          "Audio recognition engine (Whisper) automatic installation failed: %v\n\nPossible causes:\n• Python 3.12 not installed\n• Network connection issue\n• Insufficient permissions\n\nSolution:\n1. Install Python 3.12\n2. Restart the application (automatic installation will retry)\n\nIf the problem persists, manually install:\n  pip install faster-whisper whisper-ctranslate2",
 	ConfigError:              "Configuration Error",
 	ConfigLoadErrorDialog:    "Failed to load configuration: %v\n\nUsing default configuration.",
 }
@@ -316,7 +316,7 @@ var messagesJA = Messages{
 	Success:                  "成功",
 	RecordingExitWarning:     "録音中です（%s経過）\n録音データが失われますが終了しますか？",
 	RecordingInProgress:      "録音中",
-	DependencyError:          "音声認識エンジン（Whisper）が見つかりません: %v\n\n録音とファイル管理は利用できますが、音声ファイルの文字起こしはできません。\n\n解決方法:\npip install faster-whisper whisper-ctranslate2",
+	DependencyError:          "音声認識エンジン（Whisper）の自動インストールに失敗しました: %v\n\n考えられる原因:\n• Python 3.12がインストールされていない\n• ネットワーク接続の問題\n• 権限不足\n\n解決方法:\n1. Python 3.12をインストール\n2. アプリケーションを再起動（自動インストールが再試行されます）\n\n問題が解決しない場合、手動でインストール:\n  pip install faster-whisper whisper-ctranslate2",
 	ConfigError:              "設定エラー",
 	ConfigLoadErrorDialog:    "設定の読み込みに失敗しました: %v\n\nデフォルト設定を使用します。",
 }

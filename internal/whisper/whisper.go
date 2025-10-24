@@ -294,8 +294,8 @@ func EnsureDependencies(config *config.Config, log *log.Logger, logBuffer *[]log
 	if !isFasterWhisperAvailable() {
 		logger.LogInfo(log, logBuffer, logMutex, "FasterWhisper not found. Attempting to install...")
 		if err := installFasterWhisper(log, logBuffer, logMutex); err != nil {
-			logger.LogError(log, logBuffer, logMutex, "FasterWhisper installation failed: %v", err)
-			logger.LogError(log, logBuffer, logMutex, "Please install manually: pip install faster-whisper whisper-ctranslate2")
+			logger.LogError(log, logBuffer, logMutex, "FasterWhisper automatic installation failed: %v", err)
+			logger.LogError(log, logBuffer, logMutex, "Please install Python 3.12 and restart, or manually run: pip install faster-whisper whisper-ctranslate2")
 			return fmt.Errorf("FasterWhisper installation failed: %v", err)
 		}
 	} else {
