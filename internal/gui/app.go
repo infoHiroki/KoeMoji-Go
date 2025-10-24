@@ -76,10 +76,8 @@ type GUIApp struct {
 
 	// Dual recording UI references
 	dualRecordingRadio    *widget.RadioGroup
-	systemVolumeSlider    *widget.Slider
-	systemVolumeLabel     *widget.Label
-	micVolumeSlider       *widget.Slider
-	micVolumeLabel        *widget.Label
+	systemVolumeRadio     *widget.RadioGroup
+	micVolumeRadio        *widget.RadioGroup
 	dualSettingsContainer *fyne.Container
 
 	// UI safety fields

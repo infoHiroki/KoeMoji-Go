@@ -292,8 +292,18 @@ func (app *GUIApp) startRecording() {
 			dr.SetVolumes(app.Config.SystemAudioVolume, app.Config.MicrophoneVolume)
 			app.recorder = dr
 
-			logger.LogInfo(app.logger, &app.logBuffer, &app.logMutex, "デュアル録音モード: システム音声(%.0f%%) + マイク(%.0f%%)",
-				app.Config.SystemAudioVolume*100, app.Config.MicrophoneVolume*100)
+			// Convert internal values to relative scale for display
+			systemLabel := volumeToRelativeLabel(app.Config.SystemAudioVolume, true)
+			micLabel := volumeToRelativeLabel(app.Config.MicrophoneVolume, false)
+
+			if app.debugMode {
+				logger.LogInfo(app.logger, &app.logBuffer, &app.logMutex,
+					"[DEBUG] デュアル録音設定: システム音声 %s (%.2f) + マイク %s (%.2f)",
+					systemLabel, app.Config.SystemAudioVolume, micLabel, app.Config.MicrophoneVolume)
+			} else {
+				logger.LogInfo(app.logger, &app.logBuffer, &app.logMutex,
+					"デュアル録音モード: システム音声(%s) + マイク(%s)", systemLabel, micLabel)
+			}
 		} else {
 			// Use standard Recorder for single device
 			if app.Config.RecordingDeviceName != "" {
@@ -416,4 +426,45 @@ func (app *GUIApp) onQuitPressed() {
 	}
 	// Immediate exit if not recording
 	app.forceQuit()
+}
+
+// volumeToRelativeLabel converts internal volume value to relative label (-2 to +2)
+func volumeToRelativeLabel(value float64, isSystemAudio bool) string {
+	var scaleMap map[string]float64
+
+	if isSystemAudio {
+		// System audio scale: 0.1, 0.2, 0.3, 0.5, 0.7
+		scaleMap = map[string]float64{
+			"-2": 0.1,
+			"-1": 0.2,
+			"0":  0.3,
+			"+1": 0.5,
+			"+2": 0.7,
+		}
+	} else {
+		// Microphone scale: 1.0, 1.3, 1.6, 1.9, 2.2
+		scaleMap = map[string]float64{
+			"-2": 1.0,
+			"-1": 1.3,
+			"0":  1.6,
+			"+1": 1.9,
+			"+2": 2.2,
+		}
+	}
+
+	// Find closest label
+	closest := "0"
+	minDiff := 999.0
+	for label, v := range scaleMap {
+		diff := value - v
+		if diff < 0 {
+			diff = -diff
+		}
+		if diff < minDiff {
+			minDiff = diff
+			closest = label
+		}
+	}
+
+	return closest
 }

@@ -233,32 +233,63 @@ func (app *GUIApp) createRecordingForm() *widget.Form {
 		recordingModeRadio.Horizontal = false
 		app.dualRecordingRadio = recordingModeRadio
 
-		// Create dual recording volume sliders
-		systemVolumeLabel := widget.NewLabel(fmt.Sprintf("%.0f%%", app.Config.SystemAudioVolume*100))
-		systemVolumeSlider := widget.NewSlider(0, 2.0)
-		systemVolumeSlider.Value = app.Config.SystemAudioVolume
-		systemVolumeSlider.Step = 0.1
-		systemVolumeSlider.OnChanged = func(value float64) {
-			systemVolumeLabel.SetText(fmt.Sprintf("%.0f%%", value*100))
-		}
-		app.systemVolumeSlider = systemVolumeSlider
-		app.systemVolumeLabel = systemVolumeLabel
+		// Create dual recording volume radio buttons (5-level preset with relative scale)
+		volumeOptions := []string{"-2", "-1", "0", "+1", "+2"}
 
-		micVolumeLabel := widget.NewLabel(fmt.Sprintf("%.0f%%", app.Config.MicrophoneVolume*100))
-		micVolumeSlider := widget.NewSlider(0, 2.0)
-		micVolumeSlider.Value = app.Config.MicrophoneVolume
-		micVolumeSlider.Step = 0.1
-		micVolumeSlider.OnChanged = func(value float64) {
-			micVolumeLabel.SetText(fmt.Sprintf("%.0f%%", value*100))
+		// System audio scale: lower range (typically needs to be quieter)
+		systemVolumeValues := map[string]float64{
+			"-2": 0.1,
+			"-1": 0.2,
+			"0":  0.3,
+			"+1": 0.5,
+			"+2": 0.7,
 		}
-		app.micVolumeSlider = micVolumeSlider
-		app.micVolumeLabel = micVolumeLabel
+
+		// Microphone scale: higher range (typically needs to be louder)
+		micVolumeValues := map[string]float64{
+			"-2": 1.0,
+			"-1": 1.3,
+			"0":  1.6,
+			"+1": 1.9,
+			"+2": 2.2,
+		}
+
+		// Helper function to find closest preset for a given value and scale
+		findClosestPreset := func(value float64, scaleMap map[string]float64) string {
+			closest := "0"
+			minDiff := 999.0
+			for label, v := range scaleMap {
+				diff := value - v
+				if diff < 0 {
+					diff = -diff
+				}
+				if diff < minDiff {
+					minDiff = diff
+					closest = label
+				}
+			}
+			return closest
+		}
+
+		// System audio volume radio (default: 0 = 0.3)
+		systemVolumeRadio := widget.NewRadioGroup(volumeOptions, nil)
+		systemVolumeRadio.Horizontal = true
+		systemVolumeRadio.Selected = findClosestPreset(app.Config.SystemAudioVolume, systemVolumeValues)
+		app.systemVolumeRadio = systemVolumeRadio
+
+		// Microphone volume radio (default: 0 = 1.6)
+		micVolumeRadio := widget.NewRadioGroup(volumeOptions, nil)
+		micVolumeRadio.Horizontal = true
+		micVolumeRadio.Selected = findClosestPreset(app.Config.MicrophoneVolume, micVolumeValues)
+		app.micVolumeRadio = micVolumeRadio
 
 		// Create dual settings container
 		dualSettingsContainer = container.NewVBox(
 			widget.NewLabel("━━━ デュアル録音設定 ━━━"),
-			container.NewBorder(nil, nil, widget.NewLabel("システム音声音量:"), systemVolumeLabel, systemVolumeSlider),
-			container.NewBorder(nil, nil, widget.NewLabel("マイク音量:"), micVolumeLabel, micVolumeSlider),
+			widget.NewLabel("システム音声音量:"),
+			systemVolumeRadio,
+			widget.NewLabel("マイク音量:"),
+			micVolumeRadio,
 		)
 		app.dualSettingsContainer = dualSettingsContainer
 
@@ -404,11 +435,35 @@ func (app *GUIApp) saveConfigFromDialog(whisperModel, language *widget.Select,
 	if app.dualRecordingRadio != nil {
 		app.Config.DualRecordingEnabled = app.dualRecordingRadio.Selected == "デュアル録音（システム音声+マイク）"
 	}
-	if app.systemVolumeSlider != nil {
-		app.Config.SystemAudioVolume = app.systemVolumeSlider.Value
+
+	// Volume preset mapping (relative scale: -2 to +2)
+	// System audio: lower range (0.1-0.7)
+	systemVolumeValues := map[string]float64{
+		"-2": 0.1,
+		"-1": 0.2,
+		"0":  0.3,
+		"+1": 0.5,
+		"+2": 0.7,
 	}
-	if app.micVolumeSlider != nil {
-		app.Config.MicrophoneVolume = app.micVolumeSlider.Value
+
+	// Microphone: higher range (1.0-2.2)
+	micVolumeValues := map[string]float64{
+		"-2": 1.0,
+		"-1": 1.3,
+		"0":  1.6,
+		"+1": 1.9,
+		"+2": 2.2,
+	}
+
+	if app.systemVolumeRadio != nil {
+		if val, exists := systemVolumeValues[app.systemVolumeRadio.Selected]; exists {
+			app.Config.SystemAudioVolume = val
+		}
+	}
+	if app.micVolumeRadio != nil {
+		if val, exists := micVolumeValues[app.micVolumeRadio.Selected]; exists {
+			app.Config.MicrophoneVolume = val
+		}
 	}
 
 	// Save to file
