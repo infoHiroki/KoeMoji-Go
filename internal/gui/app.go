@@ -73,7 +73,6 @@ type GUIApp struct {
 	recorder              recorder.AudioRecorder // Interface for both Recorder and DualRecorder
 	recordingDeviceSelect *widget.SelectEntry
 	recordingDeviceMap    map[string]int
-	normalizationCheck    *widget.Check
 
 	// Dual recording UI references
 	dualRecordingRadio    *widget.RadioGroup

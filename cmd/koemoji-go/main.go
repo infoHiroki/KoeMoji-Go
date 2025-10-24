@@ -365,9 +365,9 @@ func (app *App) stopRecording() {
 	now := time.Now()
 	filename := fmt.Sprintf("recording_%s.wav", now.Format("20060102_1504"))
 
-	// Save to input directory with normalization
+	// Save to input directory with normalization (always enabled)
 	outputPath := filepath.Join(app.Config.InputDir, filename)
-	err = app.recorder.SaveToFileWithNormalization(outputPath, app.Config.AudioNormalizationEnabled)
+	err = app.recorder.SaveToFileWithNormalization(outputPath, true)
 	if err != nil {
 		logger.LogError(app.logger, &app.logBuffer, &app.logMutex, "録音ファイルの保存に失敗: %v", err)
 		return

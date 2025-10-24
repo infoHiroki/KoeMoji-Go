@@ -307,11 +307,6 @@ func (app *GUIApp) createRecordingForm() *widget.Form {
 	app.recordingDeviceSelect = deviceSelect
 	app.recordingDeviceMap = deviceMap
 
-	// Audio normalization checkbox
-	normalizationCheck := widget.NewCheck("音量自動調整（推奨）", nil)
-	normalizationCheck.SetChecked(app.Config.AudioNormalizationEnabled)
-	app.normalizationCheck = normalizationCheck
-
 	// Build form items
 	formItems := []*widget.FormItem{}
 
@@ -330,12 +325,6 @@ func (app *GUIApp) createRecordingForm() *widget.Form {
 	if runtime.GOOS == "windows" && dualSettingsContainer != nil {
 		formItems = append(formItems, widget.NewFormItem("", dualSettingsContainer))
 	}
-
-	// Add common settings
-	formItems = append(formItems,
-		widget.NewFormItem("", widget.NewLabel("━━━ 共通設定 ━━━")),
-		widget.NewFormItem("", normalizationCheck),
-	)
 
 	return widget.NewForm(formItems...)
 }
@@ -409,11 +398,6 @@ func (app *GUIApp) saveConfigFromDialog(whisperModel, language *widget.Select,
 			app.Config.RecordingDeviceName = ""
 		}
 		// If device not found and not empty/default, keep current settings
-	}
-
-	// Update audio normalization setting
-	if app.normalizationCheck != nil {
-		app.Config.AudioNormalizationEnabled = app.normalizationCheck.Checked
 	}
 
 	// Update dual recording settings (Windows only)

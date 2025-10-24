@@ -298,6 +298,11 @@ func (dr *DualRecorder) GetElapsedTime() time.Duration {
 
 // captureSystemAudio captures system audio using WASAPI Loopback
 func (dr *DualRecorder) captureSystemAudio() error {
+	// Get volume setting at start (thread-safe)
+	dr.mutex.Lock()
+	systemVol := dr.systemVolume
+	dr.mutex.Unlock()
+
 	// COM initialization (ignore error if already initialized)
 	ole.CoInitializeEx(0, ole.COINIT_MULTITHREADED)
 	defer ole.CoUninitialize()
@@ -418,7 +423,7 @@ func (dr *DualRecorder) captureSystemAudio() error {
 					monoFloat := (leftFloat + rightFloat) / 2.0
 
 					// Apply volume
-					monoFloat *= float32(dr.systemVolume)
+					monoFloat *= float32(systemVol)
 
 					// Convert to int16
 					intSample := int16(monoFloat * 32767.0)
@@ -438,6 +443,11 @@ func (dr *DualRecorder) captureSystemAudio() error {
 
 // captureMicrophone captures microphone audio using PortAudio
 func (dr *DualRecorder) captureMicrophone() error {
+	// Get volume setting at start (thread-safe)
+	dr.mutex.Lock()
+	micVol := dr.micVolume
+	dr.mutex.Unlock()
+
 	var stream *portaudio.Stream
 	var err error
 
@@ -454,7 +464,7 @@ func (dr *DualRecorder) captureMicrophone() error {
 		stream, err = portaudio.OpenStream(params, func(in []int16) {
 			for _, sample := range in {
 				// Apply volume
-				adjusted := int32(float64(sample) * dr.micVolume)
+				adjusted := int32(float64(sample) * micVol)
 				if adjusted > 32767 {
 					adjusted = 32767
 				} else if adjusted < -32768 {
@@ -477,7 +487,7 @@ func (dr *DualRecorder) captureMicrophone() error {
 			func(in []int16) {
 				for _, sample := range in {
 					// Apply volume
-					adjusted := int32(float64(sample) * dr.micVolume)
+					adjusted := int32(float64(sample) * micVol)
 					if adjusted > 32767 {
 						adjusted = 32767
 					} else if adjusted < -32768 {
