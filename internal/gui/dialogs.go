@@ -205,9 +205,71 @@ func (app *GUIApp) showConfigDialog() {
 
 // createRecordingForm creates the recording settings form
 func (app *GUIApp) createRecordingForm() *widget.Form {
+	msg := ui.GetMessages(app.Config)
+
+	// Recording mode selection (Windows only)
+	var recordingModeRadio *widget.RadioGroup
+	var dualSettingsContainer *fyne.Container
+
+	if runtime.GOOS == "windows" {
+		// Create recording mode radio buttons
+		modeOptions := []string{"シングル録音（マイクのみ）", "デュアル録音（システム音声+マイク）"}
+		selectedMode := "シングル録音（マイクのみ）"
+		if app.Config.DualRecordingEnabled {
+			selectedMode = "デュアル録音（システム音声+マイク）"
+		}
+
+		recordingModeRadio = widget.NewRadioGroup(modeOptions, func(selected string) {
+			// Toggle dual recording settings visibility
+			if dualSettingsContainer != nil {
+				if selected == "デュアル録音（システム音声+マイク）" {
+					dualSettingsContainer.Show()
+				} else {
+					dualSettingsContainer.Hide()
+				}
+			}
+		})
+		recordingModeRadio.SetSelected(selectedMode)
+		recordingModeRadio.Horizontal = false
+		app.dualRecordingRadio = recordingModeRadio
+
+		// Create dual recording volume sliders
+		systemVolumeLabel := widget.NewLabel(fmt.Sprintf("%.0f%%", app.Config.SystemAudioVolume*100))
+		systemVolumeSlider := widget.NewSlider(0, 2.0)
+		systemVolumeSlider.Value = app.Config.SystemAudioVolume
+		systemVolumeSlider.Step = 0.1
+		systemVolumeSlider.OnChanged = func(value float64) {
+			systemVolumeLabel.SetText(fmt.Sprintf("%.0f%%", value*100))
+		}
+		app.systemVolumeSlider = systemVolumeSlider
+		app.systemVolumeLabel = systemVolumeLabel
+
+		micVolumeLabel := widget.NewLabel(fmt.Sprintf("%.0f%%", app.Config.MicrophoneVolume*100))
+		micVolumeSlider := widget.NewSlider(0, 2.0)
+		micVolumeSlider.Value = app.Config.MicrophoneVolume
+		micVolumeSlider.Step = 0.1
+		micVolumeSlider.OnChanged = func(value float64) {
+			micVolumeLabel.SetText(fmt.Sprintf("%.0f%%", value*100))
+		}
+		app.micVolumeSlider = micVolumeSlider
+		app.micVolumeLabel = micVolumeLabel
+
+		// Create dual settings container
+		dualSettingsContainer = container.NewVBox(
+			widget.NewLabel("━━━ デュアル録音設定 ━━━"),
+			container.NewBorder(nil, nil, widget.NewLabel("システム音声音量:"), systemVolumeLabel, systemVolumeSlider),
+			container.NewBorder(nil, nil, widget.NewLabel("マイク音量:"), micVolumeLabel, micVolumeSlider),
+		)
+		app.dualSettingsContainer = dualSettingsContainer
+
+		// Initially hide/show based on current config
+		if !app.Config.DualRecordingEnabled {
+			dualSettingsContainer.Hide()
+		}
+	}
+
 	// Get available recording devices
 	devices, err := recorder.ListDevices()
-	msg := ui.GetMessages(app.Config)
 	if err != nil {
 		logger.LogError(app.logger, &app.logBuffer, &app.logMutex, msg.RecordingDeviceListError, err)
 		return widget.NewForm(
@@ -250,32 +312,30 @@ func (app *GUIApp) createRecordingForm() *widget.Form {
 	normalizationCheck.SetChecked(app.Config.AudioNormalizationEnabled)
 	app.normalizationCheck = normalizationCheck
 
-	// Create form items
-	formItems := []*widget.FormItem{
+	// Build form items
+	formItems := []*widget.FormItem{}
+
+	// Add recording mode selection (Windows only)
+	if runtime.GOOS == "windows" && recordingModeRadio != nil {
+		formItems = append(formItems, widget.NewFormItem("録音モード:", recordingModeRadio))
+	}
+
+	// Add single recording settings
+	formItems = append(formItems,
+		widget.NewFormItem("", widget.NewLabel("━━━ シングル録音設定 ━━━")),
 		widget.NewFormItem(msg.RecordingDeviceLabel, deviceSelect),
+	)
+
+	// Add dual recording settings (Windows only)
+	if runtime.GOOS == "windows" && dualSettingsContainer != nil {
+		formItems = append(formItems, widget.NewFormItem("", dualSettingsContainer))
 	}
 
-	// VoiceMeeter integration (Windows only)
-	if runtime.GOOS == "windows" {
-		// VoiceMeeter setup button
-		vmButton := widget.NewButton("VoiceMeeter設定を適用", func() {
-			app.applyVoiceMeeterSettings(deviceSelect)
-		})
-
-		// VoiceMeeter guide container
-		vmGuide := widget.NewLabel("💡 システム音声+マイク同時録音\nVoiceMeeterをインストール済みの方は、\n上のボタンで最適な設定を自動適用できます。")
-		vmGuide.Wrapping = fyne.TextWrapWord
-
-		vmContainer := container.NewVBox(
-			vmGuide,
-			vmButton,
-		)
-
-		formItems = append(formItems, widget.NewFormItem("", vmContainer))
-	}
-
-	// Add audio normalization to all platforms
-	formItems = append(formItems, widget.NewFormItem("音量調整", normalizationCheck))
+	// Add common settings
+	formItems = append(formItems,
+		widget.NewFormItem("", widget.NewLabel("━━━ 共通設定 ━━━")),
+		widget.NewFormItem("", normalizationCheck),
+	)
 
 	return widget.NewForm(formItems...)
 }
@@ -354,6 +414,17 @@ func (app *GUIApp) saveConfigFromDialog(whisperModel, language *widget.Select,
 	// Update audio normalization setting
 	if app.normalizationCheck != nil {
 		app.Config.AudioNormalizationEnabled = app.normalizationCheck.Checked
+	}
+
+	// Update dual recording settings (Windows only)
+	if app.dualRecordingRadio != nil {
+		app.Config.DualRecordingEnabled = app.dualRecordingRadio.Selected == "デュアル録音（システム音声+マイク）"
+	}
+	if app.systemVolumeSlider != nil {
+		app.Config.SystemAudioVolume = app.systemVolumeSlider.Value
+	}
+	if app.micVolumeSlider != nil {
+		app.Config.MicrophoneVolume = app.micVolumeSlider.Value
 	}
 
 	// Save to file
@@ -440,38 +511,6 @@ func (app *GUIApp) showConfigErrorDialog(err error) {
 	
 	// Log the error
 	logger.LogError(app.logger, &app.logBuffer, &app.logMutex, "設定エラーダイアログを表示しました: %v", err)
-}
-
-// applyVoiceMeeterSettings detects and applies VoiceMeeter configuration
-func (app *GUIApp) applyVoiceMeeterSettings(deviceSelect *widget.SelectEntry) {
-	// Detect VoiceMeeter
-	vmDevice, err := recorder.DetectVoiceMeeter()
-	if err != nil {
-		dialog.ShowError(fmt.Errorf("VoiceMeeter検出エラー: %v", err), app.window)
-		return
-	}
-
-	if vmDevice == "" {
-		dialog.ShowInformation(
-			"VoiceMeeterが見つかりません",
-			"VoiceMeeter Outputが見つかりませんでした。\n\nVoiceMeeterがインストール済みか、\n起動しているか確認してください。",
-			app.window,
-		)
-		return
-	}
-
-	// Apply settings
-	deviceSelect.SetText(vmDevice)
-	if app.normalizationCheck != nil {
-		app.normalizationCheck.SetChecked(true)
-	}
-
-	// Show success message
-	dialog.ShowInformation(
-		"設定完了",
-		fmt.Sprintf("✓ VoiceMeeter設定を適用しました\n\n録音デバイス: %s\n音量自動調整: ON", vmDevice),
-		app.window,
-	)
 }
 
 // showFolderSelectDialog shows a folder selection dialog and updates the entry field

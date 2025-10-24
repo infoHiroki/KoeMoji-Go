@@ -75,6 +75,14 @@ type GUIApp struct {
 	recordingDeviceMap    map[string]int
 	normalizationCheck    *widget.Check
 
+	// Dual recording UI references
+	dualRecordingRadio    *widget.RadioGroup
+	systemVolumeSlider    *widget.Slider
+	systemVolumeLabel     *widget.Label
+	micVolumeSlider       *widget.Slider
+	micVolumeLabel        *widget.Label
+	dualSettingsContainer *fyne.Container
+
 	// UI safety fields
 	uiInitialized bool
 
