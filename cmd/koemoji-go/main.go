@@ -15,13 +15,13 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/hirokitakamura/koemoji-go/internal/config"
-	"github.com/hirokitakamura/koemoji-go/internal/gui"
-	"github.com/hirokitakamura/koemoji-go/internal/logger"
-	"github.com/hirokitakamura/koemoji-go/internal/processor"
-	"github.com/hirokitakamura/koemoji-go/internal/recorder"
-	"github.com/hirokitakamura/koemoji-go/internal/ui"
-	"github.com/hirokitakamura/koemoji-go/internal/whisper"
+	"github.com/infoHiroki/KoeMoji-Go/internal/config"
+	"github.com/infoHiroki/KoeMoji-Go/internal/gui"
+	"github.com/infoHiroki/KoeMoji-Go/internal/logger"
+	"github.com/infoHiroki/KoeMoji-Go/internal/processor"
+	"github.com/infoHiroki/KoeMoji-Go/internal/recorder"
+	"github.com/infoHiroki/KoeMoji-Go/internal/ui"
+	"github.com/infoHiroki/KoeMoji-Go/internal/whisper"
 )
 
 // version は暫定的に定数として定義（ビルド時に -X フラグで上書き）

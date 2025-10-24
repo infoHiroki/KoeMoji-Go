@@ -11,10 +11,10 @@ import (
 	"fyne.io/fyne/v2/dialog"
 	"fyne.io/fyne/v2/widget"
 
-	"github.com/hirokitakamura/koemoji-go/internal/config"
-	"github.com/hirokitakamura/koemoji-go/internal/logger"
-	"github.com/hirokitakamura/koemoji-go/internal/recorder"
-	"github.com/hirokitakamura/koemoji-go/internal/ui"
+	"github.com/infoHiroki/KoeMoji-Go/internal/config"
+	"github.com/infoHiroki/KoeMoji-Go/internal/logger"
+	"github.com/infoHiroki/KoeMoji-Go/internal/recorder"
+	"github.com/infoHiroki/KoeMoji-Go/internal/ui"
 )
 
 // showConfigDialog displays the configuration dialog with tabbed interface

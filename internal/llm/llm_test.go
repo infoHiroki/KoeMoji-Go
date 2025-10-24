@@ -4,8 +4,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/hirokitakamura/koemoji-go/internal/config"
-	"github.com/hirokitakamura/koemoji-go/internal/llm/testdata"
+	"github.com/infoHiroki/KoeMoji-Go/internal/config"
+	"github.com/infoHiroki/KoeMoji-Go/internal/llm/testdata"
 	"github.com/stretchr/testify/assert"
 )
 

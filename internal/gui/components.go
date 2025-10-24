@@ -9,11 +9,11 @@ import (
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
-	"github.com/hirokitakamura/koemoji-go/internal/logger"
-	"github.com/hirokitakamura/koemoji-go/internal/processor"
-	"github.com/hirokitakamura/koemoji-go/internal/recorder"
-	"github.com/hirokitakamura/koemoji-go/internal/ui"
-	"github.com/hirokitakamura/koemoji-go/internal/whisper"
+	"github.com/infoHiroki/KoeMoji-Go/internal/logger"
+	"github.com/infoHiroki/KoeMoji-Go/internal/processor"
+	"github.com/infoHiroki/KoeMoji-Go/internal/recorder"
+	"github.com/infoHiroki/KoeMoji-Go/internal/ui"
+	"github.com/infoHiroki/KoeMoji-Go/internal/whisper"
 )
 
 // startPeriodicUpdate starts the 5-second periodic UI update

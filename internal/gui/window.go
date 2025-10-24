@@ -7,7 +7,7 @@ import (
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
 
-	"github.com/hirokitakamura/koemoji-go/internal/ui"
+	"github.com/infoHiroki/KoeMoji-Go/internal/ui"
 )
 
 // createWindow creates and configures the main application window

@@ -13,7 +13,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/hirokitakamura/koemoji-go/internal/config"
+	"github.com/infoHiroki/KoeMoji-Go/internal/config"
 )
 
 // TestEnvironment represents a test environment with temporary directories

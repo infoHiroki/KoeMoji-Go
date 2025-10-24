@@ -8,9 +8,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/hirokitakamura/koemoji-go/internal/config"
-	"github.com/hirokitakamura/koemoji-go/internal/recorder"
-	testutil "github.com/hirokitakamura/koemoji-go/test/shared"
+	"github.com/infoHiroki/KoeMoji-Go/internal/config"
+	"github.com/infoHiroki/KoeMoji-Go/internal/recorder"
+	testutil "github.com/infoHiroki/KoeMoji-Go/test/shared"
 )
 
 // TestBasicPackageImports tests that all packages can be imported without conflicts

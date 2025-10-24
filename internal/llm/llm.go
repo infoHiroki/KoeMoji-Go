@@ -11,8 +11,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/hirokitakamura/koemoji-go/internal/config"
-	"github.com/hirokitakamura/koemoji-go/internal/logger"
+	"github.com/infoHiroki/KoeMoji-Go/internal/config"
+	"github.com/infoHiroki/KoeMoji-Go/internal/logger"
 )
 
 // OpenAI API structures

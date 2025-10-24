@@ -5,7 +5,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/hirokitakamura/koemoji-go/internal/recorder"
+	"github.com/infoHiroki/KoeMoji-Go/internal/recorder"
 )
 
 func main() {

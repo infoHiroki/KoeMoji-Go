@@ -15,8 +15,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/hirokitakamura/koemoji-go/internal/config"
-	customLogger "github.com/hirokitakamura/koemoji-go/internal/logger"
+	"github.com/infoHiroki/KoeMoji-Go/internal/config"
+	customLogger "github.com/infoHiroki/KoeMoji-Go/internal/logger"
 	"github.com/stretchr/testify/require"
 )
 

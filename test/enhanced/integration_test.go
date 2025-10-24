@@ -11,11 +11,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/hirokitakamura/koemoji-go/internal/config"
-	"github.com/hirokitakamura/koemoji-go/internal/logger"
-	"github.com/hirokitakamura/koemoji-go/internal/processor"
-	"github.com/hirokitakamura/koemoji-go/internal/recorder"
-	testutil "github.com/hirokitakamura/koemoji-go/test/shared"
+	"github.com/infoHiroki/KoeMoji-Go/internal/config"
+	"github.com/infoHiroki/KoeMoji-Go/internal/logger"
+	"github.com/infoHiroki/KoeMoji-Go/internal/processor"
+	"github.com/infoHiroki/KoeMoji-Go/internal/recorder"
+	testutil "github.com/infoHiroki/KoeMoji-Go/test/shared"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

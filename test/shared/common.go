@@ -7,8 +7,8 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/hirokitakamura/koemoji-go/internal/config"
-	"github.com/hirokitakamura/koemoji-go/internal/logger"
+	"github.com/infoHiroki/KoeMoji-Go/internal/config"
+	"github.com/infoHiroki/KoeMoji-Go/internal/logger"
 )
 
 // CreateTestConfig creates a basic test configuration

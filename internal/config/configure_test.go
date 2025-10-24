@@ -3,7 +3,7 @@ package config
 import (
 	"testing"
 
-	"github.com/hirokitakamura/koemoji-go/internal/config/testdata"
+	"github.com/infoHiroki/KoeMoji-Go/internal/config/testdata"
 	"github.com/stretchr/testify/assert"
 )
 

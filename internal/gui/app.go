@@ -13,10 +13,10 @@ import (
 	"fyne.io/fyne/v2/app"
 	"fyne.io/fyne/v2/widget"
 
-	"github.com/hirokitakamura/koemoji-go/internal/config"
-	"github.com/hirokitakamura/koemoji-go/internal/logger"
-	"github.com/hirokitakamura/koemoji-go/internal/recorder"
-	"github.com/hirokitakamura/koemoji-go/internal/ui"
+	"github.com/infoHiroki/KoeMoji-Go/internal/config"
+	"github.com/infoHiroki/KoeMoji-Go/internal/logger"
+	"github.com/infoHiroki/KoeMoji-Go/internal/recorder"
+	"github.com/infoHiroki/KoeMoji-Go/internal/ui"
 )
 
 // GUIApp represents the GUI application

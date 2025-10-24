@@ -1,6 +1,6 @@
 package ui
 
-import "github.com/hirokitakamura/koemoji-go/internal/config"
+import "github.com/infoHiroki/KoeMoji-Go/internal/config"
 
 // Messages contains all UI text strings
 type Messages struct {

@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/hirokitakamura/koemoji-go/internal/whisper/testdata"
+	"github.com/infoHiroki/KoeMoji-Go/internal/whisper/testdata"
 	"github.com/stretchr/testify/assert"
 )
 

@@ -11,11 +11,11 @@ import (
 	"sync"
 	"time"
 
-	"github.com/hirokitakamura/koemoji-go/internal/config"
-	"github.com/hirokitakamura/koemoji-go/internal/llm"
-	"github.com/hirokitakamura/koemoji-go/internal/logger"
-	"github.com/hirokitakamura/koemoji-go/internal/ui"
-	"github.com/hirokitakamura/koemoji-go/internal/whisper"
+	"github.com/infoHiroki/KoeMoji-Go/internal/config"
+	"github.com/infoHiroki/KoeMoji-Go/internal/llm"
+	"github.com/infoHiroki/KoeMoji-Go/internal/logger"
+	"github.com/infoHiroki/KoeMoji-Go/internal/ui"
+	"github.com/infoHiroki/KoeMoji-Go/internal/whisper"
 )
 
 func StartProcessing(ctx context.Context, config *config.Config, log *log.Logger, logBuffer *[]logger.LogEntry, logMutex *sync.RWMutex,
