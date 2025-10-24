@@ -10,6 +10,7 @@ KoeMoji-Goは、Goで書かれた音声・動画ファイル自動文字起こ�
 - **クロスプラットフォーム**: Windows、macOS対応（Linux未テスト）
 - **二つのUI**: GUI（Fyne）とTUI（Terminal UI）
 - **高精度音声認識**: FasterWhisper（OpenAI Whisperの高速版）
+- **デュアル録音**: システム音声+マイク同時録音（Windows版、v1.7.0～）
 - **リアルタイム録音**: PortAudio統合による録音機能
 - **AI要約**: OpenAI API連携でテキスト要約生成
 - **ポータブル設計**: 単一実行ファイルで動作（Python依存を除く）
@@ -433,6 +434,24 @@ Co-Authored-By: Claude <noreply@anthropic.com>
 
 ### リリースプロセス
 
+#### **ワンコマンドリリース（v1.7.0以降、推奨）**
+
+```bash
+# 1. version.goのバージョンを更新
+# 2. 自動リリーススクリプト実行
+./scripts/release.sh
+```
+
+このスクリプトが自動実行する内容：
+- バージョン番号の自動取得（version.goから）
+- Windowsビルド実行
+- Gitタグの作成とプッシュ
+- GitHub Releaseの作成
+- ビルド成果物の自動アップロード
+- リリースノートの自動生成
+
+#### **手動リリース（従来の方法）**
+
 #### **1. バージョン番号の更新**
 ```bash
 # version.go を編集
@@ -452,56 +471,37 @@ build.bat clean
 build.bat
 ```
 
-#### **3. 成果物確認**
-```bash
-ls -lh build/releases/
-# koemoji-go-macos-1.7.0.dmg
-# koemoji-go-macos-1.7.0-cli.tar.gz
-# koemoji-go-windows-1.7.0.zip（Windows環境でビルド後）
-```
-
-#### **4. Gitタグ作成とプッシュ**
-```bash
-# アノテーション付きタグ作成
-git tag -a v1.7.0 -m "v1.7.0 - 主な変更内容"
-
-# リモートにプッシュ
-git push origin v1.7.0
-```
-
-#### **5. GitHubリリース作成とアセットアップロード**
-
-**方法A: gh CLI使用（推奨）**
+#### **3. GitHub CLIでリリース作成**
 ```bash
 # リリース作成と同時にアセットアップロード
 gh release create v1.7.0 \
-  --title "v1.7.0 - タイトル" \
-  --notes "リリースノート（詳細）" \
-  build/releases/koemoji-go-macos-1.7.0.dmg \
-  build/releases/koemoji-go-macos-1.7.0-cli.tar.gz
-
-# または、既存リリースに追加アップロード（Windows版など）
-gh release upload v1.7.0 build/releases/koemoji-go-windows-1.7.0.zip
+  --title "v1.7.0" \
+  --notes "リリースノート" \
+  build/releases/koemoji-go-windows-1.7.0.zip
 
 # リリース確認
 gh release view v1.7.0
 ```
 
-**方法B: 手動アップロード**
-1. https://github.com/infoHiroki/KoeMoji-Go/releases にアクセス
-2. 「Draft a new release」をクリック
-3. タグを選択（v1.7.0）
-4. リリースノートを記入
-5. ファイルをドラッグ&ドロップ
-6. 「Publish release」をクリック
+#### **GitHub CLI セットアップ（初回のみ）**
+```powershell
+# インストール
+winget install --id GitHub.cli
 
-**gh CLIの便利なコマンド:**
+# 認証
+gh auth login
+```
+
+#### **gh CLIの便利なコマンド**
 ```bash
 # リリース一覧
 gh release list
 
 # 特定リリースの詳細表示
 gh release view v1.7.0
+
+# アセット追加アップロード
+gh release upload v1.7.0 build/releases/koemoji-go-macos-1.7.0.dmg
 
 # アセット削除（間違えた場合）
 gh release delete-asset v1.7.0 ファイル名.zip

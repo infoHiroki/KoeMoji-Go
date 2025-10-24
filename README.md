@@ -13,6 +13,7 @@ Python版のKoeMojiAuto-cliをGoに移植し、シングルバイナリでの配
 - **順次処理**: 1ファイルずつ安定した処理
 - **FasterWhisper連携**: 高精度な音声認識
 - **AI要約機能**: OpenAI APIによる自動要約生成
+- **デュアル録音**: システム音声+マイク同時録音（Windows版、v1.7.0～）
 - **録音機能**: 内蔵マイク録音機能
 - **GUI/TUI対応**: グラフィカル画面とターミナル画面の両対応
 - **自動監視**: フォルダを定期的に監視して自動処理
@@ -34,10 +35,10 @@ Pythonがない場合は [Python公式ダウンロード](https://www.python.org
 
 #### 🪟 Windows
 
-1. **ダウンロード**: `koemoji-go-1.6.1-windows.zip`
+1. **ダウンロード**: `koemoji-go-windows-1.7.0.zip`
 2. **展開後の構成**:
    ```
-   📁 koemoji-go-1.6.1
+   📁 koemoji-go-1.7.0
    ├── koemoji-go.exe          # 実行ファイル（アイコン付き）
    ├── libportaudio.dll        # 録音機能用ライブラリ
    ├── libgcc_s_seh-1.dll      # GCCランタイム
@@ -50,14 +51,16 @@ Pythonがない場合は [Python公式ダウンロード](https://www.python.org
    koemoji-go.exe
    ```
 
+> **Windows版のみ**: デュアル録音機能（システム音声+マイク同時録音）がデフォルトで有効です。設定画面で音量調整ができます。
+
 #### 🍎 macOS
 
 1. **ダウンロード**:
-   - **Apple Silicon (M1/M2/M3)**: `koemoji-go-1.6.1-macos.tar.gz`
+   - **Apple Silicon (M1/M2/M3)**: `koemoji-go-macos-1.7.0-cli.tar.gz`
 
 2. **展開後の構成**:
    ```
-   📁 koemoji-go-1.6.1
+   📁 koemoji-go-1.7.0
    ├── koemoji-go         # 実行ファイル
    ├── config.json        # 設定ファイル
    └── README.md          # 説明書
