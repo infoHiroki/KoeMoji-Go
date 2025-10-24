@@ -70,7 +70,7 @@ type GUIApp struct {
 	timingContainer fyne.CanvasObject
 
 	// Recording related fields
-	recorder              *recorder.Recorder
+	recorder              recorder.AudioRecorder // Interface for both Recorder and DualRecorder
 	recordingDeviceSelect *widget.SelectEntry
 	recordingDeviceMap    map[string]int
 	normalizationCheck    *widget.Check

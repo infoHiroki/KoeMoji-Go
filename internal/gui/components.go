@@ -270,16 +270,40 @@ func (app *GUIApp) startRecording() {
 	// Initialize recorder if not already done
 	if app.recorder == nil {
 		var err error
-		// Use device name if specified, otherwise use default device
-		if app.Config.RecordingDeviceName != "" {
-			app.recorder, err = recorder.NewRecorderWithDeviceName(app.Config.RecordingDeviceName)
-		} else {
-			app.recorder, err = recorder.NewRecorder()
-		}
 
-		if err != nil {
-			logger.LogError(app.logger, &app.logBuffer, &app.logMutex, "録音の初期化に失敗: %v", err)
-			return
+		// Check if dual recording is enabled (Windows only)
+		if app.Config.DualRecordingEnabled {
+			// Use DualRecorder for system audio + microphone
+			var dr *recorder.DualRecorder
+			if app.Config.RecordingDeviceName != "" {
+				dr, err = recorder.NewDualRecorderWithDevices(app.Config.RecordingDeviceName)
+			} else {
+				dr, err = recorder.NewDualRecorder()
+			}
+
+			if err != nil {
+				logger.LogError(app.logger, &app.logBuffer, &app.logMutex, "デュアル録音の初期化に失敗: %v", err)
+				return
+			}
+
+			// Set volume levels
+			dr.SetVolumes(app.Config.SystemAudioVolume, app.Config.MicrophoneVolume)
+			app.recorder = dr
+
+			logger.LogInfo(app.logger, &app.logBuffer, &app.logMutex, "デュアル録音モード: システム音声(%.0f%%) + マイク(%.0f%%)",
+				app.Config.SystemAudioVolume*100, app.Config.MicrophoneVolume*100)
+		} else {
+			// Use standard Recorder for single device
+			if app.Config.RecordingDeviceName != "" {
+				app.recorder, err = recorder.NewRecorderWithDeviceName(app.Config.RecordingDeviceName)
+			} else {
+				app.recorder, err = recorder.NewRecorder()
+			}
+
+			if err != nil {
+				logger.LogError(app.logger, &app.logBuffer, &app.logMutex, "録音の初期化に失敗: %v", err)
+				return
+			}
 		}
 
 		// Phase 1: Set recording limits
