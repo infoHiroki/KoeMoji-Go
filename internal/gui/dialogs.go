@@ -285,7 +285,6 @@ func (app *GUIApp) createRecordingForm() *widget.Form {
 
 		// Create dual settings container
 		dualSettingsContainer = container.NewVBox(
-			widget.NewLabel("━━━ デュアル録音設定 ━━━"),
 			widget.NewLabel("システム音声音量:"),
 			systemVolumeRadio,
 			widget.NewLabel("マイク音量:"),
@@ -348,7 +347,6 @@ func (app *GUIApp) createRecordingForm() *widget.Form {
 
 	// Add single recording settings
 	formItems = append(formItems,
-		widget.NewFormItem("", widget.NewLabel("━━━ シングル録音設定 ━━━")),
 		widget.NewFormItem(msg.RecordingDeviceLabel, deviceSelect),
 	)
 
