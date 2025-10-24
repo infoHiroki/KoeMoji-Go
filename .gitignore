@@ -60,6 +60,9 @@ OLD/
 tmp/
 temp/
 nul
+test-build
+debug_output.txt
+check_amplitude.py
 
 # ビルド成果物ディレクトリ
 build/windows/dist/
