@@ -67,13 +67,9 @@ func SummarizeText(config *config.Config, log *log.Logger, logBuffer *[]logger.L
 }
 
 func preparePrompt(config *config.Config, text string) string {
-	prompt := config.SummaryPromptTemplate
-
-	// Replace variables in template
-	language := getSummaryLanguage(config)
-	prompt = strings.ReplaceAll(prompt, "{text}", text)
-	prompt = strings.ReplaceAll(prompt, "{language}", language)
-
+	// プロンプトテンプレートの末尾にテキストを自動追加
+	// ユーザーがプロンプトをカスタマイズする際、{text}を入れ忘れても問題なし
+	prompt := config.SummaryPromptTemplate + "\n\n" + text
 	return prompt
 }
 
