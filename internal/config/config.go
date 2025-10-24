@@ -40,6 +40,10 @@ type Config struct {
 	RecordingMaxHours          int  `json:"recording_max_hours"`            // 0 = unlimited
 	RecordingMaxFileMB         int  `json:"recording_max_file_mb"`          // 0 = unlimited
 	AudioNormalizationEnabled bool `json:"audio_normalization_enabled"` // Auto-adjust volume for small recordings
+	// Dual recording settings (Windows only)
+	DualRecordingEnabled  bool    `json:"dual_recording_enabled"`   // Enable system audio + microphone recording
+	SystemAudioVolume     float64 `json:"system_audio_volume"`      // 0.0-1.0, default 0.7
+	MicrophoneVolume      float64 `json:"microphone_volume"`        // 0.0-1.0, default 1.0
 }
 
 // GetDefaultConfig returns a config with default values (relative paths preserved)
@@ -69,6 +73,10 @@ func GetDefaultConfig() *Config {
 		RecordingMaxHours:          0,  // Unlimited by default
 		RecordingMaxFileMB:         0,  // Unlimited by default
 		AudioNormalizationEnabled: true, // Enable by default for better UX
+		// Dual recording defaults
+		DualRecordingEnabled:  false, // Disabled by default
+		SystemAudioVolume:     0.7,   // 70% system audio
+		MicrophoneVolume:      1.0,   // 100% microphone
 	}
 }
 
