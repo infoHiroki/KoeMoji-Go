@@ -379,3 +379,77 @@ func BenchmarkGetSummaryLanguage(b *testing.B) {
 		_ = getSummaryLanguage(config)
 	}
 }
+
+// Test new implementation: text auto-append without variables
+func TestPreparePrompt_TextAutoAppend(t *testing.T) {
+	tests := []struct {
+		name     string
+		template string
+		text     string
+		expected string
+	}{
+		{
+			name:     "New default prompt",
+			template: "以下の文字起こしテキストを日本語で詳細に要約してください。プレーンテキストで出力し、マークダウンは使用しないでください。",
+			text:     "これはテストの音声認識結果です。重要な情報が含まれています。",
+			expected: "以下の文字起こしテキストを日本語で詳細に要約してください。プレーンテキストで出力し、マークダウンは使用しないでください。\n\nこれはテストの音声認識結果です。重要な情報が含まれています。",
+		},
+		{
+			name:     "Custom prompt without variables",
+			template: "簡潔に要約してください。",
+			text:     "長いテキストがここに入ります。",
+			expected: "簡潔に要約してください。\n\n長いテキストがここに入ります。",
+		},
+		{
+			name:     "Long text",
+			template: "要約してください。",
+			text:     testdata.GetTestText(),
+			expected: "要約してください。\n\n" + testdata.GetTestText(),
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			config := &config.Config{
+				SummaryPromptTemplate: tt.template,
+			}
+
+			result := preparePrompt(config, tt.text)
+
+			// テスト結果を出力（実際のAPI送信データを確認）
+			t.Logf("\n=== Prepared Prompt ===\n%s\n======================\n", result)
+
+			assert.Equal(t, tt.expected, result)
+			assert.Contains(t, result, tt.template)
+			assert.Contains(t, result, tt.text)
+			// 変数が含まれていないことを確認
+			assert.NotContains(t, result, "{text}")
+			assert.NotContains(t, result, "{language}")
+		})
+	}
+}
+
+// 実際のAPIリクエストデータ形式を確認するテスト
+func TestAPIRequestDataFormat(t *testing.T) {
+	config := &config.Config{
+		SummaryPromptTemplate: "以下の文字起こしテキストを日本語で詳細に要約してください。プレーンテキストで出力し、マークダウンは使用しないでください。",
+		LLMModel:              "gpt-4o",
+		LLMMaxTokens:          4096,
+	}
+
+	sampleText := "本日の会議では、新製品の開発スケジュールについて議論しました。来月からプロトタイプの制作を開始し、3ヶ月後にテストを実施する予定です。"
+
+	prompt := preparePrompt(config, sampleText)
+
+	// APIに送信される実際のデータ形式を出力
+	t.Logf("\n=== API Request Data ===")
+	t.Logf("Model: %s", config.LLMModel)
+	t.Logf("MaxTokens: %d", config.LLMMaxTokens)
+	t.Logf("\nPrompt (sent to API):\n---\n%s\n---", prompt)
+	t.Logf("\nPrompt length: %d characters\n", len(prompt))
+
+	// 基本的な検証
+	assert.Contains(t, prompt, config.SummaryPromptTemplate)
+	assert.Contains(t, prompt, sampleText)
+	assert.True(t, len(prompt) > len(sampleText))
+}
