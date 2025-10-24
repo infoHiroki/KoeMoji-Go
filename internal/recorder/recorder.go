@@ -514,43 +514,6 @@ func (r *Recorder) SetLimits(maxDuration time.Duration, maxFileSize int64) {
 	r.maxFileSize = maxFileSize
 }
 
-// DetectVoiceMeeter searches for VoiceMeeter output device
-// Returns device name if found, empty string otherwise
-func DetectVoiceMeeter() (string, error) {
-	err := portaudio.Initialize()
-	if err != nil {
-		return "", err
-	}
-	defer portaudio.Terminate()
-
-	devices, err := portaudio.Devices()
-	if err != nil {
-		return "", err
-	}
-
-	// Search for VoiceMeeter devices (case-insensitive)
-	// Simplified keywords to match all VoiceMeeter versions (Basic/Banana/Potato)
-	voicemeeterKeywords := []string{
-		"voicemeeter", // Matches all VoiceMeeter devices
-		"vb-audio",    // VB-Audio products (VoiceMeeter, VB-CABLE)
-		"vaio",        // VoiceMeeter VAIO virtual device
-		"cable output", // VB-CABLE (legacy support)
-	}
-
-	for _, device := range devices {
-		if device.MaxInputChannels > 0 {
-			nameLower := strings.ToLower(device.Name)
-			for _, keyword := range voicemeeterKeywords {
-				if strings.Contains(nameLower, keyword) {
-					return device.Name, nil
-				}
-			}
-		}
-	}
-
-	return "", nil // Not found
-}
-
 // NormalizeAudio applies adaptive peak normalization to samples
 // Returns true if normalization was applied
 func NormalizeAudio(samples []int16) bool {
