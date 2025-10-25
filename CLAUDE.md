@@ -22,15 +22,14 @@ KoeMoji-Goは、Goで書かれた音声・動画ファイル自動文字起こ�
 # 開発用ビルド
 go build -o koemoji-go ./cmd/koemoji-go
 
-# macOS配布用ビルド（v1.7.0以降）
+# macOS配布用ビルド（v1.7.2以降）
 cd build/macos
-./build.sh dmg    # DMG版（.app）→ koemoji-go-macos-1.7.0.dmg
-./build.sh cli    # CLI版（tar.gz）→ koemoji-go-macos-1.7.0-cli.tar.gz
-./build.sh all    # 両方
-./build.sh app    # .appのみ（テスト用）
+./build.sh        # デフォルトでtar.gz版をビルド → koemoji-go-macos-1.7.2.tar.gz
+./build.sh build  # 明示的にビルド（上記と同じ）
+./build.sh clean  # ビルド成果物のクリーンアップ
 
 # Windows配布用ビルド（MSYS2/MinGW64が必要）
-cd build/windows && build.bat  # → koemoji-go-windows-1.7.0.zip
+cd build/windows && build.bat  # → koemoji-go-windows-1.7.2.zip
 
 # ビルド成果物のクリーンアップ
 cd build/macos && ./build.sh clean
@@ -39,15 +38,14 @@ cd build/windows && build.bat clean
 
 ### リリース成果物（v1.7.0以降の命名規則）
 **macOS**:
-- **DMG版（推奨）**: `koemoji-go-macos-{VERSION}.dmg`
-- **CLI版**: `koemoji-go-macos-{VERSION}-cli.tar.gz`
+- `koemoji-go-macos-{VERSION}.tar.gz` (GUI/TUI両対応)
 
 **Windows**:
 - `koemoji-go-windows-{VERSION}.zip`
 
 **変更履歴**:
+- v1.7.2: macOS版はtar.gz形式のみ（DMG版は廃止、Apple Developer Programコスト削減のため）
 - v1.7.0: 命名規則変更（プラットフォーム名を中央に配置、ウイルス検知回避強化）
-- v1.7.0: macOS DMG版追加（.app形式）
 - v1.6.1: 命名規則変更（`-win`→`-windows`）
 - v1.6.0以前: `KoeMoji-Go-v{VERSION}-win.zip`形式
 
@@ -224,18 +222,11 @@ KoeMoji-Go/
 
 ### 配布パッケージ化
 
-**macOS（v1.7.0以降）**:
-- **DMG版（推奨）**: `koemoji-go-macos-{VERSION}.dmg`
-  - .appバンドル形式（ダブルクリック起動）
-  - GUIユーザー、非技術者向け
-  - Launchpad、Dockに表示
-  - ビルド: `cd build/macos && ./build.sh dmg`
-
-- **CLI版**: `koemoji-go-macos-{VERSION}-cli.tar.gz`
-  - 単一バイナリ形式
-  - 技術者、自動化用途向け
-  - ターミナルから実行
-  - ビルド: `cd build/macos && ./build.sh cli`
+**macOS（v1.7.2以降）**:
+- `koemoji-go-macos-{VERSION}.tar.gz`
+  - 単一バイナリ形式（GUI/TUI両対応）
+  - ビルド: `cd build/macos && ./build.sh`
+  - **注**: DMG版は廃止（Apple Developer Program年間費用削減のため）
 
 **Windows**:
 - `koemoji-go-windows-{VERSION}.zip`
@@ -509,7 +500,7 @@ const Version = "1.7.0"  # 新しいバージョンに変更
 # macOS
 cd build/macos
 ./build.sh clean
-./build.sh all  # DMG + CLI版
+./build.sh  # tar.gz版
 
 # Windows（Windows環境で）
 cd build\windows
@@ -577,11 +568,10 @@ gh release delete v1.7.0
 ## 📦 ダウンロード
 
 ### macOS
-- **DMG版（推奨）**: 一般ユーザー向け
-- **CLI版**: 技術者・自動化用途向け
+- tar.gz版（GUI/TUI両対応）
 
 ### Windows
-- ZIP形式
+- ZIP形式（デュアル録音機能対応）
 
 ---
 

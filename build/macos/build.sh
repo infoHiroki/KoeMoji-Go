@@ -16,14 +16,11 @@ COMMON_DIR="$SCRIPT_DIR/../common"
 show_usage() {
     echo "Usage: $0 [options]"
     echo "Options:"
-    echo "  app         Build .app bundle only"
-    echo "  dmg         Build DMG package (includes .app)"
-    echo "  cli         Build CLI version (tar.gz)"
-    echo "  all         Build both DMG and CLI versions"
+    echo "  build       Build release version (tar.gz) [default]"
     echo "  clean       Clean build artifacts"
     echo "  help        Show this help message"
     echo ""
-    echo "Default (no args): Build CLI version"
+    echo "Default (no args): Build release version"
 }
 
 # Function to build for specific architecture
@@ -180,19 +177,19 @@ build_dmg() {
     echo "✅ DMG package created: ../releases/${release_name}.dmg"
 }
 
-# Function to build CLI version (tar.gz)
+# Function to build release version (tar.gz)
 build_cli() {
     local arch="$1"
     local binary_name="${APP_NAME}-${arch}"
     local package_name="koemoji-go-${VERSION}"
-    local release_name="koemoji-go-macos-${VERSION}-cli"
+    local release_name="koemoji-go-macos-${VERSION}"
 
-    echo "🖥️  Building CLI version for $arch..."
+    echo "🖥️  Building release version for $arch..."
 
     # Build binary
     build_arch "$arch"
 
-    echo "📦 Creating CLI package..."
+    echo "📦 Creating release package..."
 
     # Create package directory
     rm -rf "$package_name"
@@ -214,7 +211,7 @@ build_cli() {
     # Clean up temporary directory
     rm -rf "$package_name"
 
-    echo "✅ CLI package created: ../releases/${release_name}.tar.gz"
+    echo "✅ Release package created: ../releases/${release_name}.tar.gz"
 }
 
 # Parse command line arguments
@@ -226,26 +223,13 @@ case "${1:-}" in
     "clean")
         echo "🧹 Cleaning macOS build artifacts..."
         rm -rf $DIST_DIR
-        rm -rf ../releases/koemoji-go-macos-*.dmg
-        rm -rf ../releases/koemoji-go-macos-*-cli.tar.gz
+        rm -rf ../releases/koemoji-go-macos-*.tar.gz
         echo "✅ Clean completed"
         exit 0
         ;;
-    "app")
-        BUILD_TYPE="app"
-        ;;
-    "dmg")
-        BUILD_TYPE="dmg"
-        ;;
-    "cli")
-        BUILD_TYPE="cli"
-        ;;
-    "all")
-        BUILD_TYPE="all"
-        ;;
-    "")
-        # Default behavior - build CLI version
-        BUILD_TYPE="cli"
+    "build"|"")
+        # Default behavior - build release version (tar.gz)
+        BUILD_TYPE="build"
         ;;
     *)
         echo "❌ Unknown option: $1"
@@ -274,39 +258,13 @@ mkdir -p ../releases
 
 # Build based on type
 case "$BUILD_TYPE" in
-    "app")
-        build_app "arm64"
-        echo ""
-        echo "🎉 macOS .app build completed successfully!"
-        echo ""
-        echo "📱 App bundle created in: $DIST_DIR/"
-        echo "   - KoeMoji-Go.app"
-        ;;
-    "dmg")
-        build_dmg "arm64"
-        echo ""
-        echo "🎉 macOS DMG build completed successfully!"
-        echo ""
-        echo "📦 Distribution file created in: ../releases/"
-        echo "   - koemoji-go-macos-${VERSION}.dmg"
-        ;;
-    "cli")
-        build_cli "arm64"
-        echo ""
-        echo "🎉 macOS CLI build completed successfully!"
-        echo ""
-        echo "📦 Distribution file created in: ../releases/"
-        echo "   - koemoji-go-macos-${VERSION}-cli.tar.gz"
-        ;;
-    "all")
-        build_dmg "arm64"
+    "build")
         build_cli "arm64"
         echo ""
         echo "🎉 macOS build completed successfully!"
         echo ""
-        echo "📦 Distribution files created in: ../releases/"
-        echo "   - koemoji-go-macos-${VERSION}.dmg"
-        echo "   - koemoji-go-macos-${VERSION}-cli.tar.gz"
+        echo "📦 Distribution file created in: ../releases/"
+        echo "   - koemoji-go-macos-${VERSION}.tar.gz"
         ;;
 esac
 

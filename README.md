@@ -56,22 +56,24 @@ Pythonがない場合は [Python公式ダウンロード](https://www.python.org
 #### 🍎 macOS
 
 1. **ダウンロード**:
-   - **Apple Silicon (M1/M2/M3)**: `koemoji-go-macos-1.7.0-cli.tar.gz`
+   - **Apple Silicon (M1/M2/M3)**: `koemoji-go-macos-1.7.2.tar.gz`
 
 2. **展開後の構成**:
    ```
-   📁 koemoji-go-1.7.0
-   ├── koemoji-go         # 実行ファイル
+   📁 koemoji-go-1.7.2
+   ├── koemoji-go         # 実行ファイル（GUI/TUI両対応）
    ├── config.json        # 設定ファイル
    └── README.md          # 説明書
    ```
 
 3. **実行**:
    ```bash
-   ./koemoji-go
+   ./koemoji-go          # GUI版（デフォルト）
+   ./koemoji-go --tui    # TUI版
    ```
 
 > **初回実行時**: FasterWhisperが自動インストールされます（数分かかります）
+> **録音機能**: macOS版は単一デバイス録音のみ対応（デュアル録音はWindows版のみ）
 
 ### 基本的な使い方
 
