@@ -342,6 +342,23 @@ dir build\windows\*.dll
 
 ## 最近の重要な変更
 
+### v1.7.2での変更（2025-10-25）
+1. **Windows版アイコン埋め込み問題の修正**
+   - 問題: goversioninfo呼び出し時の出力パス指定が不適切でアイコンが埋め込まれなかった
+   - 修正: 絶対パス（`%TEMP_DIR%\resource.syso`）から相対パス（`resource.syso`）に変更
+   - 効果: タスクバー・エクスプローラーにアプリケーションアイコンが正しく表示されるように
+   - exeファイルサイズが約220KB増加（24,486,400 → 24,708,608バイト）
+
+2. **versioninfo.jsonのバージョン更新**
+   - バージョン情報を1.6.0から1.7.2に更新
+   - FileVersion、ProductVersionを統一
+
+3. **ビルドスクリプトの改善**
+   - リソースファイルのコピー処理にエラーハンドリングを追加
+   - クリーンアップ処理を最適化（不要なtempディレクトリ参照を削除）
+
+**詳細**: [docs/progress/v1.7.2-release-notes.md](docs/progress/v1.7.2-release-notes.md)
+
 ### v1.6.1での変更（2025-01-22）
 1. **Windows GUI 日本語文字化け修正**
    - Fyne + Windows + 日本語 + Boldスタイルの組み合わせで文字化けが発生
