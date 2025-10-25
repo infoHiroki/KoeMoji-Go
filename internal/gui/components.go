@@ -42,7 +42,7 @@ func (app *GUIApp) startPeriodicUpdate() {
 	}
 
 	// Phase 2: Start file processing with context
-	go processor.StartProcessing(app.ctx, app.Config, nil, &app.logBuffer, &app.logMutex,
+	go processor.StartProcessing(app.ctx, app.Config, app.logger, &app.logBuffer, &app.logMutex,
 		&app.lastScanTime, &app.queuedFiles, &app.processingFile, &app.isProcessing,
 		&app.processedFiles, &app.mu, nil, app.debugMode)
 
@@ -234,7 +234,7 @@ func (app *GUIApp) onScanPressed() {
 	logger.LogInfo(app.logger, &app.logBuffer, &app.logMutex, "手動スキャンを実行しました")
 
 	// Use existing sync.WaitGroup reference if available, or create minimal scan
-	processor.ScanAndProcess(app.Config, nil, &app.logBuffer, &app.logMutex,
+	processor.ScanAndProcess(app.Config, app.logger, &app.logBuffer, &app.logMutex,
 		&app.lastScanTime, &app.queuedFiles, &app.processingFile, &app.isProcessing,
 		&app.processedFiles, &app.mu, nil, app.debugMode)
 }
