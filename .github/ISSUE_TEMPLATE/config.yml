@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 💬 質問・サポート / Questions & Support
+    url: https://github.com/infoHiroki/KoeMoji-Go/discussions
+    about: 使い方の質問や一般的なサポートは Discussions をご利用ください / For general questions and support, please use Discussions
+  - name: 📚 ドキュメント / Documentation
+    url: https://github.com/infoHiroki/KoeMoji-Go/blob/main/README.md
+    about: まずはドキュメントをご確認ください / Please check the documentation first

@@ -209,6 +209,64 @@ func TestDualRecorder_SetVolumes(t *testing.T) {
 	}
 }
 
+// TestDualRecorder_SetVolumes_BoundaryValues tests volume boundary conditions
+func TestDualRecorder_SetVolumes_BoundaryValues(t *testing.T) {
+	dr, err := NewDualRecorder()
+	require.NoError(t, err)
+	defer dr.Close()
+
+	testCases := []struct {
+		name           string
+		systemVol      float64
+		micVol         float64
+		expectSystem   float64
+		expectMic      float64
+	}{
+		{"Minimum valid", 0.0, 0.0, 0.0, 0.0},
+		{"Maximum valid", 2.0, 2.0, 2.0, 2.0},
+		{"Below minimum", -0.1, -0.5, 0.7, 1.0}, // Should keep old values
+		{"Above maximum", 2.1, 3.0, 0.7, 1.0},   // Should keep old values
+		{"Mixed invalid", -1.0, 2.5, 0.7, 1.0},  // Should keep old values
+		{"Extreme values", 999.0, -999.0, 0.7, 1.0}, // Should keep old values
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			dr.SetVolumes(tc.systemVol, tc.micVol)
+			assert.Equal(t, tc.expectSystem, dr.systemVolume, "System volume mismatch")
+			assert.Equal(t, tc.expectMic, dr.micVolume, "Mic volume mismatch")
+		})
+	}
+}
+
+// TestDualRecorder_SetLimits_BoundaryValues tests recording limits boundary conditions
+func TestDualRecorder_SetLimits_BoundaryValues(t *testing.T) {
+	dr, err := NewDualRecorder()
+	require.NoError(t, err)
+	defer dr.Close()
+
+	testCases := []struct {
+		name        string
+		maxDuration time.Duration
+		maxFileSize int64
+	}{
+		{"Zero values (unlimited)", 0, 0},
+		{"Only duration limit", 1 * time.Hour, 0},
+		{"Only file size limit", 0, 100 * 1024 * 1024},
+		{"Both limits", 30 * time.Minute, 50 * 1024 * 1024},
+		{"Very small limits", 1 * time.Second, 1024},
+		{"Very large limits", 24 * time.Hour, 10 * 1024 * 1024 * 1024},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			dr.SetLimits(tc.maxDuration, tc.maxFileSize)
+			assert.Equal(t, tc.maxDuration, dr.maxDuration)
+			assert.Equal(t, tc.maxFileSize, dr.maxFileSize)
+		})
+	}
+}
+
 // TestDualRecorder_SetLimits tests recording limits
 func TestDualRecorder_SetLimits(t *testing.T) {
 	dr, err := NewDualRecorder()
