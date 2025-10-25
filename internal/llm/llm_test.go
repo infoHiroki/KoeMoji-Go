@@ -429,6 +429,67 @@ func TestPreparePrompt_TextAutoAppend(t *testing.T) {
 	}
 }
 
+// Test backward compatibility: old format with {text} and {language} placeholders
+func TestPreparePrompt_BackwardCompatibility(t *testing.T) {
+	tests := []struct {
+		name         string
+		template     string
+		text         string
+		language     string
+		summaryLang  string
+		expectedLang string
+	}{
+		{
+			name:         "Old format with both placeholders (Japanese)",
+			template:     "以下の文字起こしテキストを{language}で詳細に要約してください。\n\n{text}",
+			text:         "これはテストです。",
+			language:     "ja",
+			summaryLang:  "auto",
+			expectedLang: "日本語",
+		},
+		{
+			name:         "Old format with both placeholders (English)",
+			template:     "Summarize the following text in {language}:\n\n{text}",
+			text:         "This is a test.",
+			language:     "en",
+			summaryLang:  "auto",
+			expectedLang: "英語",
+		},
+		{
+			name:         "Old format with only {text}",
+			template:     "要約してください:\n\n{text}",
+			text:         "テキスト内容",
+			language:     "ja",
+			summaryLang:  "ja",
+			expectedLang: "日本語",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			config := &config.Config{
+				Language:              tt.language,
+				SummaryLanguage:       tt.summaryLang,
+				SummaryPromptTemplate: tt.template,
+			}
+
+			result := preparePrompt(config, tt.text)
+
+			// プレースホルダーが置換されていることを確認
+			assert.NotContains(t, result, "{text}", "Placeholder {text} should be replaced")
+			assert.NotContains(t, result, "{language}", "Placeholder {language} should be replaced")
+
+			// テキストと言語が含まれていることを確認
+			assert.Contains(t, result, tt.text, "Result should contain the text")
+			if strings.Contains(tt.template, "{language}") {
+				assert.Contains(t, result, tt.expectedLang, "Result should contain the language")
+			}
+
+			t.Logf("\n=== Backward Compatible Prompt ===\n%s\n==================================\n", result)
+		})
+	}
+}
+
 // 実際のAPIリクエストデータ形式を確認するテスト
 func TestAPIRequestDataFormat(t *testing.T) {
 	config := &config.Config{
