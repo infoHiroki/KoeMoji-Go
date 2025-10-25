@@ -14,6 +14,14 @@ import (
 	"github.com/infoHiroki/KoeMoji-Go/internal/logger"
 )
 
+// min returns the minimum of two integers
+func min(a, b int) int {
+	if a < b {
+		return a
+	}
+	return b
+}
+
 // OpenAI API structures
 type OpenAIRequest struct {
 	Model     string    `json:"model"`
@@ -160,9 +168,17 @@ func callOpenAI(config *config.Config, log *log.Logger, logBuffer *[]logger.LogE
 
 	logger.LogDebug(log, logBuffer, logMutex, debugMode, "OpenAI API response received (status: %d)", response.StatusCode)
 
+	// Check HTTP status code before parsing
+	if response.StatusCode < 200 || response.StatusCode >= 300 {
+		logger.LogError(log, logBuffer, logMutex, "OpenAI API returned non-2xx status: %d. Response: %s", response.StatusCode, string(body[:min(500, len(body))]))
+		return "", fmt.Errorf("OpenAI API request failed with status %d: %s", response.StatusCode, string(body[:min(200, len(body))]))
+	}
+
 	// Parse response
 	var apiResponse OpenAIResponse
 	if err := json.Unmarshal(body, &apiResponse); err != nil {
+		// Log the raw response for debugging
+		logger.LogError(log, logBuffer, logMutex, "Failed to parse OpenAI response. Status: %d, Body (first 500 chars): %s", response.StatusCode, string(body[:min(500, len(body))]))
 		return "", fmt.Errorf("failed to parse response: %w", err)
 	}
 

@@ -103,7 +103,7 @@ rem Change to templates directory for goversioninfo to find the icon
 cd /d "%TEMPLATES_DIR%"
 
 if exist "%GOPATH_BIN%\goversioninfo.exe" (
-    "%GOPATH_BIN%\goversioninfo.exe" -64 -o resource.syso versioninfo.json
+    "%GOPATH_BIN%\goversioninfo.exe" -64 -o "%TEMP_DIR%\resource.syso" versioninfo.json
     if %errorlevel% equ 0 (
         set RESOURCE_GENERATED=1
         echo [OK] Resource file generated successfully
@@ -111,7 +111,7 @@ if exist "%GOPATH_BIN%\goversioninfo.exe" (
         echo [WARNING] goversioninfo failed - continuing without icon
     )
 ) else (
-    goversioninfo -64 -o resource.syso versioninfo.json
+    goversioninfo -64 -o "%TEMP_DIR%\resource.syso" versioninfo.json
     if %errorlevel% equ 0 (
         set RESOURCE_GENERATED=1
         echo [OK] Resource file generated successfully
@@ -120,25 +120,15 @@ if exist "%GOPATH_BIN%\goversioninfo.exe" (
     )
 )
 
-rem Copy resource file to source directory (only if generated successfully)
-if %RESOURCE_GENERATED% equ 1 (
-    echo Copying resource file to source directory...
-    copy resource.syso "%~dp0%SOURCE_DIR%\" >nul
-    if %errorlevel% equ 0 (
-        echo [OK] Icon will be embedded in executable
-    ) else (
-        echo [WARNING] Failed to copy resource file
-        set RESOURCE_GENERATED=0
-    )
-)
-
 rem Return to original directory
 cd /d "%CURRENT_DIR%"
 
-rem Clean up resource file in templates directory
-if exist "%TEMPLATES_DIR%\resource.syso" del "%TEMPLATES_DIR%\resource.syso"
-
-if %RESOURCE_GENERATED% equ 0 (
+rem Copy resource file to source directory (only if generated successfully)
+if %RESOURCE_GENERATED% equ 1 (
+    echo Copying resource file to source directory...
+    copy "%~dp0temp\resource.syso" "%~dp0%SOURCE_DIR%\" >nul
+    echo [OK] Icon will be embedded in executable
+) else (
     echo [INFO] Building without embedded icon
 )
 
@@ -166,6 +156,7 @@ if %BUILD_ERROR% neq 0 (
 )
 
 rem Clean up resource file
+if exist "%~dp0temp\resource.syso" del "%~dp0temp\resource.syso"
 if exist "%~dp0%SOURCE_DIR%\resource.syso" del "%~dp0%SOURCE_DIR%\resource.syso"
 
 echo.

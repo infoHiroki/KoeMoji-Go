@@ -20,5 +20,7 @@
     "recording_device_name": "",
     "recording_max_hours": 0,
     "recording_max_file_mb": 0,
-    "audio_normalization_enabled": true
+    "dual_recording_enabled": true,
+    "system_audio_volume": 0.3,
+    "microphone_volume": 1.6
 }
