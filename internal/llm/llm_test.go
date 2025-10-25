@@ -31,61 +31,41 @@ func TestValidateAPIKey_EmptyKey(t *testing.T) {
 
 func TestPreparePrompt(t *testing.T) {
 	tests := []struct {
-		name         string
-		language     string
-		summaryLang  string
-		template     string
-		text         string
-		expectedLang string
+		name     string
+		template string
+		text     string
+		expected string
 	}{
 		{
-			name:         "Japanese auto",
-			language:     "ja",
-			summaryLang:  "auto",
-			template:     "Summarize {text} in {language}",
-			text:         "テストテキスト",
-			expectedLang: "日本語",
+			name:     "Simple template",
+			template: "要約してください。",
+			text:     "テストテキスト",
+			expected: "要約してください。\n\nテストテキスト",
 		},
 		{
-			name:         "English auto",
-			language:     "en",
-			summaryLang:  "auto",
-			template:     "Summarize {text} in {language}",
-			text:         "Test text",
-			expectedLang: "英語",
+			name:     "Empty template",
+			template: "",
+			text:     "Test text",
+			expected: "\n\nTest text",
 		},
 		{
-			name:         "Force Japanese",
-			language:     "en",
-			summaryLang:  "ja",
-			template:     "Summarize {text} in {language}",
-			text:         "Test text",
-			expectedLang: "日本語",
-		},
-		{
-			name:         "Force English",
-			language:     "ja",
-			summaryLang:  "en",
-			template:     "Summarize {text} in {language}",
-			text:         "テストテキスト",
-			expectedLang: "英語",
+			name:     "Long template",
+			template: "以下の文字起こしテキストを日本語で詳細に要約してください。プレーンテキストで出力し、マークダウンは使用しないでください。",
+			text:     "本日の会議では...",
+			expected: "以下の文字起こしテキストを日本語で詳細に要約してください。プレーンテキストで出力し、マークダウンは使用しないでください。\n\n本日の会議では...",
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			config := &config.Config{
-				Language:              tt.language,
-				SummaryLanguage:       tt.summaryLang,
 				SummaryPromptTemplate: tt.template,
 			}
 
 			result := preparePrompt(config, tt.text)
 
+			assert.Equal(t, tt.expected, result)
 			assert.Contains(t, result, tt.text)
-			assert.Contains(t, result, tt.expectedLang)
-			assert.NotContains(t, result, "{text}")
-			assert.NotContains(t, result, "{language}")
 		})
 	}
 }
@@ -208,31 +188,21 @@ func TestPromptTemplateValidation(t *testing.T) {
 		name     string
 		template string
 		text     string
-		valid    bool
 	}{
 		{
-			name:     "Valid template",
+			name:     "Normal template",
+			template: "要約してください。",
+			text:     "test",
+		},
+		{
+			name:     "Template with placeholders (not processed)",
 			template: "Summarize {text} in {language}",
 			text:     "test",
-			valid:    true,
-		},
-		{
-			name:     "Missing text placeholder",
-			template: "Summarize in {language}",
-			text:     "test",
-			valid:    false,
-		},
-		{
-			name:     "Missing language placeholder",
-			template: "Summarize {text}",
-			text:     "test",
-			valid:    false,
 		},
 		{
 			name:     "Empty template",
 			template: "",
 			text:     "test",
-			valid:    false,
 		},
 	}
 
@@ -246,19 +216,10 @@ func TestPromptTemplateValidation(t *testing.T) {
 
 			result := preparePrompt(config, tt.text)
 
-			if tt.valid {
-				assert.Contains(t, result, tt.text)
-				assert.NotContains(t, result, "{text}")
-				assert.NotContains(t, result, "{language}")
-			} else {
-				// For invalid templates, placeholders might remain
-				if strings.Contains(tt.template, "{text}") && !strings.Contains(result, tt.text) {
-					assert.Contains(t, result, "{text}")
-				}
-				if strings.Contains(tt.template, "{language}") && !strings.Contains(result, "語") {
-					assert.Contains(t, result, "{language}")
-				}
-			}
+			// Text should always be appended
+			assert.Contains(t, result, tt.text)
+			// Template should be at the beginning
+			assert.Contains(t, result, tt.template)
 		})
 	}
 }
@@ -425,67 +386,6 @@ func TestPreparePrompt_TextAutoAppend(t *testing.T) {
 			// 変数が含まれていないことを確認
 			assert.NotContains(t, result, "{text}")
 			assert.NotContains(t, result, "{language}")
-		})
-	}
-}
-
-// Test backward compatibility: old format with {text} and {language} placeholders
-func TestPreparePrompt_BackwardCompatibility(t *testing.T) {
-	tests := []struct {
-		name         string
-		template     string
-		text         string
-		language     string
-		summaryLang  string
-		expectedLang string
-	}{
-		{
-			name:         "Old format with both placeholders (Japanese)",
-			template:     "以下の文字起こしテキストを{language}で詳細に要約してください。\n\n{text}",
-			text:         "これはテストです。",
-			language:     "ja",
-			summaryLang:  "auto",
-			expectedLang: "日本語",
-		},
-		{
-			name:         "Old format with both placeholders (English)",
-			template:     "Summarize the following text in {language}:\n\n{text}",
-			text:         "This is a test.",
-			language:     "en",
-			summaryLang:  "auto",
-			expectedLang: "英語",
-		},
-		{
-			name:         "Old format with only {text}",
-			template:     "要約してください:\n\n{text}",
-			text:         "テキスト内容",
-			language:     "ja",
-			summaryLang:  "ja",
-			expectedLang: "日本語",
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			config := &config.Config{
-				Language:              tt.language,
-				SummaryLanguage:       tt.summaryLang,
-				SummaryPromptTemplate: tt.template,
-			}
-
-			result := preparePrompt(config, tt.text)
-
-			// プレースホルダーが置換されていることを確認
-			assert.NotContains(t, result, "{text}", "Placeholder {text} should be replaced")
-			assert.NotContains(t, result, "{language}", "Placeholder {language} should be replaced")
-
-			// テキストと言語が含まれていることを確認
-			assert.Contains(t, result, tt.text, "Result should contain the text")
-			if strings.Contains(tt.template, "{language}") {
-				assert.Contains(t, result, tt.expectedLang, "Result should contain the language")
-			}
-
-			t.Logf("\n=== Backward Compatible Prompt ===\n%s\n==================================\n", result)
 		})
 	}
 }

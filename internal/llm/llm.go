@@ -7,7 +7,6 @@ import (
 	"io"
 	"log"
 	"net/http"
-	"strings"
 	"sync"
 	"time"
 
@@ -76,21 +75,8 @@ func SummarizeText(config *config.Config, log *log.Logger, logBuffer *[]logger.L
 
 func preparePrompt(config *config.Config, text string) string {
 	prompt := config.SummaryPromptTemplate
-	language := getSummaryLanguage(config)
-
-	// 後方互換性: {text}と{language}プレースホルダーがあれば置換
-	hasTextPlaceholder := strings.Contains(prompt, "{text}")
-	hasLanguagePlaceholder := strings.Contains(prompt, "{language}")
-
-	if hasTextPlaceholder || hasLanguagePlaceholder {
-		// 旧形式: プレースホルダーを置換
-		prompt = strings.ReplaceAll(prompt, "{text}", text)
-		prompt = strings.ReplaceAll(prompt, "{language}", language)
-	} else {
-		// 新形式: テンプレートの末尾にテキストを自動追加
-		prompt = prompt + "\n\n" + text
-	}
-
+	// テンプレートの末尾にテキストを自動追加
+	prompt = prompt + "\n\n" + text
 	return prompt
 }
 
@@ -186,8 +172,15 @@ func callOpenAI(config *config.Config, log *log.Logger, logBuffer *[]logger.LogE
 	// Check HTTP status code before parsing
 	if response.StatusCode < 200 || response.StatusCode >= 300 {
 		bodyStr := string(body)
-		logger.LogError(log, logBuffer, logMutex, "OpenAI API error (status %d). Full response: %s", response.StatusCode, bodyStr)
-		return "", fmt.Errorf("OpenAI API request failed with status %d: %s", response.StatusCode, bodyStr)
+		// Log full response for debugging (truncated if too long)
+		truncatedBody := bodyStr
+		if len(bodyStr) > 1000 {
+			truncatedBody = bodyStr[:1000] + "... (truncated)"
+		}
+		logger.LogError(log, logBuffer, logMutex, "OpenAI API error (status %d). Response: %s", response.StatusCode, truncatedBody)
+
+		// Return user-friendly error message with minimal details
+		return "", fmt.Errorf("OpenAI API request failed with status %d", response.StatusCode)
 	}
 
 	// Parse response

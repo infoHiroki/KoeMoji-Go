@@ -145,12 +145,14 @@ func DisplayLogs(cfg *config.Config) {
 
 	switch runtime.GOOS {
 	case "windows":
+		// Use full path to Windows notepad.exe to avoid Git's notepad wrapper
+		notepadPath := filepath.Join(os.Getenv("WINDIR"), "notepad.exe")
 		// Try to open with PowerShell to jump to end, fallback to regular notepad
 		powershellCmd := createCommand("powershell", "-Command",
-			fmt.Sprintf(`notepad "%s"; Start-Sleep -Milliseconds 500; Add-Type -AssemblyName System.Windows.Forms; [System.Windows.Forms.SendKeys]::SendWait("^{END}")`, logPath))
+			fmt.Sprintf(`& "%s" "%s"; Start-Sleep -Milliseconds 500; Add-Type -AssemblyName System.Windows.Forms; [System.Windows.Forms.SendKeys]::SendWait("^{END}")`, notepadPath, logPath))
 		if err := powershellCmd.Run(); err != nil {
 			// Fallback to regular notepad if PowerShell fails
-			fallbackCmd := createCommand("notepad", logPath)
+			fallbackCmd := createCommand(notepadPath, logPath)
 			if fallbackErr := fallbackCmd.Run(); fallbackErr != nil {
 				fmt.Printf(msg.LogFileError, fallbackErr)
 			}
