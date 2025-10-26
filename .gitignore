@@ -12,6 +12,7 @@ cmd/koemoji-go/koemoji-go
 cmd/koemoji-go/*.syso
 recorder-manual
 cmd/recorder-manual/recorder-manual
+cmd/audio-capture/audio-capture
 koemoji.log
 config.json
 
