@@ -14,8 +14,17 @@ import (
 func (app *GUIApp) initializeRecorder() error {
 	var err error
 
-	// macOS does not support DualRecorder, always use standard Recorder
-	if app.Config.RecordingDeviceName != "" {
+	// macOS does not support DualRecorder - ignore DualRecordingEnabled setting
+	// Always use standard Recorder for single device recording
+	if app.Config.DualRecordingEnabled {
+		logger.LogInfo(app.logger, &app.logBuffer, &app.logMutex,
+			"デュアル録音はmacOS版では未対応です。単一デバイス録音を使用します。")
+		app.Config.DualRecordingEnabled = false // Force disable
+	}
+
+	// Use standard Recorder for single device
+	if app.Config.RecordingDeviceName != "" &&
+	   app.Config.RecordingDeviceName != "デフォルトデバイス" {
 		app.recorder, err = recorder.NewRecorderWithDeviceName(app.Config.RecordingDeviceName)
 	} else {
 		app.recorder, err = recorder.NewRecorder()
