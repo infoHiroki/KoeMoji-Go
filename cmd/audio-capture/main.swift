@@ -134,7 +134,7 @@ do {
     print("  Format: \(format.mChannelsPerFrame) channels, \(format.mSampleRate) Hz", to: &standardError)
 
     // Create recorder
-    recorder = AudioRecorder(deviceID: deviceID, format: format, outputPath: args.outputPath)
+    recorder = try AudioRecorder(deviceID: deviceID, format: format, outputPath: args.outputPath)
     try recorder!.startRecording()
 
     // Duration-based or continuous recording
@@ -159,10 +159,6 @@ do {
     print("✓ Recording completed successfully", to: &standardError)
     exit(0)
 
-} catch AudioCaptureError.permissionDenied {
-    print("Error: Microphone permission denied", to: &standardError)
-    print("Please grant microphone access in System Settings > Privacy & Security", to: &standardError)
-    exit(1)
 } catch AudioCaptureError.setupFailed(let message) {
     print("Error: Setup failed - \(message)", to: &standardError)
     exit(1)

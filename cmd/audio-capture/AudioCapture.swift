@@ -1,183 +1,274 @@
 import Foundation
 import AVFoundation
 import AudioToolbox
+import CoreAudio
 
-// MARK: - Core Audio Error Handling
+// MARK: - Error Handling
 
 enum AudioCaptureError: Error {
     case setupFailed(String)
     case recordingFailed(String)
-    case permissionDenied
-    case unsupportedOS
+    case tapCreationFailed(OSStatus)
+    case aggregateDeviceCreationFailed(OSStatus)
+    case tapAssignmentFailed(OSStatus)
 }
 
-extension OSStatus {
-    var isSuccess: Bool {
-        return self == noErr
-    }
+// MARK: - Audio Property Utilities
 
-    func checkError(_ context: String) throws {
-        guard self.isSuccess else {
-            throw AudioCaptureError.setupFailed("\(context): OSStatus \(self)")
-        }
-    }
+func getPropertyAddress(
+    selector: AudioObjectPropertySelector,
+    scope: AudioObjectPropertyScope = kAudioObjectPropertyScopeGlobal,
+    element: AudioObjectPropertyElement = kAudioObjectPropertyElementMain
+) -> AudioObjectPropertyAddress {
+    return AudioObjectPropertyAddress(mSelector: selector, mScope: scope, mElement: element)
 }
 
 // MARK: - Audio Tap Manager
 
 class AudioTapManager {
-    private var tapID: AudioObjectID = 0
-    private var aggregateDeviceID: AudioObjectID = 0
-    private var format: AudioStreamBasicDescription?
+    private var tapID: AudioObjectID?
+    private var deviceID: AudioObjectID?
+
+    deinit {
+        cleanup()
+    }
 
     func setupSystemAudioTap() throws -> (deviceID: AudioObjectID, format: AudioStreamBasicDescription) {
-        // Step 1: Create system audio tap
+        // Create system audio tap
         tapID = try createSystemAudioTap()
 
-        // Step 2: Get audio format from tap
-        format = try readAudioFormat(from: tapID)
+        // Create aggregate device
+        deviceID = try createAggregateDevice()
 
-        // Step 3: Create aggregate device with the tap
-        aggregateDeviceID = try createAggregateDevice(withTapID: tapID)
-
-        guard let fmt = format else {
-            throw AudioCaptureError.setupFailed("Failed to get audio format")
+        guard let tapID = tapID, let deviceID = deviceID else {
+            throw AudioCaptureError.setupFailed("Failed to create tap or device")
         }
 
-        return (aggregateDeviceID, fmt)
+        // Add tap to aggregate device
+        try addTapToAggregateDevice(tapID: tapID, deviceID: deviceID)
+
+        // Get audio format
+        let format = try getAudioFormat(from: deviceID)
+
+        return (deviceID, format)
     }
 
     private func createSystemAudioTap() throws -> AudioObjectID {
-        // Get default output device
-        var defaultOutputID = AudioObjectID(kAudioObjectUnknown)
-        var propertyAddress = AudioObjectPropertyAddress(
-            mSelector: kAudioHardwarePropertyDefaultOutputDevice,
-            mScope: kAudioObjectPropertyScopeGlobal,
-            mElement: kAudioObjectPropertyElementMain
-        )
+        let description = CATapDescription()
 
-        var size = UInt32(MemoryLayout<AudioObjectID>.size)
-        try AudioObjectGetPropertyData(
-            AudioObjectID(kAudioObjectSystemObject),
-            &propertyAddress,
-            0,
-            nil,
-            &size,
-            &defaultOutputID
-        ).checkError("Get default output device")
+        description.name = "koemoji-system-audio-tap"
+        description.processes = []  // Empty array = all system audio
+        description.isPrivate = true
+        description.muteBehavior = .unmuted
+        description.isMixdown = true
+        description.isMono = false  // Stereo
+        description.isExclusive = false
+        description.deviceUID = nil  // System default
+        description.stream = 0  // First stream
 
-        // Translate to process object (system-wide)
-        // For system-wide capture, use pid 0
-        var processObjectID = AudioObjectID(kAudioObjectUnknown)
-        var pid: pid_t = 0
-
-        propertyAddress.mSelector = kAudioHardwarePropertyTranslatePIDToProcessObject
-
-        var pidSize = UInt32(MemoryLayout<pid_t>.size)
-        var processObjectIDSize = UInt32(MemoryLayout<AudioObjectID>.size)
-
-        try AudioObjectGetPropertyData(
-            AudioObjectID(kAudioObjectSystemObject),
-            &propertyAddress,
-            pidSize,
-            &pid,
-            &processObjectIDSize,
-            &processObjectID
-        ).checkError("Translate PID to process object")
-
-        // Create tap description
-        var tapDescription = CATapDescription(
-            stereoMixdownOfProcesses: [processObjectID],
-            andMuteBehavior: .mutedWhenTapped,
-            withStream: nil
-        )
-
-        // Create process tap
         var tapID = AudioObjectID(kAudioObjectUnknown)
-        try AudioHardwareCreateProcessTap(
-            &tapDescription,
-            &tapID
-        ).checkError("Create process tap")
+        let status = AudioHardwareCreateProcessTap(description, &tapID)
+
+        guard status == kAudioHardwareNoError else {
+            throw AudioCaptureError.tapCreationFailed(status)
+        }
 
         return tapID
     }
 
-    private func readAudioFormat(from tapID: AudioObjectID) throws -> AudioStreamBasicDescription {
-        var format = AudioStreamBasicDescription()
-        var propertyAddress = AudioObjectPropertyAddress(
-            mSelector: kAudioTapPropertyFormat,
-            mScope: kAudioObjectPropertyScopeGlobal,
-            mElement: kAudioObjectPropertyElementMain
-        )
-
-        var size = UInt32(MemoryLayout<AudioStreamBasicDescription>.size)
-        try AudioObjectGetPropertyData(
-            tapID,
-            &propertyAddress,
-            0,
-            nil,
-            &size,
-            &format
-        ).checkError("Read audio format from tap")
-
-        return format
-    }
-
-    private func createAggregateDevice(withTapID tapID: AudioObjectID) throws -> AudioObjectID {
-        // Get tap UUID
-        var tapUUID: CFString?
-        var propertyAddress = AudioObjectPropertyAddress(
-            mSelector: kAudioTapPropertyUIDKey,
-            mScope: kAudioObjectPropertyScopeGlobal,
-            mElement: kAudioObjectPropertyElementMain
-        )
-
-        var size = UInt32(MemoryLayout<CFString>.size)
-        try AudioObjectGetPropertyData(
-            tapID,
-            &propertyAddress,
-            0,
-            nil,
-            &size,
-            &tapUUID
-        ).checkError("Get tap UUID")
-
-        guard let uuid = tapUUID else {
-            throw AudioCaptureError.setupFailed("Failed to get tap UUID")
-        }
-
-        // Create aggregate device description
-        let uniqueID = UUID().uuidString
-        let deviceDict: [String: Any] = [
-            kAudioAggregateDeviceNameKey as String: "KoeMoji System Audio Tap",
-            kAudioAggregateDeviceUIDKey as String: uniqueID,
-            kAudioAggregateDevicePrivateKey as String: 1,  // Private device
-            kAudioAggregateDeviceTapListKey as String: [
-                [kAudioSubTapUIDKey as String: uuid as String]
-            ]
+    private func createAggregateDevice() throws -> AudioObjectID {
+        let uid = UUID().uuidString
+        let description: [String: Any] = [
+            kAudioAggregateDeviceNameKey: "koemoji-aggregate-device",
+            kAudioAggregateDeviceUIDKey: uid,
+            kAudioAggregateDeviceSubDeviceListKey: [] as CFArray,
+            kAudioAggregateDeviceMasterSubDeviceKey: 0,
+            kAudioAggregateDeviceIsPrivateKey: true,
+            kAudioAggregateDeviceIsStackedKey: false,
         ]
 
-        // Create aggregate device
-        var aggregateDeviceID = AudioObjectID(kAudioObjectUnknown)
-        try AudioHardwareCreateAggregateDevice(
-            deviceDict as CFDictionary,
-            &aggregateDeviceID
-        ).checkError("Create aggregate device")
+        var deviceID: AudioObjectID = 0
+        let status = AudioHardwareCreateAggregateDevice(description as CFDictionary, &deviceID)
 
-        return aggregateDeviceID
+        guard status == kAudioHardwareNoError else {
+            throw AudioCaptureError.aggregateDeviceCreationFailed(status)
+        }
+
+        return deviceID
+    }
+
+    private func addTapToAggregateDevice(tapID: AudioObjectID, deviceID: AudioObjectID) throws {
+        // Get tap UID
+        var propertyAddress = getPropertyAddress(selector: kAudioTapPropertyUID)
+        var propertySize = UInt32(MemoryLayout<CFString>.stride)
+        var tapUID: CFString = "" as CFString
+
+        _ = withUnsafeMutablePointer(to: &tapUID) { tapUIDPtr in
+            AudioObjectGetPropertyData(tapID, &propertyAddress, 0, nil, &propertySize, tapUIDPtr)
+        }
+
+        // Add tap to aggregate device
+        propertyAddress = getPropertyAddress(selector: kAudioAggregateDevicePropertyTapList)
+        let tapArray = [tapUID] as CFArray
+        propertySize = UInt32(MemoryLayout<CFArray>.stride)
+
+        let status = withUnsafePointer(to: tapArray) { ptr in
+            AudioObjectSetPropertyData(deviceID, &propertyAddress, 0, nil, propertySize, ptr)
+        }
+
+        guard status == kAudioHardwareNoError else {
+            throw AudioCaptureError.tapAssignmentFailed(status)
+        }
+    }
+
+    private func getAudioFormat(from deviceID: AudioObjectID) throws -> AudioStreamBasicDescription {
+        // Wait for device to become ready
+        let deviceReadyTimeout = 2.0
+        let pollInterval = 0.1
+        let maxPolls = Int(deviceReadyTimeout / pollInterval)
+
+        for poll in 1...maxPolls {
+            if isDeviceReady(deviceID) {
+                break
+            }
+            if poll == maxPolls {
+                // Continue anyway, maybe it will work
+                break
+            }
+            Thread.sleep(forTimeInterval: pollInterval)
+        }
+
+        // Retry getting format
+        let maxRetries = 3
+        let retryDelayMs = 20
+
+        for attempt in 1...maxRetries {
+            var propertyAddress = getPropertyAddress(
+                selector: kAudioDevicePropertyStreamFormat,
+                scope: kAudioDevicePropertyScopeInput
+            )
+            var propertySize = UInt32(MemoryLayout<AudioStreamBasicDescription>.stride)
+            var format = AudioStreamBasicDescription()
+
+            let status = AudioObjectGetPropertyData(
+                deviceID,
+                &propertyAddress,
+                0,
+                nil,
+                &propertySize,
+                &format
+            )
+
+            if status == kAudioHardwareNoError {
+                return format
+            }
+
+            if attempt < maxRetries {
+                Thread.sleep(forTimeInterval: Double(retryDelayMs) / 1000.0)
+            }
+        }
+
+        throw AudioCaptureError.setupFailed("Failed to get audio format after retries")
+    }
+
+    private func isDeviceReady(_ deviceID: AudioObjectID) -> Bool {
+        var address = getPropertyAddress(selector: kAudioDevicePropertyDeviceIsAlive)
+        var isAlive: UInt32 = 0
+        var size = UInt32(MemoryLayout<UInt32>.size)
+        let status = AudioObjectGetPropertyData(deviceID, &address, 0, nil, &size, &isAlive)
+        return status == kAudioHardwareNoError && isAlive == 1
     }
 
     func cleanup() {
-        if aggregateDeviceID != 0 {
-            AudioHardwareDestroyAggregateDevice(aggregateDeviceID)
+        if let tapID = tapID {
+            AudioHardwareDestroyProcessTap(tapID)
+            self.tapID = nil
         }
-        if tapID != 0 {
-            // Tap cleanup (if needed)
+
+        if let deviceID = deviceID {
+            AudioHardwareDestroyAggregateDevice(deviceID)
+            self.deviceID = nil
         }
+    }
+}
+
+// MARK: - WAV File Writer
+
+class WAVFileWriter {
+    private var fileHandle: FileHandle?
+    private let url: URL
+    private var dataSize: UInt32 = 0
+    private let format: AudioStreamBasicDescription
+
+    init(url: URL, format: AudioStreamBasicDescription) throws {
+        self.url = url
+        self.format = format
+
+        // Create file
+        FileManager.default.createFile(atPath: url.path, contents: nil)
+        fileHandle = try FileHandle(forWritingTo: url)
+
+        // Write WAV header (placeholder, will update at end)
+        try writeWAVHeader(dataSize: 0)
+    }
+
+    func write(_ data: Data) throws {
+        guard let fileHandle = fileHandle else {
+            throw AudioCaptureError.recordingFailed("File handle is nil")
+        }
+
+        fileHandle.write(data)
+        dataSize += UInt32(data.count)
+    }
+
+    func close() throws {
+        guard let fileHandle = fileHandle else { return }
+
+        // Update WAV header with final data size
+        try fileHandle.seek(toOffset: 0)
+        try writeWAVHeader(dataSize: dataSize)
+
+        try fileHandle.close()
+        self.fileHandle = nil
+    }
+
+    private func writeWAVHeader(dataSize: UInt32) throws {
+        guard let fileHandle = fileHandle else {
+            throw AudioCaptureError.recordingFailed("File handle is nil")
+        }
+
+        let channels = UInt16(format.mChannelsPerFrame)
+        let sampleRate = UInt32(format.mSampleRate)
+        let bitsPerSample: UInt16 = 16
+        let byteRate = sampleRate * UInt32(channels) * UInt32(bitsPerSample / 8)
+        let blockAlign = channels * bitsPerSample / 8
+
+        var header = Data()
+
+        // RIFF chunk
+        header.append("RIFF".data(using: .ascii)!)
+        header.append(withUnsafeBytes(of: dataSize + 36) { Data($0) })
+        header.append("WAVE".data(using: .ascii)!)
+
+        // fmt chunk
+        header.append("fmt ".data(using: .ascii)!)
+        header.append(withUnsafeBytes(of: UInt32(16)) { Data($0) })  // Chunk size
+        header.append(withUnsafeBytes(of: UInt16(1)) { Data($0) })   // Audio format (PCM)
+        header.append(withUnsafeBytes(of: channels) { Data($0) })
+        header.append(withUnsafeBytes(of: sampleRate) { Data($0) })
+        header.append(withUnsafeBytes(of: byteRate) { Data($0) })
+        header.append(withUnsafeBytes(of: blockAlign) { Data($0) })
+        header.append(withUnsafeBytes(of: bitsPerSample) { Data($0) })
+
+        // data chunk
+        header.append("data".data(using: .ascii)!)
+        header.append(withUnsafeBytes(of: dataSize) { Data($0) })
+
+        fileHandle.write(header)
     }
 
     deinit {
-        cleanup()
+        try? close()
     }
 }
 
@@ -186,101 +277,64 @@ class AudioTapManager {
 class AudioRecorder {
     private let deviceID: AudioObjectID
     private let format: AudioStreamBasicDescription
-    private let outputURL: URL
-    private var audioFile: ExtAudioFileRef?
     private var ioProcID: AudioDeviceIOProcID?
+    private var wavWriter: WAVFileWriter?
     private var isRecording = false
 
-    init(deviceID: AudioObjectID, format: AudioStreamBasicDescription, outputPath: String) {
+    init(deviceID: AudioObjectID, format: AudioStreamBasicDescription, outputPath: String) throws {
         self.deviceID = deviceID
         self.format = format
-        self.outputURL = URL(fileURLWithPath: outputPath)
+
+        let url = URL(fileURLWithPath: outputPath)
+        self.wavWriter = try WAVFileWriter(url: url, format: format)
     }
 
     func startRecording() throws {
-        // Create WAV file
-        var clientFormat = format
-        var fileFormat = AudioStreamBasicDescription(
-            mSampleRate: format.mSampleRate,
-            mFormatID: kAudioFormatLinearPCM,
-            mFormatFlags: kAudioFormatFlagIsSignedInteger | kAudioFormatFlagIsPacked,
-            mBytesPerPacket: 4,
-            mFramesPerPacket: 1,
-            mBytesPerFrame: 4,
-            mChannelsPerFrame: 2,
-            mBitsPerChannel: 16,
-            mReserved: 0
-        )
-
-        try ExtAudioFileCreateWithURL(
-            outputURL as CFURL,
-            kAudioFileWAVEType,
-            &fileFormat,
-            nil,
-            AudioFileFlags.eraseFile.rawValue,
-            &audioFile
-        ).checkError("Create audio file")
-
-        guard let file = audioFile else {
-            throw AudioCaptureError.recordingFailed("Failed to create audio file")
-        }
-
-        // Set client format
-        try ExtAudioFileSetProperty(
-            file,
-            kExtAudioFileProperty_ClientDataFormat,
-            UInt32(MemoryLayout<AudioStreamBasicDescription>.size),
-            &clientFormat
-        ).checkError("Set client format")
-
-        // Create IO proc
         let unmanagedSelf = Unmanaged.passUnretained(self).toOpaque()
-        try AudioDeviceCreateIOProcID(
+
+        var status = AudioDeviceCreateIOProcID(
             deviceID,
-            { (
-                inDevice: AudioObjectID,
-                inNow: UnsafePointer<AudioTimeStamp>,
-                inInputData: UnsafePointer<AudioBufferList>,
-                inInputTime: UnsafePointer<AudioTimeStamp>,
-                outOutputData: UnsafeMutablePointer<AudioBufferList>,
-                inOutputTime: UnsafePointer<AudioTimeStamp>,
-                inClientData: UnsafeMutableRawPointer?
-            ) -> OSStatus in
+            { (_, _, inInputData, _, _, _, inClientData) -> OSStatus in
                 guard let clientData = inClientData else { return noErr }
                 let recorder = Unmanaged<AudioRecorder>.fromOpaque(clientData).takeUnretainedValue()
-                return recorder.handleAudioBuffer(inInputData)
+                return recorder.processAudio(inInputData)
             },
             unmanagedSelf,
             &ioProcID
-        ).checkError("Create IO proc")
+        )
 
-        // Start device
-        try AudioDeviceStart(deviceID, ioProcID).checkError("Start audio device")
+        guard status == noErr else {
+            throw AudioCaptureError.recordingFailed("Failed to create IO proc: OSStatus \(status)")
+        }
+
+        status = AudioDeviceStart(deviceID, ioProcID)
+        guard status == noErr else {
+            if let procID = ioProcID {
+                AudioDeviceDestroyIOProcID(deviceID, procID)
+            }
+            throw AudioCaptureError.recordingFailed("Failed to start device: OSStatus \(status)")
+        }
 
         isRecording = true
-        print("Recording started...", to: &standardError)
     }
 
-    private func handleAudioBuffer(_ bufferList: UnsafePointer<AudioBufferList>) -> OSStatus {
-        guard let file = audioFile else { return kAudioHardwareUnspecifiedError }
+    private func processAudio(_ inputData: UnsafePointer<AudioBufferList>) -> OSStatus {
+        let bufferList = inputData.pointee
+        let firstBuffer = bufferList.mBuffers
 
-        let buffers = UnsafeBufferPointer<AudioBuffer>(
-            start: &UnsafeMutablePointer(mutating: bufferList).pointee.mBuffers,
-            count: Int(bufferList.pointee.mNumberBuffers)
-        )
+        guard firstBuffer.mData != nil && firstBuffer.mDataByteSize > 0 else {
+            return noErr
+        }
 
-        guard let buffer = buffers.first else { return noErr }
+        let audioData = Data(bytes: firstBuffer.mData!, count: Int(firstBuffer.mDataByteSize))
 
-        let frameCount = buffer.mDataByteSize / UInt32(format.mBytesPerFrame)
-        var mutableBufferList = bufferList.pointee
+        do {
+            try wavWriter?.write(audioData)
+        } catch {
+            print("Error writing audio data: \(error)", to: &standardError)
+        }
 
-        let status = ExtAudioFileWrite(
-            file,
-            frameCount,
-            &mutableBufferList
-        )
-
-        return status
+        return noErr
     }
 
     func stopRecording() {
@@ -291,13 +345,13 @@ class AudioRecorder {
             AudioDeviceDestroyIOProcID(deviceID, procID)
         }
 
-        if let file = audioFile {
-            ExtAudioFileDispose(file)
+        do {
+            try wavWriter?.close()
+        } catch {
+            print("Error closing WAV file: \(error)", to: &standardError)
         }
 
         isRecording = false
-        print("Recording stopped.", to: &standardError)
-        print("Saved to: \(outputURL.path)", to: &standardError)
     }
 
     deinit {
