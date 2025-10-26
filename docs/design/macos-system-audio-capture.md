@@ -446,3 +446,178 @@ cmd/audio-capture/
 - AVAudioFileでWAV直接書き込みはフォーマット不一致エラーが発生
 - CAF形式で録音 → afconvertでWAVに変換する方式が確実
 
+
+---
+
+## デュアル録音（システム音声 + マイク音声）の設計
+
+### Phase 0完了後の状況（2025-10-26）
+
+**✅ 完了**:
+- システム音声のみキャプチャ（ScreenCaptureKit）
+- Swift CLIツール動作確認済み
+- `--microphone`オプション追加（実装はTODO）
+
+**❌ 未実装**:
+- マイク音声キャプチャ
+- システム音声とマイク音声の結合
+
+### デュアル録音の実装アプローチ
+
+#### アプローチA: ScreenCaptureKit単独（macOS 15+ のみ）
+
+**概要**: ScreenCaptureKitのマイクキャプチャ機能を使用
+
+**問題点**:
+- `capturesMicrophone`プロパティがSDKに存在しない（macOS 15.6.1で確認）
+- Appleドキュメントでも確認できず
+- 実装方法が不明
+
+**結論**: ⚠️ 現時点では実装不可
+
+---
+
+#### アプローチB: 2ストリーム方式（推奨）
+
+**概要**: システム音声とマイク音声を別々に録音して結合
+
+```
+┌───────────────────────┐
+│ システム音声          │ ScreenCaptureKit
+│ Swift CLI             │ → system.wav (48kHz, Float32, Stereo)
+└───────────────────────┘
+
+┌───────────────────────┐
+│ マイク音声            │ PortAudio (既存の実装)
+│ Go (internal/recorder)│ → mic.wav (48kHz, Float32, Mono)
+└───────────────────────┘
+          ↓
+    ┌─────────┐
+    │ 音声結合 │ FFmpeg or Go
+    └─────────┘
+          ↓
+      output.wav (48kHz, Float32, Stereo)
+```
+
+**実装詳細**:
+
+**1. Go側での同時録音**:
+```go
+// internal/recorder/dual_recorder_darwin.go
+
+type DualRecorder struct {
+    systemRecorder *SystemAudioRecorder  // Swift CLI呼び出し
+    micRecorder    *Recorder             // 既存のPortAudio実装
+}
+
+func (r *DualRecorder) Start() error {
+    // 1. システム音声録音開始（バックグラウンド）
+    go r.systemRecorder.Start()
+    
+    // 2. マイク録音開始
+    r.micRecorder.Start()
+    
+    return nil
+}
+
+func (r *DualRecorder) Stop() (string, error) {
+    // 1. 両方停止
+    systemFile := r.systemRecorder.Stop()
+    micFile := r.micRecorder.Stop()
+    
+    // 2. 音声結合
+    outputFile := r.mixAudio(systemFile, micFile)
+    
+    return outputFile, nil
+}
+```
+
+**2. 音声結合方法**:
+
+**Option 1: FFmpegで結合**（簡単・推奨）:
+```go
+func (r *DualRecorder) mixAudio(systemWav, micWav string) string {
+    cmd := exec.Command("ffmpeg",
+        "-i", systemWav,        // システム音声（Stereo）
+        "-i", micWav,           // マイク音声（Mono）
+        "-filter_complex",
+        "[0:a]volume=1.0[sys];[1:a]volume=1.0,pan=stereo|c0=c0|c1=c0[mic];[sys][mic]amix=inputs=2:duration=longest",
+        "-ar", "48000",
+        "-ac", "2",
+        "output.wav")
+    cmd.Run()
+    return "output.wav"
+}
+```
+
+**Option 2: Goでリアルタイム結合**（複雑）:
+- バッファリングして同時に処理
+- タイムスタンプ同期が必要
+- より高度な実装
+
+**メリット**:
+- ✅ macOS 13+で動作（幅広い互換性）
+- ✅ 既存のPortAudio実装を再利用
+- ✅ 音量バランス調整が柔軟
+
+**デメリット**:
+- ❌ 2つのストリーム管理が必要
+- ❌ 同期の問題（タイムスタンプ管理）
+- ❌ 結合処理のオーバーヘッド
+
+---
+
+### 実装ロードマップ
+
+**Phase 1: Go側統合**（次のステップ）
+- [ ] `internal/recorder/system_audio_recorder_darwin.go`作成
+- [ ] Swift CLIバイナリをgo:embedで埋め込み
+- [ ] GUI/TUI統合
+- [ ] システム音声のみの録音機能をKoeMoji-Goに統合
+
+**Phase 2: デュアル録音実装**（その後）
+- [ ] `internal/recorder/dual_recorder_darwin.go`作成
+- [ ] システム音声 + マイク音声の同時録音
+- [ ] FFmpegでの音声結合処理
+- [ ] GUI/TUIでデュアル録音オプション追加
+
+**Phase 3: 最適化**（オプション）
+- [ ] Goでのリアルタイム結合実装（FFmpegなしで動作）
+- [ ] タイムスタンプ同期の改善
+- [ ] 音量自動調整機能
+
+---
+
+### 技術的な課題と解決策
+
+**課題1: サンプルレート・フォーマット不一致**
+- システム音声: 48kHz, Float32, Stereo
+- マイク音声: 設定可能（既存実装で対応済み）
+- **解決策**: マイクも48kHz, Float32に統一
+
+**課題2: タイムスタンプ同期**
+- 2つのストリームの開始タイミングがズレる
+- **解決策**: 
+  - 両方の録音開始時刻を記録
+  - FFmpegの`-itsoffset`で調整
+  - または、Goで先頭の無音部分をトリミング
+
+**課題3: FFmpeg依存**
+- FFmpegがインストールされていない環境
+- **解決策**:
+  - macOSには通常FFmpegがない → Homebrewでインストール必要
+  - Phase 3でGo実装に切り替え（FFmpeg不要に）
+  - または、ビルド時にFFmpegをバンドル
+
+---
+
+### 参考: Windows版DualRecorderとの比較
+
+| 項目 | Windows (DualRecorder) | macOS (計画) |
+|------|------------------------|--------------|
+| システム音声 | WASAPI Loopback | ScreenCaptureKit |
+| マイク音声 | PortAudio | PortAudio（同じ） |
+| 結合方法 | Go（リアルタイム） | FFmpeg → Go実装 |
+| 同期 | 同じスレッドで処理 | タイムスタンプ同期 |
+| 権限 | なし | 画面収録権限 |
+
