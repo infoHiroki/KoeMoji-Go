@@ -115,8 +115,61 @@ if args.duration > 0 {
 }
 print("Sample Rate: \(args.sampleRate) Hz", to: &standardError)
 
-// TODO: Implement system audio capture using CATap API
-// This will be implemented in the next step
+// Setup audio tap and recorder
+var tapManager: AudioTapManager?
+var recorder: AudioRecorder?
+var shouldStop = false
 
-print("System audio capture implementation coming soon...", to: &standardError)
-exit(0)
+// Signal handler for Ctrl+C
+signal(SIGINT) { _ in
+    shouldStop = true
+}
+
+do {
+    // Create tap manager and setup system audio tap
+    tapManager = AudioTapManager()
+    let (deviceID, format) = try tapManager!.setupSystemAudioTap()
+
+    print("✓ Audio tap created successfully", to: &standardError)
+    print("  Format: \(format.mChannelsPerFrame) channels, \(format.mSampleRate) Hz", to: &standardError)
+
+    // Create recorder
+    recorder = AudioRecorder(deviceID: deviceID, format: format, outputPath: args.outputPath)
+    try recorder!.startRecording()
+
+    // Duration-based or continuous recording
+    if args.duration > 0 {
+        // Fixed duration recording
+        let endTime = Date().addingTimeInterval(args.duration)
+        while Date() < endTime && !shouldStop {
+            RunLoop.current.run(mode: .default, before: Date(timeIntervalSinceNow: 0.1))
+        }
+    } else {
+        // Continuous recording until Ctrl+C
+        print("Press Ctrl+C to stop recording...", to: &standardError)
+        while !shouldStop {
+            RunLoop.current.run(mode: .default, before: Date(timeIntervalSinceNow: 0.1))
+        }
+    }
+
+    // Stop recording
+    recorder?.stopRecording()
+    tapManager?.cleanup()
+
+    print("✓ Recording completed successfully", to: &standardError)
+    exit(0)
+
+} catch AudioCaptureError.permissionDenied {
+    print("Error: Microphone permission denied", to: &standardError)
+    print("Please grant microphone access in System Settings > Privacy & Security", to: &standardError)
+    exit(1)
+} catch AudioCaptureError.setupFailed(let message) {
+    print("Error: Setup failed - \(message)", to: &standardError)
+    exit(1)
+} catch AudioCaptureError.recordingFailed(let message) {
+    print("Error: Recording failed - \(message)", to: &standardError)
+    exit(1)
+} catch {
+    print("Error: \(error.localizedDescription)", to: &standardError)
+    exit(1)
+}
