@@ -21,12 +21,10 @@ class ScreenCaptureAudioRecorder: NSObject, SCStreamOutput {
     private var duration: TimeInterval
     private var startTime: Date?
     private var isRecording = false
-    private var captureMicrophone: Bool
 
-    init(outputPath: String, duration: TimeInterval = 0, captureMicrophone: Bool = false) {
+    init(outputPath: String, duration: TimeInterval = 0) {
         self.outputURL = URL(fileURLWithPath: outputPath)
         self.duration = duration
-        self.captureMicrophone = captureMicrophone
         super.init()
     }
 
@@ -56,12 +54,6 @@ class ScreenCaptureAudioRecorder: NSObject, SCStreamOutput {
         streamConfig.excludesCurrentProcessAudio = true
         streamConfig.sampleRate = 48000
         streamConfig.channelCount = 2
-
-        // Microphone capture (TODO: Requires additional implementation)
-        if captureMicrophone {
-            print("⚠ Microphone capture not yet implemented", to: &standardError)
-            print("  System audio only will be captured", to: &standardError)
-        }
 
         // Minimal video settings (required even for audio-only)
         streamConfig.width = display.width
@@ -98,15 +90,22 @@ class ScreenCaptureAudioRecorder: NSObject, SCStreamOutput {
     func stopRecording() async throws {
         guard isRecording else { return }
 
+        print("Stopping recording...", to: &standardError)
         isRecording = false
 
+        // Stop the stream first
         if let stream = stream {
             try await stream.stopCapture()
-            print("✓ Recording stopped", to: &standardError)
         }
 
-        stream = nil
+        // Give a moment for final buffers to be written
+        try await Task.sleep(nanoseconds: 100_000_000) // 0.1 seconds
+
+        // Close audio file explicitly
         audioFile = nil
+        stream = nil
+
+        print("✓ Recording stopped", to: &standardError)
     }
 
     // MARK: - SCStreamOutput Protocol
@@ -114,22 +113,12 @@ class ScreenCaptureAudioRecorder: NSObject, SCStreamOutput {
     func stream(_ stream: SCStream, didOutputSampleBuffer sampleBuffer: CMSampleBuffer, of type: SCStreamOutputType) {
         guard isRecording, type == .audio else { return }
 
-        // Check if duration has elapsed
-        if duration > 0, let startTime = startTime {
-            let elapsed = Date().timeIntervalSince(startTime)
-            if elapsed >= duration {
-                Task {
-                    try? await stopRecording()
-                }
-                return
-            }
-        }
-
         // Process audio sample buffer
         do {
             try processSampleBuffer(sampleBuffer)
         } catch {
-            print("Error processing sample buffer: \(error)", to: &standardError)
+            print("⚠ Error processing sample buffer: \(error)", to: &standardError)
+            // Don't crash on individual buffer errors
         }
     }
 
@@ -151,18 +140,15 @@ class ScreenCaptureAudioRecorder: NSObject, SCStreamOutput {
 
         // Initialize audio file on first buffer
         if audioFile == nil {
-            // Use the format directly from the stream (works best with CAF)
             audioFile = try AVAudioFile(forWriting: outputURL, settings: format.settings)
-            print("Audio format: \(format.sampleRate)Hz, \(format.channelCount)ch, Float32", to: &standardError)
+            print("System audio format: \(format.sampleRate)Hz, \(format.channelCount)ch", to: &standardError)
         }
 
-        // Convert CMSampleBuffer to AVAudioPCMBuffer
+        // Convert CMSampleBuffer to AVAudioPCMBuffer and write
         try sampleBuffer.withAudioBufferList { audioBufferList, blockBuffer in
             guard let pcmBuffer = AVAudioPCMBuffer(pcmFormat: format, bufferListNoCopy: audioBufferList.unsafePointer) else {
                 throw ScreenCaptureError.captureFailed("Failed to create PCM buffer")
             }
-
-            // Write to file
             try audioFile?.write(from: pcmBuffer)
         }
     }
