@@ -21,10 +21,12 @@ class ScreenCaptureAudioRecorder: NSObject, SCStreamOutput {
     private var duration: TimeInterval
     private var startTime: Date?
     private var isRecording = false
+    private var captureMicrophone: Bool
 
-    init(outputPath: String, duration: TimeInterval = 0) {
+    init(outputPath: String, duration: TimeInterval = 0, captureMicrophone: Bool = false) {
         self.outputURL = URL(fileURLWithPath: outputPath)
         self.duration = duration
+        self.captureMicrophone = captureMicrophone
         super.init()
     }
 
@@ -54,6 +56,12 @@ class ScreenCaptureAudioRecorder: NSObject, SCStreamOutput {
         streamConfig.excludesCurrentProcessAudio = true
         streamConfig.sampleRate = 48000
         streamConfig.channelCount = 2
+
+        // Microphone capture (TODO: Requires additional implementation)
+        if captureMicrophone {
+            print("⚠ Microphone capture not yet implemented", to: &standardError)
+            print("  System audio only will be captured", to: &standardError)
+        }
 
         // Minimal video settings (required even for audio-only)
         streamConfig.width = display.width

@@ -5,6 +5,7 @@ import Foundation
 struct Arguments {
     var outputPath: String = ""
     var duration: TimeInterval = 0  // 0 = continuous until Ctrl+C
+    var microphone: Bool = false     // Enable microphone capture (macOS 15+)
     var help: Bool = false
 }
 
@@ -27,6 +28,8 @@ func parseArguments() -> Arguments {
                 args.duration = TimeInterval(arguments[i + 1]) ?? 0
                 i += 1
             }
+        case "--microphone", "-m":
+            args.microphone = true
         case "--help", "-h":
             args.help = true
         default:
@@ -46,11 +49,13 @@ func printUsage() {
     Options:
         --output, -o PATH      Output WAV file path (required)
         --duration, -d SECONDS Recording duration in seconds (0 = continuous)
+        --microphone, -m       Enable microphone capture (macOS 15+ only)
         --help, -h             Show this help message
 
     Examples:
         audio-capture --output recording.wav --duration 10
-        audio-capture -o recording.wav
+        audio-capture -o recording.wav --microphone
+        audio-capture -o dual.wav -d 5 -m
     """)
 }
 
@@ -80,10 +85,14 @@ struct Main {
         } else {
             print("Duration: Continuous (press Ctrl+C to stop)")
         }
+        if args.microphone {
+            print("Microphone: Enabled (macOS 15+ only)")
+        }
 
         let recorder = ScreenCaptureAudioRecorder(
             outputPath: args.outputPath,
-            duration: args.duration
+            duration: args.duration,
+            captureMicrophone: args.microphone
         )
 
         do {
