@@ -323,22 +323,36 @@ swiftc -o audio-capture cmd/audio-capture/*.swift
 ### 技術記事
 - [AudioTee: capture system audio output on macOS](https://stronglytyped.uk/articles/audiotee-capture-system-audio-output-macos)
 
-## 現在の進捗（2025-10-26）
+## 現在の進捗（2025-10-26 更新）
 
-### ✅ 完了
-- 技術調査完了
-- アーキテクチャ設計
-- 新ブランチ作成（`feature/macos-system-audio-capture`）
-- Swift CLI骨格実装
-  - コマンドライン引数処理
-  - macOSバージョンチェック
-  - コンパイルテスト成功（76KB バイナリ）
+### ✅ Phase 1完了: Swift CLIツール開発
+- ✅ 技術調査完了（AudioTee、AudioCap分析）
+- ✅ アーキテクチャ設計完了
+- ✅ 新ブランチ作成（`feature/macos-system-audio-capture`）
+- ✅ Swift CLI完全実装:
+  - **AudioTapManager**: CATap APIでシステム全体の音声キャプチャ
+    - `processes=[]` でシステム全体を対象
+    - 集約デバイスの作成とtapの紐付け
+    - デバイス準備完了待機処理（最大2秒）
+    - フォーマット取得リトライロジック（最大3回）
+  - **WAVFileWriter**: WAVファイル書き込み機能
+    - 16ビット PCM、ステレオ対応
+    - 動的ヘッダー生成
+  - **AudioRecorder**: IOProc経由でオーディオデータ録音
+  - コマンドライン引数処理完成
+  - エラーハンドリング実装
+- ✅ **動作確認成功** (macOS 15.6.1):
+  - コンパイル成功（141KB バイナリ）
+  - 5秒間のシステム音声録音成功
+  - 1.8MB WAVファイル生成確認 (48kHz, stereo, 16bit PCM)
 
-### 🚧 進行中
-- CATap API実装（次のステップ）
+**参考**: AudioTeeの実装を詳細分析し、正しいCATap API使用方法を学習
 
-### ⏳ 未着手
-- WAVファイル書き込み
-- Go側統合
+### 🚧 Phase 2進行中: Go側統合
+- `internal/recorder/system_audio_recorder_darwin.go` 作成（次のステップ）
+
+### ⏳ Phase 3-5未着手
+- Swift バイナリ埋め込み（go:embed）
 - ビルドシステム更新
-- テスト・ドキュメント
+- 統合テスト
+- ドキュメント更新
