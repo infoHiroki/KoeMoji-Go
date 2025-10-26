@@ -18,12 +18,16 @@ class ScreenCaptureAudioRecorder: NSObject, SCStreamOutput {
     private var stream: SCStream?
     private var audioFile: AVAudioFile?
     private let outputURL: URL
+    private let finalOutputURL: URL  // User-requested output path
     private var duration: TimeInterval
     private var startTime: Date?
     private var isRecording = false
 
     init(outputPath: String, duration: TimeInterval = 0) {
+        // Always write as CAF format (AVAudioFile default)
+        // Conversion to WAV is handled by the caller (Go code)
         self.outputURL = URL(fileURLWithPath: outputPath)
+        self.finalOutputURL = self.outputURL
         self.duration = duration
         super.init()
     }

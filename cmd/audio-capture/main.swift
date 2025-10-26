@@ -54,6 +54,70 @@ func printUsage() {
     """)
 }
 
+// MARK: - Signal Handling
+
+actor SignalHandler {
+    static let shared = SignalHandler()
+    private var shouldStop = false
+    private var recorder: ScreenCaptureAudioRecorder?
+    private var sigintSource: DispatchSourceSignal?
+    private var sigtermSource: DispatchSourceSignal?
+
+    private init() {}
+
+    func setup(recorder: ScreenCaptureAudioRecorder) {
+        self.recorder = recorder
+
+        // Ignore default signal handling
+        signal(SIGINT, SIG_IGN)
+        signal(SIGTERM, SIG_IGN)
+
+        // Set up dispatch sources for signals
+        let queue = DispatchQueue.global(qos: .userInteractive)
+
+        sigintSource = DispatchSource.makeSignalSource(signal: SIGINT, queue: queue)
+        sigintSource?.setEventHandler {
+            Task {
+                await self.handleSignal()
+            }
+        }
+        sigintSource?.resume()
+
+        sigtermSource = DispatchSource.makeSignalSource(signal: SIGTERM, queue: queue)
+        sigtermSource?.setEventHandler {
+            Task {
+                await self.handleSignal()
+            }
+        }
+        sigtermSource?.resume()
+    }
+
+    func handleSignal() async {
+        guard !shouldStop else { return }
+        shouldStop = true
+
+        print("Received stop signal, finalizing recording...", to: &standardError)
+
+        if let recorder = recorder {
+            do {
+                try await recorder.stopRecording()
+                print("✓ Recording stopped gracefully", to: &standardError)
+            } catch {
+                print("Error stopping recording: \(error)", to: &standardError)
+            }
+        }
+
+        Foundation.exit(0)
+    }
+
+    func waitForever() async {
+        // Keep the program running
+        while !shouldStop {
+            try? await Task.sleep(nanoseconds: 100_000_000) // 0.1 seconds
+        }
+    }
+}
+
 // MARK: - Main
 
 @available(macOS 13.0, *)
@@ -86,40 +150,19 @@ struct Main {
             duration: args.duration
         )
 
+        // Set up signal handling
+        await SignalHandler.shared.setup(recorder: recorder)
+
         do {
-            // Simply start recording (duration is handled inside recorder)
-            try await recorder.startRecording()
-            print("✓ Recording completed successfully")
-
-            // Convert CAF to WAV if output is .wav
-            if args.outputPath.hasSuffix(".wav") {
-                print("Converting to WAV format...", to: &standardError)
-                let cafPath = args.outputPath.replacingOccurrences(of: ".wav", with: ".caf")
-
-                // Rename the output to .caf temporarily
-                try FileManager.default.moveItem(atPath: args.outputPath, toPath: cafPath)
-
-                // Convert using afconvert
-                let process = Process()
-                process.executableURL = URL(fileURLWithPath: "/usr/bin/afconvert")
-                process.arguments = [
-                    "-f", "WAVE",      // WAV format
-                    "-d", "LEF32",     // Little-endian float 32
-                    cafPath,
-                    args.outputPath
-                ]
-
-                try process.run()
-                process.waitUntilExit()
-
-                if process.terminationStatus == 0 {
-                    // Remove the temporary CAF file
-                    try FileManager.default.removeItem(atPath: cafPath)
-                    print("✓ Converted to WAV successfully")
-                } else {
-                    print("Warning: Conversion failed, keeping CAF format", to: &standardError)
-                    try FileManager.default.moveItem(atPath: cafPath, toPath: args.outputPath)
-                }
+            if args.duration > 0 {
+                // Duration-based recording
+                try await recorder.startRecording()
+                print("✓ Recording completed successfully (CAF format)", to: &standardError)
+            } else {
+                // Continuous recording - wait for signal
+                try await recorder.startRecording()
+                // Keep running until signal
+                await SignalHandler.shared.waitForever()
             }
 
         } catch {
