@@ -24,6 +24,8 @@ archive/
 # テスト・録音ファイル
 test_recording_*.wav
 recording_*.wav
+test*.wav
+test*.caf
 *.m4a
 *.mp3
 *.flac

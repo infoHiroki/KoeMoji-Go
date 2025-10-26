@@ -2,7 +2,11 @@
 
 ## 概要
 
-macOS 14.4+でCATap APIを使用し、BlackHole等の手動設定不要でシステム音声を自動キャプチャする機能を実装する。Windows版DualRecorderと同等の体験をmacOSで提供する。
+**✅ 実装完了（2025-10-26）**
+
+macOS 13+でScreenCaptureKit APIを使用し、BlackHole等の手動設定不要でシステム音声を自動キャプチャする機能を実装しました。Windows版DualRecorderと同等の体験をmacOSで提供します。
+
+**最終的な実装**: ScreenCaptureKit（CATap APIからの変更 - 詳細は後述）
 
 ## 背景と課題
 
@@ -356,3 +360,89 @@ swiftc -o audio-capture cmd/audio-capture/*.swift
 - ビルドシステム更新
 - 統合テスト
 - ドキュメント更新
+
+## 実装結果（2025-10-26）
+
+### 最終的な実装方式
+
+**ScreenCaptureKit APIを採用**（当初計画のCATap APIから変更）
+
+### 変更理由
+
+**CATap API実装時の問題**:
+1. ✅ Tap作成、集約デバイス作成、IOProcコールバックは成功
+2. ❌ **オーディオバッファデータがすべて0**
+3. ❌ 権限・Entitlements設定が複雑（Code Signing必須の可能性）
+4. ❌ ドキュメント不足で問題解決が困難
+
+**Screen CaptureKit採用の理由**:
+1. ✅ **実装成功、動作確認済み**
+2. ✅ Apple公式の推奨API（充実したドキュメント）
+3. ✅ macOS 13+対応（当初のmacOS 14.4+より広い対応範囲）
+4. ✅ 「画面収録」権限のみで動作（より単純な権限モデル）
+5. ⚠️ 画面キャプチャAPIを音声のみに使用（若干オーバースペック）
+
+### 実装詳細
+
+**ファイル構成**:
+```
+cmd/audio-capture/
+├── main.swift              # CLIエントリーポイント
+├── AudioCapture.swift      # ScreenCaptureKit実装
+└── audio-capture           # ビルド済みバイナリ（.gitignore）
+```
+
+**主要機能**:
+- ScreenCaptureKitでシステム音声キャプチャ
+- CAF形式で録音 → WAV形式に自動変換（afconvert使用）
+- 48kHz, Float32, ステレオ
+- 録音時間指定可能
+
+**コマンド例**:
+```bash
+# 5秒間録音
+./audio-capture --output recording.wav --duration 5
+
+# 継続録音（Ctrl+Cで停止）
+./audio-capture --output recording.wav
+```
+
+### Phase 1完了状況
+
+| タスク | 状態 | 備考 |
+|--------|------|------|
+| Swift CLI開発 | ✅ 完了 | ScreenCaptureKit使用 |
+| 音声キャプチャ実装 | ✅ 完了 | CAF→WAV変換機能付き |
+| 動作確認 | ✅ 完了 | システム音声録音成功、再生確認済み |
+
+### 次のステップ（Phase 2以降）
+
+**Phase 2: Go側統合**（未着手）
+- [ ] `internal/recorder/system_audio_recorder_darwin.go`作成
+- [ ] Go埋め込みリソース（go:embed）でSwift CLIバイナリ埋め込み
+- [ ] GUI/TUI統合
+
+**Phase 3: ビルドシステム**（未着手）
+- [ ] `build/macos/build.sh`にSwift CLIビルド追加
+- [ ] dmg/tar.gzパッケージにバイナリ同梱
+
+**Phase 4: テスト**（未着手）
+- [ ] 統合テスト実施
+
+**Phase 5: ドキュメント・リリース**（未着手）
+- [ ] README.md, CLAUDE.md更新
+- [ ] v1.8.0リリース準備
+
+### 技術メモ
+
+**ScreenCaptureKit使用時の注意点**:
+1. **権限**: 初回実行時に「画面収録」権限ダイアログが表示される
+2. **最小要件**: macOS 13 Ventura以上
+3. **ビデオ設定**: 音声のみキャプチャでも、ディスプレイフィルターが必要
+   - `width`/`height`を最小値（1x1）に設定してオーバーヘッド削減
+4. **フォーマット**: ネイティブフォーマット（Float32, 48kHz）をそのまま使用するのが最も安定
+
+**WAV変換**:
+- AVAudioFileでWAV直接書き込みはフォーマット不一致エラーが発生
+- CAF形式で録音 → afconvertでWAVに変換する方式が確実
+
