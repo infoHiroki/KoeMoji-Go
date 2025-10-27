@@ -22,10 +22,12 @@ Python版のKoeMojiAuto-cliをGoに移植し、シングルバイナリでの配
 
 ### 前提条件
 
-**Python 3.8以上** が必要です。
+**Python 3.12以上** を推奨します。
 ```bash
-python --version  # 3.8以上であることを確認
+python --version  # 3.12以上を推奨
 ```
+
+> **注意**: Python 3.8など古いバージョンでは動作しない可能性があります。
 
 Pythonがない場合は [Python公式ダウンロード](https://www.python.org/downloads/) からインストールしてください。
 
