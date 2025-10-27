@@ -10,29 +10,49 @@ import (
 )
 
 // initializeRecorder initializes the appropriate recorder based on platform and settings
-// macOS: Only single device recording is supported
+// macOS: Supports both single device and dual recording (system audio + microphone)
 func (app *GUIApp) initializeRecorder() error {
 	var err error
 
-	// macOS does not support DualRecorder - ignore DualRecordingEnabled setting
-	// Always use standard Recorder for single device recording
+	// Check if dual recording is enabled (macOS 13+)
 	if app.Config.DualRecordingEnabled {
-		logger.LogInfo(app.logger, &app.logBuffer, &app.logMutex,
-			"デュアル録音はmacOS版では未対応です。単一デバイス録音を使用します。")
-		app.Config.DualRecordingEnabled = false // Force disable
-	}
+		// Use DualRecorder for system audio + microphone
+		var dr *recorder.DualRecorder
+		// Check for actual device name (not UI placeholder strings)
+		if app.Config.RecordingDeviceName != "" &&
+			app.Config.RecordingDeviceName != "デフォルトデバイス" {
+			dr, err = recorder.NewDualRecorderWithDevices(app.Config.RecordingDeviceName)
+		} else {
+			dr, err = recorder.NewDualRecorder()
+		}
 
-	// Use standard Recorder for single device
-	if app.Config.RecordingDeviceName != "" &&
-	   app.Config.RecordingDeviceName != "デフォルトデバイス" {
-		app.recorder, err = recorder.NewRecorderWithDeviceName(app.Config.RecordingDeviceName)
+		if err != nil {
+			logger.LogError(app.logger, &app.logBuffer, &app.logMutex, "デュアル録音の初期化に失敗: %v", err)
+			return err
+		}
+
+		app.recorder = dr
+
+		if app.debugMode {
+			logger.LogInfo(app.logger, &app.logBuffer, &app.logMutex,
+				"[DEBUG] デュアル録音モード: システム音声(48kHz Stereo) + マイク(44.1kHz Mono)")
+		} else {
+			logger.LogInfo(app.logger, &app.logBuffer, &app.logMutex,
+				"デュアル録音モード: システム音声 + マイク（2ファイル出力）")
+		}
 	} else {
-		app.recorder, err = recorder.NewRecorder()
-	}
+		// Use standard Recorder for single device
+		if app.Config.RecordingDeviceName != "" &&
+		   app.Config.RecordingDeviceName != "デフォルトデバイス" {
+			app.recorder, err = recorder.NewRecorderWithDeviceName(app.Config.RecordingDeviceName)
+		} else {
+			app.recorder, err = recorder.NewRecorder()
+		}
 
-	if err != nil {
-		logger.LogError(app.logger, &app.logBuffer, &app.logMutex, "録音の初期化に失敗: %v", err)
-		return err
+		if err != nil {
+			logger.LogError(app.logger, &app.logBuffer, &app.logMutex, "録音の初期化に失敗: %v", err)
+			return err
+		}
 	}
 
 	// Set recording limits

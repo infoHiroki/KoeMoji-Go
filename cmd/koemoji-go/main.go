@@ -61,7 +61,7 @@ type App struct {
 	isProcessing   bool     // 処理中フラグ
 
 	// Recording related fields
-	recorder           *recorder.Recorder
+	recorder           recorder.AudioRecorder
 	isRecording        bool
 	recordingStartTime time.Time
 }
@@ -309,19 +309,41 @@ func (app *App) startRecording() {
 	// Initialize recorder if not already done
 	if app.recorder == nil {
 		var err error
-		// Use device name if specified, otherwise use default device
-		if app.Config.RecordingDeviceName != "" {
-			app.recorder, err = recorder.NewRecorderWithDeviceName(app.Config.RecordingDeviceName)
+
+		// Check if dual recording is enabled
+		if app.Config.DualRecordingEnabled {
+			// Use DualRecorder for system audio + microphone
+			var dr *recorder.DualRecorder
+			if app.Config.RecordingDeviceName != "" &&
+				app.Config.RecordingDeviceName != "デフォルトデバイス" {
+				dr, err = recorder.NewDualRecorderWithDevices(app.Config.RecordingDeviceName)
+			} else {
+				dr, err = recorder.NewDualRecorder()
+			}
+
+			if err != nil {
+				logger.LogError(app.logger, &app.logBuffer, &app.logMutex, "デュアル録音の初期化に失敗: %v", err)
+				return
+			}
+
+			app.recorder = dr
+			logger.LogInfo(app.logger, &app.logBuffer, &app.logMutex, "デュアル録音モード: システム音声 + マイク")
 		} else {
-			app.recorder, err = recorder.NewRecorder()
+			// Use standard Recorder for single device
+			if app.Config.RecordingDeviceName != "" &&
+				app.Config.RecordingDeviceName != "デフォルトデバイス" {
+				app.recorder, err = recorder.NewRecorderWithDeviceName(app.Config.RecordingDeviceName)
+			} else {
+				app.recorder, err = recorder.NewRecorder()
+			}
+
+			if err != nil {
+				logger.LogError(app.logger, &app.logBuffer, &app.logMutex, "録音の初期化に失敗: %v", err)
+				return
+			}
 		}
 
-		if err != nil {
-			logger.LogError(app.logger, &app.logBuffer, &app.logMutex, "録音の初期化に失敗: %v", err)
-			return
-		}
-
-		// Phase 1: Set recording limits
+		// Set recording limits
 		var maxDuration time.Duration
 		var maxFileSize int64
 
