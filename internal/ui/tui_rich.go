@@ -121,7 +121,7 @@ func (t *RichTUI) setupKeyBindings() {
 		switch event.Key() {
 		case tcell.KeyF1:
 			if t.onConfig != nil {
-				t.onConfig()
+				t.showConfigDialog()
 			}
 			return nil
 		case tcell.KeyF2:
@@ -149,7 +149,7 @@ func (t *RichTUI) setupKeyBindings() {
 				return nil
 			case 'c', 'C':
 				if t.onConfig != nil {
-					t.onConfig()
+					t.showConfigDialog()
 				}
 				return nil
 			case 'l', 'L':
@@ -333,4 +333,22 @@ func (t *RichTUI) Run() error {
 // Stop stops the TUI application
 func (t *RichTUI) Stop() {
 	t.app.Stop()
+}
+
+// showConfigDialog displays the configuration dialog
+func (t *RichTUI) showConfigDialog() {
+	dialog := NewConfigDialog(t.app, t.pages, t.config)
+	dialog.Show(
+		// onSave callback
+		func() {
+			// Configuration saved, update display
+			if t.onConfig != nil {
+				t.onConfig()
+			}
+		},
+		// onCancel callback
+		func() {
+			// Dialog cancelled, do nothing
+		},
+	)
 }
