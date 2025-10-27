@@ -10,6 +10,7 @@ KoeMoji-Goは、Goで書かれた音声・動画ファイル自動文字起こ�
 - **クロスプラットフォーム**: Windows、macOS対応（Linux未テスト）
 - **二つのUI**: GUI（Fyne）とTUI（Terminal UI）
 - **高精度音声認識**: FasterWhisper（OpenAI Whisperの高速版）
+- **Python 3.12（推奨）**: FasterWhisperバックエンド用（3.13以降は非対応）
 - **デュアル録音**: システム音声+マイク同時録音（Windows: v1.7.0～、macOS: v1.8.0～）
   - Windows: VoiceMeeter/ステレオミキサー方式
   - macOS: ScreenCaptureKit API方式（macOS 13+）
@@ -158,7 +159,7 @@ KoeMoji-Go/
   - ダークモード自動対応
   - 統一されたアイコンデザイン
 - **音声処理**: リアルタイム音声録音用PortAudio
-- **音声認識**: FasterWhisper（Python依存）
+- **音声認識**: FasterWhisper（Python 3.12推奨、3.13以降は非対応）
 - **AI統合**: テキスト要約用OpenAI API
 - **テスト**: 単体テスト用Testify v1.10.0
 
@@ -214,7 +215,7 @@ KoeMoji-Go/
 
 ### 前提条件
 - **Go 1.21+** コンパイル用
-- **Python 3.8+** FasterWhisperバックエンド用
+- **Python 3.12（推奨）** FasterWhisperバックエンド用（3.13以降は非対応）
 - **MSYS2/MinGW64** Windows ビルド用（CGO依存）
 - **PortAudio** 開発ライブラリ
 

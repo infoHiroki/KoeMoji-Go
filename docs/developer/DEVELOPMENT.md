@@ -4,7 +4,7 @@
 
 ### 必要条件
 - Go 1.21+
-- Python 3.9+ (faster-whisper用)
+- Python 3.12（推奨、3.13以降は非対応、faster-whisper用）
 
 ### 依存関係
 ```bash
