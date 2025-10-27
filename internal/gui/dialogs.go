@@ -207,7 +207,7 @@ func (app *GUIApp) showConfigDialog() {
 func (app *GUIApp) createRecordingForm() *widget.Form {
 	msg := ui.GetMessages(app.Config)
 
-	// Recording mode selection (Windows only)
+	// Recording mode selection (Windows and macOS)
 	var recordingModeRadio *widget.RadioGroup
 	var dualSettingsContainer *fyne.Container
 
@@ -296,6 +296,39 @@ func (app *GUIApp) createRecordingForm() *widget.Form {
 		if !app.Config.DualRecordingEnabled {
 			dualSettingsContainer.Hide()
 		}
+	} else if runtime.GOOS == "darwin" {
+		// macOS: Simple dual recording toggle (no volume controls for now)
+		modeOptions := []string{"シングル録音（マイクのみ）", "デュアル録音（システム音声+マイク）"}
+		selectedMode := "シングル録音（マイクのみ）"
+		if app.Config.DualRecordingEnabled {
+			selectedMode = "デュアル録音（システム音声+マイク）"
+		}
+
+		recordingModeRadio = widget.NewRadioGroup(modeOptions, nil)
+		recordingModeRadio.SetSelected(selectedMode)
+		recordingModeRadio.Horizontal = false
+		app.dualRecordingRadio = recordingModeRadio
+
+		// Info label for macOS dual recording requirements
+		infoLabel := widget.NewLabel("※ macOS 13以降、画面収録権限が必要です")
+		dualSettingsContainer = container.NewVBox(infoLabel)
+		app.dualSettingsContainer = dualSettingsContainer
+
+		// Initially hide/show based on current config
+		if !app.Config.DualRecordingEnabled {
+			dualSettingsContainer.Hide()
+		}
+
+		// Add callback to toggle visibility
+		recordingModeRadio.OnChanged = func(selected string) {
+			if dualSettingsContainer != nil {
+				if selected == "デュアル録音（システム音声+マイク）" {
+					dualSettingsContainer.Show()
+				} else {
+					dualSettingsContainer.Hide()
+				}
+			}
+		}
 	}
 
 	// Get available recording devices
@@ -340,8 +373,8 @@ func (app *GUIApp) createRecordingForm() *widget.Form {
 	// Build form items
 	formItems := []*widget.FormItem{}
 
-	// Add recording mode selection (Windows only)
-	if runtime.GOOS == "windows" && recordingModeRadio != nil {
+	// Add recording mode selection (Windows and macOS)
+	if (runtime.GOOS == "windows" || runtime.GOOS == "darwin") && recordingModeRadio != nil {
 		formItems = append(formItems, widget.NewFormItem("録音モード:", recordingModeRadio))
 	}
 
@@ -350,8 +383,8 @@ func (app *GUIApp) createRecordingForm() *widget.Form {
 		widget.NewFormItem(msg.RecordingDeviceLabel, deviceSelect),
 	)
 
-	// Add dual recording settings (Windows only)
-	if runtime.GOOS == "windows" && dualSettingsContainer != nil {
+	// Add dual recording settings (Windows and macOS)
+	if (runtime.GOOS == "windows" || runtime.GOOS == "darwin") && dualSettingsContainer != nil {
 		formItems = append(formItems, widget.NewFormItem("", dualSettingsContainer))
 	}
 
@@ -429,7 +462,7 @@ func (app *GUIApp) saveConfigFromDialog(whisperModel, language *widget.Select,
 		// If device not found and not empty/default, keep current settings
 	}
 
-	// Update dual recording settings (Windows only)
+	// Update dual recording settings (Windows and macOS)
 	if app.dualRecordingRadio != nil {
 		app.Config.DualRecordingEnabled = app.dualRecordingRadio.Selected == "デュアル録音（システム音声+マイク）"
 	}

@@ -72,9 +72,9 @@ func GetDefaultConfig() *Config {
 		RecordingMaxHours:          0,  // Unlimited by default
 		RecordingMaxFileMB:         0,  // Unlimited by default
 		// Dual recording defaults
-		DualRecordingEnabled:  runtime.GOOS == "windows", // Enabled by default on Windows, disabled on macOS
-		SystemAudioVolume:     0.3,   // 0 on system scale (0.1, 0.2, 0.3, 0.5, 0.7)
-		MicrophoneVolume:      1.6,   // 0 on microphone scale (1.0, 1.3, 1.6, 1.9, 2.2)
+		DualRecordingEnabled:  runtime.GOOS == "windows", // Enabled by default on Windows, disabled on macOS (requires screen recording permission)
+		SystemAudioVolume:     0.3,   // Windows only: 0 on system scale (0.1, 0.2, 0.3, 0.5, 0.7)
+		MicrophoneVolume:      1.6,   // Windows only: 0 on microphone scale (1.0, 1.3, 1.6, 1.9, 2.2)
 	}
 }
 
