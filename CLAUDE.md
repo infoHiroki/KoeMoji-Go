@@ -10,7 +10,9 @@ KoeMoji-Goは、Goで書かれた音声・動画ファイル自動文字起こ�
 - **クロスプラットフォーム**: Windows、macOS対応（Linux未テスト）
 - **二つのUI**: GUI（Fyne）とTUI（Terminal UI）
 - **高精度音声認識**: FasterWhisper（OpenAI Whisperの高速版）
-- **デュアル録音**: システム音声+マイク同時録音（Windows版、v1.7.0～）
+- **デュアル録音**: システム音声+マイク同時録音（Windows: v1.7.0～、macOS: v1.8.0～）
+  - Windows: VoiceMeeter/ステレオミキサー方式
+  - macOS: ScreenCaptureKit API方式（macOS 13+）
 - **リアルタイム録音**: PortAudio統合による録音機能
 - **AI要約**: OpenAI API連携でテキスト要約生成
 - **ポータブル設計**: 単一実行ファイルで動作（Python依存を除く）
@@ -357,6 +359,44 @@ dir build\windows\*.dll
 包括的なテスト手順については`test/manual-test-commands.md`を参照してください。
 
 ## 最近の重要な変更
+
+### v1.8.0での変更（2025-10-27）
+1. **macOSデュアル録音機能実装**（Phase 0-4完了）
+   - ScreenCaptureKit APIを使用したシステム音声キャプチャ
+   - Swift CLIバイナリ（`cmd/audio-capture`）の統合
+   - 2ストリーム方式（システム音声とマイク音声を別ファイルで保存）
+   - macOS 13以降対応、画面収録権限が必要
+
+2. **実装ファイル**
+   - `internal/recorder/system_audio_darwin.go` (242行) - Swift CLI ラッパー
+   - `internal/recorder/dual_recorder_darwin.go` (386行) - デュアル録音実装
+   - `cmd/audio-capture/AudioCapture.swift` - ScreenCaptureKit統合
+   - `cmd/audio-capture/main.swift` - CLI エントリーポイント
+
+3. **GUIデュアル録音切り替え機能**
+   - 設定画面に録音モード選択ラジオボタン追加
+   - "シングル録音（マイクのみ）" / "デュアル録音（システム音声+マイク）"
+   - macOS 13以降と画面収録権限が必要な旨の情報ラベル表示
+   - Windows版と統一されたUIパターン
+
+4. **技術仕様**
+   - システム音声: 48kHz Float32 Stereo (CAF → WAV自動変換)
+   - マイク音声: 44.1kHz Int16 Mono
+   - SIGTERMによる優雅な停止処理（DispatchSourceSignal）
+   - バイナリ検索パス: 実行ファイルディレクトリ優先
+
+5. **ビルドシステム更新**
+   - `build/macos/build.sh`: Swift CLIバイナリを自動パッケージング
+   - リリース版に`audio-capture`バイナリ（171KB）を同梱
+
+6. **ドキュメント追加**
+   - `docs/user/SYSTEM_AUDIO_RECORDING_MACOS.md` - macOS版ユーザーガイド
+   - `README.md` - デュアル録音機能のmacOS対応を反映
+   - `TEST_RESULTS.md` - 全自動テスト合格（8/8）、手動テスト合格（3/3）
+
+7. **テスト結果**
+   - 自動テスト: ビルド、環境確認、デバイス検出、設定シナリオ、統合テスト（全合格）
+   - 手動テスト: GUI/TUIモードでのシングル/デュアル録音動作確認（全合格）
 
 ### 未リリース（2025-10-25）
 1. **ログシステムの改善**

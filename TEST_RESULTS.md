@@ -159,31 +159,42 @@ Audio files cannot be non-interleaved. Ignoring setting AVLinearPCMIsNonInterlea
 
 ---
 
-## ✨ Phase 2-3実装完了
+## ✨ Phase 2-4実装完了
 
 ### 実装内容
 1. **Phase 2**: Go統合実装
-   - `system_audio_darwin.go` (209行)
-   - `dual_recorder_darwin.go` (386行)
-   - Swift CLIシグナルハンドリング改善
+   - `system_audio_darwin.go` (242行) - Swift CLI ラッパー
+   - `dual_recorder_darwin.go` (386行) - デュアル録音実装
+   - Swift CLIシグナルハンドリング改善（DispatchSourceSignal）
+   - CAF → WAV自動変換機能
 
 2. **Phase 3**: GUI/TUI統合
    - `components_darwin.go` 修正
    - `main.go` (TUI) 修正
    - AudioRecorderインターフェース統一
+   - デュアル録音自動初期化
+
+3. **Phase 4**: GUI設定UI実装
+   - 録音モード選択ラジオボタン追加（`dialogs.go`）
+   - macOS要件の情報ラベル表示
+   - Windows版と統一されたUIパターン
+   - 設定保存処理のmacOS対応
 
 ### コミット履歴
 - `4e1bac8`: Phase 2完了 - macOSデュアル録音Go統合実装
 - `481639b`: Phase 3完了 - GUI/TUI統合でmacOSデュアル録音対応
+- `c874bcd`: リリースビルド対応 - Swift CLIバイナリをパッケージング
+- `52bea59`: Phase 4完了 - macOS GUI設定にデュアル録音切り替え機能を追加
 
 ---
 
-## 📌 次のステップ
+## 📌 完了済みステップ
 
-- [ ] 手動テスト実施（MANUAL_TEST.md参照）
-- [ ] README.md更新
-- [ ] CLAUDE.md更新
-- [ ] リリースノート作成
+- [x] 手動テスト実施（MANUAL_TEST.md参照） - 3/3合格
+- [x] README.md更新 - macOS対応を反映
+- [x] CLAUDE.md更新 - v1.8.0変更履歴追加
+- [x] macOS版ユーザーガイド作成 - SYSTEM_AUDIO_RECORDING_MACOS.md
+- [ ] リリースノート作成（v1.8.0リリース時）
 
 ---
 
