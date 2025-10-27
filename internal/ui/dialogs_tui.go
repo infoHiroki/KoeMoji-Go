@@ -16,17 +16,38 @@ type ConfigDialog struct {
 	pages  *tview.Pages
 	config *config.Config
 
-	// Form fields
+	// UI components
+	tabList     *tview.List
+	tabPages    *tview.Pages
+	mainFlex    *tview.Flex
+	buttonFlex  *tview.Flex
+	saveButton  *tview.Button
+	cancelButton *tview.Button
+
+	// Form fields - Basic settings
+	uiLanguageDropDown   *tview.DropDown
 	whisperModelDropDown *tview.DropDown
 	languageDropDown     *tview.DropDown
 	scanIntervalField    *tview.InputField
-	llmEnabledCheckbox   *tview.Checkbox
-	llmAPIKeyField       *tview.InputField
-	llmModelDropDown     *tview.DropDown
 
-	// Recording fields
+	// Form fields - Directories
+	inputDirField   *tview.InputField
+	outputDirField  *tview.InputField
+	archiveDirField *tview.InputField
+
+	// Form fields - LLM settings
+	llmEnabledCheckbox *tview.Checkbox
+	llmAPIKeyField     *tview.InputField
+	llmModelDropDown   *tview.DropDown
+
+	// Form fields - Recording settings
 	recordingDeviceField  *tview.InputField
 	dualRecordingCheckbox *tview.Checkbox
+
+	// Form fields - Advanced settings
+	computeTypeDropDown  *tview.DropDown
+	outputFormatDropDown *tview.DropDown
+	maxCpuField          *tview.InputField
 
 	// Callbacks
 	onSave   func()
@@ -49,6 +70,130 @@ func (d *ConfigDialog) Show(onSave, onCancel func()) {
 
 	msg := GetMessages(d.config)
 
+	// Create tab pages
+	d.tabPages = tview.NewPages()
+
+	// Create tabs
+	d.createBasicTab(msg)
+	d.createDirectoriesTab(msg)
+	d.createLLMTab(msg)
+	d.createRecordingTab(msg)
+	d.createAdvancedTab(msg)
+
+	// Create tab list (left side)
+	d.tabList = tview.NewList().
+		AddItem(msg.BasicTab, "", '1', nil).
+		AddItem(msg.DirectoriesTab, "", '2', nil).
+		AddItem(msg.LLMTab, "", '3', nil).
+		AddItem(msg.RecordingTab, "", '4', nil).
+		AddItem("詳細設定", "", '5', nil)
+
+	d.tabList.SetBorder(true).
+		SetTitle(" タブ ").
+		SetTitleAlign(tview.AlignCenter)
+
+	d.tabList.SetSelectedFunc(func(index int, mainText string, secondaryText string, shortcut rune) {
+		d.switchTab(index)
+	})
+
+	// Set initial tab
+	d.switchTab(0)
+
+	// Create buttons
+	d.saveButton = tview.NewButton(msg.SaveBtn)
+	d.saveButton.SetSelectedFunc(func() {
+		d.saveConfig()
+		d.close()
+		if d.onSave != nil {
+			d.onSave()
+		}
+	})
+
+	d.cancelButton = tview.NewButton(msg.CancelBtn)
+	d.cancelButton.SetSelectedFunc(func() {
+		d.close()
+		if d.onCancel != nil {
+			d.onCancel()
+		}
+	})
+
+	// Button layout
+	d.buttonFlex = tview.NewFlex().
+		AddItem(nil, 0, 1, false).
+		AddItem(d.saveButton, 12, 0, false).
+		AddItem(nil, 2, 0, false).
+		AddItem(d.cancelButton, 14, 0, false).
+		AddItem(nil, 0, 1, false)
+
+	// Main layout: tab list (left) + tab content (right)
+	contentFlex := tview.NewFlex().
+		AddItem(d.tabList, 20, 0, true).
+		AddItem(d.tabPages, 0, 1, false)
+
+	// Overall layout: content + buttons
+	d.mainFlex = tview.NewFlex().
+		SetDirection(tview.FlexRow).
+		AddItem(contentFlex, 0, 1, true).
+		AddItem(d.buttonFlex, 1, 0, false)
+
+	d.mainFlex.SetBorder(true).
+		SetTitle(" " + msg.SettingsTitle + " ").
+		SetTitleAlign(tview.AlignCenter)
+
+	// Handle keyboard shortcuts
+	d.mainFlex.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+		switch event.Key() {
+		case tcell.KeyEscape:
+			d.close()
+			if d.onCancel != nil {
+				d.onCancel()
+			}
+			return nil
+		case tcell.KeyTab:
+			// Cycle focus: tabList -> tabPages -> buttons -> tabList
+			if d.app.GetFocus() == d.tabList {
+				d.app.SetFocus(d.tabPages)
+			} else if d.app.GetFocus() == d.tabPages {
+				d.app.SetFocus(d.saveButton)
+			} else {
+				d.app.SetFocus(d.tabList)
+			}
+			return nil
+		}
+		return event
+	})
+
+	// Add to pages
+	d.pages.AddPage("config", d.mainFlex, true, true)
+	d.app.SetFocus(d.tabList)
+}
+
+// switchTab changes the active tab
+func (d *ConfigDialog) switchTab(index int) {
+	tabs := []string{"basic", "directories", "llm", "recording", "advanced"}
+	if index >= 0 && index < len(tabs) {
+		d.tabPages.SwitchToPage(tabs[index])
+		d.tabList.SetCurrentItem(index)
+	}
+}
+
+// createBasicTab creates the basic settings tab
+func (d *ConfigDialog) createBasicTab(msg *Messages) {
+	// UI Language dropdown
+	uiLanguageOptions := []string{"English", "日本語"}
+	uiLanguageCodes := []string{"en", "ja"}
+	currentUILangIndex := 0
+	for i, code := range uiLanguageCodes {
+		if code == d.config.UILanguage {
+			currentUILangIndex = i
+			break
+		}
+	}
+	d.uiLanguageDropDown = tview.NewDropDown().
+		SetLabel(msg.LanguageLabel + ": ").
+		SetOptions(uiLanguageOptions, nil).
+		SetCurrentOption(currentUILangIndex)
+
 	// Whisper model dropdown
 	whisperModels := []string{
 		"tiny", "tiny.en", "base", "base.en",
@@ -69,19 +214,9 @@ func (d *ConfigDialog) Show(onSave, onCancel func()) {
 
 	// Language dropdown
 	languageOptions := []string{
-		"Auto（自動検出）",
-		"日本語",
-		"English",
-		"中文（简体）",
-		"한국어",
-		"Español",
-		"Français",
-		"Deutsch",
-		"Русский",
-		"العربية",
-		"हिन्दी",
-		"Italiano",
-		"Português",
+		"Auto（自動検出）", "日本語", "English", "中文（简体）", "한국어",
+		"Español", "Français", "Deutsch", "Русский", "العربية",
+		"हिन्दी", "Italiano", "Português",
 	}
 	languageCodes := []string{
 		"auto", "ja", "en", "zh", "ko", "es", "fr", "de", "ru", "ar", "hi", "it", "pt",
@@ -100,11 +235,54 @@ func (d *ConfigDialog) Show(onSave, onCancel func()) {
 
 	// Scan interval field
 	d.scanIntervalField = tview.NewInputField().
-		SetLabel(msg.ScanIntervalLabel + ": ").
+		SetLabel(msg.ScanIntervalLabel + " (分): ").
 		SetText(strconv.Itoa(d.config.ScanIntervalMinutes)).
 		SetFieldWidth(10).
 		SetAcceptanceFunc(tview.InputFieldInteger)
 
+	// Create form
+	form := tview.NewForm().
+		AddFormItem(d.uiLanguageDropDown).
+		AddFormItem(d.whisperModelDropDown).
+		AddFormItem(d.languageDropDown).
+		AddFormItem(d.scanIntervalField)
+
+	form.SetBorder(true).SetTitle(" " + msg.BasicTab + " ")
+	d.tabPages.AddPage("basic", form, true, true)
+}
+
+// createDirectoriesTab creates the directories settings tab
+func (d *ConfigDialog) createDirectoriesTab(msg *Messages) {
+	// Input directory field
+	d.inputDirField = tview.NewInputField().
+		SetLabel(msg.InputDirLabel + ": ").
+		SetText(config.GetRelativePath(d.config.InputDir)).
+		SetFieldWidth(50)
+
+	// Output directory field
+	d.outputDirField = tview.NewInputField().
+		SetLabel(msg.OutputDirLabel + ": ").
+		SetText(config.GetRelativePath(d.config.OutputDir)).
+		SetFieldWidth(50)
+
+	// Archive directory field
+	d.archiveDirField = tview.NewInputField().
+		SetLabel(msg.ArchiveDirLabel + ": ").
+		SetText(config.GetRelativePath(d.config.ArchiveDir)).
+		SetFieldWidth(50)
+
+	// Create form
+	form := tview.NewForm().
+		AddFormItem(d.inputDirField).
+		AddFormItem(d.outputDirField).
+		AddFormItem(d.archiveDirField)
+
+	form.SetBorder(true).SetTitle(" " + msg.DirectoriesTab + " ")
+	d.tabPages.AddPage("directories", form, true, false)
+}
+
+// createLLMTab creates the LLM settings tab
+func (d *ConfigDialog) createLLMTab(msg *Messages) {
 	// LLM enabled checkbox
 	d.llmEnabledCheckbox = tview.NewCheckbox().
 		SetLabel(msg.LLMEnabledLabel + ": ").
@@ -131,6 +309,18 @@ func (d *ConfigDialog) Show(onSave, onCancel func()) {
 		SetOptions(llmModels, nil).
 		SetCurrentOption(currentLLMModelIndex)
 
+	// Create form
+	form := tview.NewForm().
+		AddFormItem(d.llmEnabledCheckbox).
+		AddFormItem(d.llmAPIKeyField).
+		AddFormItem(d.llmModelDropDown)
+
+	form.SetBorder(true).SetTitle(" " + msg.LLMTab + " ")
+	d.tabPages.AddPage("llm", form, true, false)
+}
+
+// createRecordingTab creates the recording settings tab
+func (d *ConfigDialog) createRecordingTab(msg *Messages) {
 	// Recording device field
 	d.recordingDeviceField = tview.NewInputField().
 		SetLabel(msg.RecordingDeviceLabel + ": ").
@@ -144,12 +334,6 @@ func (d *ConfigDialog) Show(onSave, onCancel func()) {
 
 	// Create form
 	form := tview.NewForm().
-		AddFormItem(d.whisperModelDropDown).
-		AddFormItem(d.languageDropDown).
-		AddFormItem(d.scanIntervalField).
-		AddFormItem(d.llmEnabledCheckbox).
-		AddFormItem(d.llmAPIKeyField).
-		AddFormItem(d.llmModelDropDown).
 		AddFormItem(d.recordingDeviceField)
 
 	// Add dual recording checkbox for macOS only
@@ -157,48 +341,69 @@ func (d *ConfigDialog) Show(onSave, onCancel func()) {
 		form.AddFormItem(d.dualRecordingCheckbox)
 	}
 
-	form.
-		AddButton(msg.SaveBtn, func() {
-			d.saveConfig()
-			d.close()
-			if d.onSave != nil {
-				d.onSave()
-			}
-		}).
-		AddButton(msg.CancelBtn, func() {
-			d.close()
-			if d.onCancel != nil {
-				d.onCancel()
-			}
-		})
+	form.SetBorder(true).SetTitle(" " + msg.RecordingTab + " ")
+	d.tabPages.AddPage("recording", form, true, false)
+}
 
-	form.SetBorder(true).
-		SetTitle(" " + msg.SettingsTitle + " ").
-		SetTitleAlign(tview.AlignCenter)
-
-	// Handle Escape key to close dialog
-	form.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
-		if event.Key() == tcell.KeyEscape {
-			d.close()
-			if d.onCancel != nil {
-				d.onCancel()
-			}
-			return nil
+// createAdvancedTab creates the advanced settings tab
+func (d *ConfigDialog) createAdvancedTab(msg *Messages) {
+	// Compute type dropdown
+	computeTypes := []string{"int8", "int8_float16", "int16", "float16", "float32"}
+	currentComputeTypeIndex := 0
+	for i, ctype := range computeTypes {
+		if ctype == d.config.ComputeType {
+			currentComputeTypeIndex = i
+			break
 		}
-		return event
-	})
+	}
+	d.computeTypeDropDown = tview.NewDropDown().
+		SetLabel("計算精度: ").
+		SetOptions(computeTypes, nil).
+		SetCurrentOption(currentComputeTypeIndex)
 
-	// Add to pages
-	d.pages.AddPage("config", form, true, true)
+	// Output format dropdown
+	outputFormats := []string{"txt", "vtt", "srt", "tsv", "json"}
+	currentFormatIndex := 0
+	for i, format := range outputFormats {
+		if format == d.config.OutputFormat {
+			currentFormatIndex = i
+			break
+		}
+	}
+	d.outputFormatDropDown = tview.NewDropDown().
+		SetLabel("出力形式: ").
+		SetOptions(outputFormats, nil).
+		SetCurrentOption(currentFormatIndex)
+
+	// Max CPU field
+	d.maxCpuField = tview.NewInputField().
+		SetLabel("最大CPU使用率 (%): ").
+		SetText(strconv.Itoa(d.config.MaxCpuPercent)).
+		SetFieldWidth(10).
+		SetAcceptanceFunc(tview.InputFieldInteger)
+
+	// Create form
+	form := tview.NewForm().
+		AddFormItem(d.computeTypeDropDown).
+		AddFormItem(d.outputFormatDropDown).
+		AddFormItem(d.maxCpuField)
+
+	form.SetBorder(true).SetTitle(" 詳細設定 ")
+	d.tabPages.AddPage("advanced", form, true, false)
 }
 
 // saveConfig saves the configuration from form fields
 func (d *ConfigDialog) saveConfig() {
-	// Get Whisper model
+	// Basic settings
+	uiLanguageCodes := []string{"en", "ja"}
+	uiLangIndex, _ := d.uiLanguageDropDown.GetCurrentOption()
+	if uiLangIndex >= 0 && uiLangIndex < len(uiLanguageCodes) {
+		d.config.UILanguage = uiLanguageCodes[uiLangIndex]
+	}
+
 	_, whisperModel := d.whisperModelDropDown.GetCurrentOption()
 	d.config.WhisperModel = whisperModel
 
-	// Get language
 	languageCodes := []string{
 		"auto", "ja", "en", "zh", "ko", "es", "fr", "de", "ru", "ar", "hi", "it", "pt",
 	}
@@ -207,14 +412,16 @@ func (d *ConfigDialog) saveConfig() {
 		d.config.Language = languageCodes[langIndex]
 	}
 
-	// Get scan interval
-	if interval, err := strconv.Atoi(d.scanIntervalField.GetText()); err == nil {
-		if interval > 0 {
-			d.config.ScanIntervalMinutes = interval
-		}
+	if interval, err := strconv.Atoi(d.scanIntervalField.GetText()); err == nil && interval > 0 {
+		d.config.ScanIntervalMinutes = interval
 	}
 
-	// Get LLM settings
+	// Directories
+	d.config.InputDir = d.inputDirField.GetText()
+	d.config.OutputDir = d.outputDirField.GetText()
+	d.config.ArchiveDir = d.archiveDirField.GetText()
+
+	// LLM settings
 	d.config.LLMSummaryEnabled = d.llmEnabledCheckbox.IsChecked()
 	d.config.LLMAPIKey = d.llmAPIKeyField.GetText()
 
@@ -223,12 +430,23 @@ func (d *ConfigDialog) saveConfig() {
 		d.config.LLMModel = llmModel
 	}
 
-	// Get recording settings
+	// Recording settings
 	d.config.RecordingDeviceName = d.recordingDeviceField.GetText()
 
 	// Get dual recording setting (macOS only)
 	if runtime.GOOS == "darwin" {
 		d.config.DualRecordingEnabled = d.dualRecordingCheckbox.IsChecked()
+	}
+
+	// Advanced settings
+	_, computeType := d.computeTypeDropDown.GetCurrentOption()
+	d.config.ComputeType = computeType
+
+	_, outputFormat := d.outputFormatDropDown.GetCurrentOption()
+	d.config.OutputFormat = outputFormat
+
+	if maxCpu, err := strconv.Atoi(d.maxCpuField.GetText()); err == nil && maxCpu >= 1 && maxCpu <= 100 {
+		d.config.MaxCpuPercent = maxCpu
 	}
 
 	// Save to file
