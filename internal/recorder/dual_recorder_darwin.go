@@ -223,9 +223,103 @@ func (dr *DualRecorder) Stop() error {
 }
 
 // SaveToFile saves the recorded audio to a file
-// This saves the microphone audio to the specified file
-// System audio is saved separately with "-system" suffix
+// By default, mixes system audio and microphone into a single file (FFmpeg-free)
+// For separate files, use SaveSeparateFiles() instead
 func (dr *DualRecorder) SaveToFile(filename string) error {
+	dr.mutex.Lock()
+	defer dr.mutex.Unlock()
+
+	if dr.recording {
+		return fmt.Errorf("cannot save while recording")
+	}
+
+	// If both system and mic are enabled, mix them
+	if dr.systemEnabled && dr.micEnabled {
+		// Save mic to temporary file
+		micTempPath := filepath.Join(dr.baseDir, fmt.Sprintf("mic-temp-%s.wav", dr.sessionID))
+		if err := dr.micRecorder.SaveToFile(micTempPath); err != nil {
+			return fmt.Errorf("failed to save microphone audio: %w", err)
+		}
+		defer os.Remove(micTempPath)
+
+		// Mix system and mic audio (FFmpeg-free)
+		// System: 70% volume, Mic: 100% volume
+		if err := MixAudioFiles(dr.systemOutputPath, micTempPath, filename, 0.7, 1.0); err != nil {
+			return fmt.Errorf("failed to mix audio files: %w", err)
+		}
+
+		// Clean up temporary system audio file
+		os.Remove(dr.systemOutputPath)
+
+		return nil
+	}
+
+	// If only one stream is enabled, save it directly
+	if dr.micEnabled {
+		if err := dr.micRecorder.SaveToFile(filename); err != nil {
+			return fmt.Errorf("failed to save microphone audio: %w", err)
+		}
+	} else if dr.systemEnabled {
+		if err := copyFile(dr.systemOutputPath, filename); err != nil {
+			return fmt.Errorf("failed to save system audio: %w", err)
+		}
+		os.Remove(dr.systemOutputPath)
+	}
+
+	return nil
+}
+
+// SaveToFileWithNormalization saves recording with optional audio normalization
+// Normalization is applied only to microphone audio before mixing
+func (dr *DualRecorder) SaveToFileWithNormalization(filename string, enableNormalization bool) error {
+	dr.mutex.Lock()
+	defer dr.mutex.Unlock()
+
+	if dr.recording {
+		return fmt.Errorf("cannot save while recording")
+	}
+
+	// If both system and mic are enabled, mix them
+	if dr.systemEnabled && dr.micEnabled {
+		// Save mic to temporary file with normalization
+		micTempPath := filepath.Join(dr.baseDir, fmt.Sprintf("mic-temp-%s.wav", dr.sessionID))
+		if err := dr.micRecorder.SaveToFileWithNormalization(micTempPath, enableNormalization); err != nil {
+			return fmt.Errorf("failed to save microphone audio: %w", err)
+		}
+		defer os.Remove(micTempPath)
+
+		// Mix system and mic audio (FFmpeg-free)
+		// System: 70% volume, Mic: 100% volume
+		if err := MixAudioFiles(dr.systemOutputPath, micTempPath, filename, 0.7, 1.0); err != nil {
+			return fmt.Errorf("failed to mix audio files: %w", err)
+		}
+
+		// Clean up temporary system audio file
+		os.Remove(dr.systemOutputPath)
+
+		return nil
+	}
+
+	// If only one stream is enabled, save it directly
+	if dr.micEnabled {
+		if err := dr.micRecorder.SaveToFileWithNormalization(filename, enableNormalization); err != nil {
+			return fmt.Errorf("failed to save microphone audio: %w", err)
+		}
+	} else if dr.systemEnabled {
+		if err := copyFile(dr.systemOutputPath, filename); err != nil {
+			return fmt.Errorf("failed to save system audio: %w", err)
+		}
+		os.Remove(dr.systemOutputPath)
+	}
+
+	return nil
+}
+
+// SaveSeparateFiles saves system audio and microphone as separate files
+// This is useful for advanced use cases (e.g., speaker diarization)
+// System audio: filename-system.wav
+// Microphone: filename.wav
+func (dr *DualRecorder) SaveSeparateFiles(filename string) error {
 	dr.mutex.Lock()
 	defer dr.mutex.Unlock()
 
@@ -246,40 +340,16 @@ func (dr *DualRecorder) SaveToFile(filename string) error {
 		if err := copyFile(dr.systemOutputPath, systemFilename); err != nil {
 			return fmt.Errorf("failed to save system audio: %w", err)
 		}
-	}
-
-	return nil
-}
-
-// SaveToFileWithNormalization saves recording with optional audio normalization
-func (dr *DualRecorder) SaveToFileWithNormalization(filename string, enableNormalization bool) error {
-	dr.mutex.Lock()
-	defer dr.mutex.Unlock()
-
-	if dr.recording {
-		return fmt.Errorf("cannot save while recording")
-	}
-
-	// Save microphone audio with normalization
-	if dr.micEnabled {
-		if err := dr.micRecorder.SaveToFileWithNormalization(filename, enableNormalization); err != nil {
-			return fmt.Errorf("failed to save microphone audio: %w", err)
-		}
-	}
-
-	// Save system audio (no normalization for system audio)
-	if dr.systemEnabled {
-		systemFilename := generateSystemFilename(filename)
-		if err := copyFile(dr.systemOutputPath, systemFilename); err != nil {
-			return fmt.Errorf("failed to save system audio: %w", err)
-		}
+		// Clean up temporary file
+		os.Remove(dr.systemOutputPath)
 	}
 
 	return nil
 }
 
 // MixToFile mixes system audio and microphone into a single file using FFmpeg
-// This is an optional method for users who want a single mixed file
+// DEPRECATED: Use SaveToFile() instead (FFmpeg-free)
+// This method is kept for backward compatibility but requires FFmpeg
 func (dr *DualRecorder) MixToFile(filename string) error {
 	dr.mutex.Lock()
 	defer dr.mutex.Unlock()
