@@ -68,9 +68,8 @@ $ go run test_gui_integration.go
 **結果**: ✅ 成功
 
 **出力**:
-- マイク録音: `80KB` (1秒)
-- システム音声: `296KB` (1秒)
-- 2ファイル正常生成
+- ミックス済み録音: `約376KB` (1秒)
+- 1ファイル正常生成（自動ミックス済み）
 
 **ログ**:
 ```
@@ -79,8 +78,8 @@ $ go run test_gui_integration.go
 ✓ Starting 1-second test recording...
 ✓ Stopping recording...
 ✅ Test completed successfully!
-   Output file: /tmp/gui-integration-test.wav (80.04 KB)
-   System audio: /tmp/gui-integration-test-system.wav (296.50 KB)
+   Output file: /tmp/gui-integration-test.wav (約376 KB)
+   Format: 48kHz Stereo Int16 (System 70% + Mic 100% mixed)
 ```
 
 ---
@@ -95,7 +94,7 @@ $ go run test_gui_integration.go
 - [ ] GUIモード起動確認（デュアル録音有効）
 - [ ] TUIモード起動確認（デュアル録音有効）
 - [ ] 実際の録音動作確認（3秒録音）
-- [ ] 2ファイル生成確認（マイク + システム）
+- [ ] 1ファイル生成確認（自動ミックス済み）
 - [ ] ファイルフォーマット確認（afinfo）
 - [ ] 音声再生確認（afplay）
 - [ ] 画面収録権限ダイアログ確認（初回のみ）
