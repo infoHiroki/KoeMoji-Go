@@ -203,21 +203,24 @@ func (r *SystemAudioRecorder) Close() error {
 
 // findAudioCaptureBinary searches for the audio-capture binary
 // Search order:
-// 1. ./cmd/audio-capture/audio-capture (development)
-// 2. Same directory as the executable (production)
-// 3. /tmp/audio-capture (go:embed extraction, future)
+// 1. Same directory as the executable (production/release)
+// 2. ./cmd/audio-capture/audio-capture (development)
+// 3. ./audio-capture (relative to current directory)
 func findAudioCaptureBinary() (string, error) {
-	candidates := []string{
-		// Development: relative to project root
-		"./cmd/audio-capture/audio-capture",
-		"cmd/audio-capture/audio-capture",
-	}
+	var candidates []string
 
-	// Production: same directory as the executable
+	// Production: same directory as the executable (highest priority)
 	if exePath, err := os.Executable(); err == nil {
 		exeDir := filepath.Dir(exePath)
 		candidates = append(candidates, filepath.Join(exeDir, "audio-capture"))
 	}
+
+	// Development: relative to project root
+	candidates = append(candidates,
+		"./cmd/audio-capture/audio-capture",
+		"cmd/audio-capture/audio-capture",
+		"./audio-capture", // Current directory
+	)
 
 	// Check each candidate
 	for _, path := range candidates {

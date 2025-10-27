@@ -199,6 +199,16 @@ build_cli() {
     cp "$DIST_DIR/$binary_name" "$package_name/$APP_NAME"
     chmod +x "$package_name/$APP_NAME"
 
+    # Copy Swift CLI binary (audio-capture) for macOS system audio recording
+    if [ -f "$PROJECT_ROOT/cmd/audio-capture/audio-capture" ]; then
+        cp "$PROJECT_ROOT/cmd/audio-capture/audio-capture" "$package_name/audio-capture"
+        chmod +x "$package_name/audio-capture"
+        echo "✅ Swift CLI (audio-capture) included"
+    else
+        echo "⚠️  Warning: Swift CLI binary (audio-capture) not found"
+        echo "   Dual recording will not work without this binary"
+    fi
+
     # Copy config file
     cp "$COMMON_DIR/assets/config.example.json" "$package_name/config.json"
 
