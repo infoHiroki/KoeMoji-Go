@@ -21,7 +21,7 @@ KoeMoji-Go の macOS 版をビルドするための完全ガイドです。
 | **macOS** | 12.0 (Monterey) 以降 | `sw_vers` |
 | **Go** | 1.21 以降 | `go version` |
 | **PortAudio** | 最新版 | `brew list portaudio` |
-| **Python** | 3.12 以降（推奨） | `python3 --version` |
+| **Python** | 3.12（推奨、3.13は非対応） | `python3 --version` |
 | **FasterWhisper** | 最新版 | `pip3 list \| grep faster-whisper` |
 
 ### Homebrewのインストール

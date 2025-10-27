@@ -11,7 +11,7 @@
 ### 必須要件
 - Windows 10/11 (64bit)
 - Go 1.21以上
-- Python 3.12以上（推奨、FasterWhisper用）
+- Python 3.12（推奨、3.13以降は非対応、FasterWhisper用）
 - MSYS2（GCCツールチェーン用）
 
 ## セットアップ手順
