@@ -24,14 +24,14 @@ KoeMoji-Goは、Goで書かれた音声・動画ファイル自動文字起こ�
 # 開発用ビルド
 go build -o koemoji-go ./cmd/koemoji-go
 
-# macOS配布用ビルド（v1.7.2以降）
+# macOS配布用ビルド（v1.8.0以降）
 cd build/macos
-./build.sh        # デフォルトでtar.gz版をビルド → koemoji-go-macos-1.7.2.tar.gz
+./build.sh        # デフォルトでtar.gz版をビルド → koemoji-go-macos-1.8.0.tar.gz
 ./build.sh build  # 明示的にビルド（上記と同じ）
 ./build.sh clean  # ビルド成果物のクリーンアップ
 
 # Windows配布用ビルド（MSYS2/MinGW64が必要）
-cd build/windows && build.bat  # → koemoji-go-windows-1.7.2.zip
+cd build/windows && build.bat  # → koemoji-go-windows-1.8.0.zip
 
 # ビルド成果物のクリーンアップ
 cd build/macos && ./build.sh clean
@@ -46,6 +46,7 @@ cd build/windows && build.bat clean
 - `koemoji-go-windows-{VERSION}.zip`
 
 **変更履歴**:
+- v1.8.0: macOSデュアル録音機能実装（FFmpeg不要の1ファイルミキシング）
 - v1.7.2: macOS版はtar.gz形式のみ（DMG版は廃止、Apple Developer Programコスト削減のため）
 - v1.7.0: 命名規則変更（プラットフォーム名を中央に配置、ウイルス検知回避強化）
 - v1.6.1: 命名規則変更（`-win`→`-windows`）
@@ -397,6 +398,20 @@ dir build\windows\*.dll
 7. **テスト結果**
    - 自動テスト: ビルド、環境確認、デバイス検出、設定シナリオ、統合テスト（全合格）
    - 手動テスト: GUI/TUIモードでのシングル/デュアル録音動作確認（全合格）
+
+8. **FFmpeg不要の1ファイルミキシング機能**
+   - `internal/recorder/mixer.go` (366行) - Go標準ライブラリのみでWAVミキシング実装
+   - 線形補間による44.1kHz→48kHzリサンプリング
+   - ステレオ+モノラルのミキシング（システム70%, マイク100%）
+   - ソフトクリッピングによる歪み防止
+   - afconvert互換性対応（FLLR等の余分なチャンク処理）
+   - デフォルトで1ファイル出力（`recording_*.wav`）、重複文字起こし防止
+   - `SaveSeparateFiles()`で2ファイル出力も可能（話者分離用）
+
+9. **ミキシング機能のテスト**
+   - `internal/recorder/mixer_test.go` (290行) - 8つのユニットテスト（全合格）
+   - `internal/recorder/test_afconvert_wav_test.go` - afconvert互換性テスト
+   - 手動テスト: 503KB、2.68秒、48kHz Stereo Int16 正常動作確認
 
 ### 未リリース（2025-10-25）
 1. **ログシステムの改善**

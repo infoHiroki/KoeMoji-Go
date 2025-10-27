@@ -58,11 +58,11 @@ Pythonがない場合は [Python公式ダウンロード](https://www.python.org
 #### 🍎 macOS
 
 1. **ダウンロード**:
-   - **Apple Silicon (M1/M2/M3)**: `koemoji-go-macos-1.7.2.tar.gz`
+   - **Apple Silicon (M1/M2/M3)**: `koemoji-go-macos-1.8.0.tar.gz`
 
 2. **展開後の構成**:
    ```
-   📁 koemoji-go-1.7.2
+   📁 koemoji-go-1.8.0
    ├── koemoji-go         # 実行ファイル（GUI/TUI両対応）
    ├── config.json        # 設定ファイル
    └── README.md          # 説明書
