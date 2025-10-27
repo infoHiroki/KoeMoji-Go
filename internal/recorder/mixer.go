@@ -162,6 +162,7 @@ func clamp(sample float64) float64 {
 }
 
 // ReadWAVFile reads a WAV file and returns audio data
+// Supports WAV files with extra chunks (FLLR, LIST, JUNK, etc.)
 func ReadWAVFile(filename string) (*AudioData, error) {
 	file, err := os.Open(filename)
 	if err != nil {
@@ -169,50 +170,107 @@ func ReadWAVFile(filename string) (*AudioData, error) {
 	}
 	defer file.Close()
 
-	// Read WAV header
-	var header wavHeader
-	if err := binary.Read(file, binary.LittleEndian, &header); err != nil {
-		return nil, fmt.Errorf("failed to read WAV header: %w", err)
+	// Read RIFF header (12 bytes)
+	var riffHeader struct {
+		ChunkID   [4]byte // "RIFF"
+		ChunkSize uint32
+		Format    [4]byte // "WAVE"
+	}
+	if err := binary.Read(file, binary.LittleEndian, &riffHeader); err != nil {
+		return nil, fmt.Errorf("failed to read RIFF header: %w", err)
 	}
 
 	// Verify RIFF header
-	if string(header.ChunkID[:]) != "RIFF" || string(header.Format[:]) != "WAVE" {
+	if string(riffHeader.ChunkID[:]) != "RIFF" || string(riffHeader.Format[:]) != "WAVE" {
 		return nil, fmt.Errorf("not a valid WAV file")
 	}
 
-	// Verify fmt chunk
-	if string(header.Subchunk1ID[:]) != "fmt " {
-		return nil, fmt.Errorf("invalid fmt chunk")
+	// Read chunks until we find fmt and data
+	var fmtChunk struct {
+		AudioFormat   uint16
+		NumChannels   uint16
+		SampleRate    uint32
+		ByteRate      uint32
+		BlockAlign    uint16
+		BitsPerSample uint16
+	}
+	var dataSize uint32
+	var audioBytes []byte
+	foundFmt := false
+	foundData := false
+
+	for !foundFmt || !foundData {
+		// Read chunk header
+		var chunkID [4]byte
+		var chunkSize uint32
+		if err := binary.Read(file, binary.LittleEndian, &chunkID); err != nil {
+			if err == io.EOF {
+				break
+			}
+			return nil, fmt.Errorf("failed to read chunk ID: %w", err)
+		}
+		if err := binary.Read(file, binary.LittleEndian, &chunkSize); err != nil {
+			return nil, fmt.Errorf("failed to read chunk size: %w", err)
+		}
+
+		chunkName := string(chunkID[:])
+
+		switch chunkName {
+		case "fmt ":
+			// Read fmt chunk data (we expect at least 16 bytes for PCM)
+			if err := binary.Read(file, binary.LittleEndian, &fmtChunk); err != nil {
+				return nil, fmt.Errorf("failed to read fmt chunk: %w", err)
+			}
+			// Skip any extra bytes in fmt chunk (e.g., for non-PCM formats)
+			if chunkSize > 16 {
+				extraBytes := int(chunkSize) - 16
+				if _, err := file.Seek(int64(extraBytes), io.SeekCurrent); err != nil {
+					return nil, fmt.Errorf("failed to skip fmt extra bytes: %w", err)
+				}
+			}
+			foundFmt = true
+
+		case "data":
+			// Read audio data
+			dataSize = chunkSize
+			audioBytes = make([]byte, dataSize)
+			if _, err := io.ReadFull(file, audioBytes); err != nil {
+				return nil, fmt.Errorf("failed to read audio data: %w", err)
+			}
+			foundData = true
+
+		default:
+			// Skip unknown chunks (FLLR, LIST, JUNK, etc.)
+			if _, err := file.Seek(int64(chunkSize), io.SeekCurrent); err != nil {
+				return nil, fmt.Errorf("failed to skip chunk %s: %w", chunkName, err)
+			}
+		}
 	}
 
-	// Verify data chunk
-	if string(header.Subchunk2ID[:]) != "data" {
-		return nil, fmt.Errorf("invalid data chunk")
+	if !foundFmt {
+		return nil, fmt.Errorf("fmt chunk not found")
 	}
-
-	// Read audio data
-	audioBytes := make([]byte, header.Subchunk2Size)
-	if _, err := io.ReadFull(file, audioBytes); err != nil {
-		return nil, fmt.Errorf("failed to read audio data: %w", err)
+	if !foundData {
+		return nil, fmt.Errorf("data chunk not found")
 	}
 
 	// Convert to normalized Float64
 	var samples []float64
-	if header.AudioFormat == 1 {
+	if fmtChunk.AudioFormat == 1 {
 		// PCM Int16
 		samples = ConvertInt16ToFloat64(audioBytes)
-	} else if header.AudioFormat == 3 {
+	} else if fmtChunk.AudioFormat == 3 {
 		// IEEE Float32
 		samples = ConvertFloat32ToFloat64(audioBytes)
 	} else {
-		return nil, fmt.Errorf("unsupported audio format: %d", header.AudioFormat)
+		return nil, fmt.Errorf("unsupported audio format: %d", fmtChunk.AudioFormat)
 	}
 
 	return &AudioData{
-		SampleRate:    int(header.SampleRate),
-		NumChannels:   int(header.NumChannels),
-		BitsPerSample: int(header.BitsPerSample),
-		AudioFormat:   int(header.AudioFormat),
+		SampleRate:    int(fmtChunk.SampleRate),
+		NumChannels:   int(fmtChunk.NumChannels),
+		BitsPerSample: int(fmtChunk.BitsPerSample),
+		AudioFormat:   int(fmtChunk.AudioFormat),
 		Samples:       samples,
 	}, nil
 }
