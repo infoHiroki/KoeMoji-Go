@@ -67,7 +67,7 @@ type App struct {
 }
 
 func main() {
-	configPath, debugMode, showVersion, showHelp, configMode, tuiMode := parseFlags()
+	configPath, debugMode, showVersion, showHelp, configMode, tuiMode, tuiRichMode := parseFlags()
 
 	if showVersion {
 		fmt.Printf("KoeMoji-Go v%s\n", version)
@@ -79,9 +79,9 @@ func main() {
 		return
 	}
 
-	// Handle TUI mode (non-default)
-	if tuiMode {
-		runTUIMode(configPath, debugMode, configMode)
+	// Handle TUI modes (non-default)
+	if tuiMode || tuiRichMode {
+		runTUIMode(configPath, debugMode, configMode, tuiRichMode)
 		return
 	}
 
@@ -89,7 +89,7 @@ func main() {
 	gui.Run(configPath, debugMode)
 }
 
-func runTUIMode(configPath string, debugMode bool, configMode bool) {
+func runTUIMode(configPath string, debugMode bool, configMode bool, tuiRichMode bool) {
 	app := &App{
 		configPath:     configPath,
 		debugMode:      debugMode,
@@ -132,18 +132,25 @@ func runTUIMode(configPath string, debugMode bool, configMode bool) {
 		fmt.Fprintf(os.Stderr, "  2. Restart the application\n")
 		fmt.Fprintf(os.Stderr, "\nThe application will continue with limited functionality.\n")
 	}
-	app.run()
+
+	// Run appropriate TUI mode
+	if tuiRichMode {
+		app.runRichTUI()
+	} else {
+		app.run()
+	}
 }
 
-func parseFlags() (string, bool, bool, bool, bool, bool) {
+func parseFlags() (string, bool, bool, bool, bool, bool, bool) {
 	configPath := flag.String("config", config.GetConfigFilePath(), "Path to config file")
 	debugMode := flag.Bool("debug", false, "Enable debug mode")
 	showVersion := flag.Bool("version", false, "Show version")
 	showHelp := flag.Bool("help", false, "Show help")
 	configMode := flag.Bool("configure", false, "Enter configuration mode")
-	tuiMode := flag.Bool("tui", false, "Run in Terminal UI (TUI) mode")
+	tuiMode := flag.Bool("tui", false, "Run in Terminal UI (TUI) mode (simple)")
+	tuiRichMode := flag.Bool("tui-rich", false, "Run in Rich Terminal UI (TUI) mode (tview)")
 	flag.Parse()
-	return *configPath, *debugMode, *showVersion, *showHelp, *configMode, *tuiMode
+	return *configPath, *debugMode, *showVersion, *showHelp, *configMode, *tuiMode, *tuiRichMode
 }
 
 func showHelpText() {
@@ -153,16 +160,18 @@ func showHelpText() {
 	fmt.Println("\nOptions:")
 	flag.PrintDefaults()
 	fmt.Println("\nModes:")
-	fmt.Println("  Default - Graphical User Interface (GUI) mode")
-	fmt.Println("  --tui   - Terminal UI (TUI) mode")
-	fmt.Println("\nInteractive commands (TUI mode only):")
-	fmt.Println("  c - Configure settings")
-	fmt.Println("  l - Display all logs")
-	fmt.Println("  s - Scan now")
-	fmt.Println("  i - Open input directory")
-	fmt.Println("  o - Open output directory")
-	fmt.Println("  r - Start/stop recording")
-	fmt.Println("  q - Quit")
+	fmt.Println("  Default      - Graphical User Interface (GUI) mode")
+	fmt.Println("  --tui        - Terminal UI (TUI) mode (simple)")
+	fmt.Println("  --tui-rich   - Rich Terminal UI (TUI) mode (tview, recommended)")
+	fmt.Println("\nInteractive commands (TUI modes):")
+	fmt.Println("  F1/c - Configure settings")
+	fmt.Println("  F2/l - Display all logs")
+	fmt.Println("  F3/s - Scan now")
+	fmt.Println("  F4/r - Start/stop recording")
+	fmt.Println("  i    - Open input directory")
+	fmt.Println("  o    - Open output directory")
+	fmt.Println("  q    - Quit")
+	fmt.Println("\nAdditional commands (--tui mode):")
 	fmt.Println("  Enter - Refresh display")
 }
 
@@ -410,4 +419,138 @@ func (app *App) stopRecording() {
 		&app.logMutex, app.inputCount, app.outputCount, app.archiveCount,
 		&app.queuedFiles, app.processingFile, app.isProcessing, &app.mu,
 		app.isRecording, app.recordingStartTime)
+}
+
+func (app *App) runRichTUI() {
+	// Create context for graceful shutdown
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	// Create RichTUI
+	richTUI := ui.NewRichTUI(app.Config, &app.logBuffer, &app.logMutex, &app.queuedFiles, &app.mu)
+
+	// Set callbacks
+	richTUI.SetCallbacks(
+		// onScan
+		func() {
+			logger.LogInfo(app.logger, &app.logBuffer, &app.logMutex, "手動スキャンを実行しました")
+			go processor.ScanAndProcess(app.Config, app.logger, &app.logBuffer, &app.logMutex,
+				&app.lastScanTime, &app.queuedFiles, &app.processingFile, &app.isProcessing,
+				&app.processedFiles, &app.mu, &app.wg, app.debugMode)
+			richTUI.SetLastScanTime(app.lastScanTime)
+		},
+		// onRecord
+		func() {
+			app.handleRecordingToggle()
+		},
+		// onConfig
+		func() {
+			config.ConfigureSettings(app.Config, app.configPath, app.logger)
+		},
+		// onLogs
+		func() {
+			ui.DisplayLogs(app.Config)
+		},
+		// onInput
+		func() {
+			if err := ui.OpenDirectory(app.Config.InputDir); err != nil {
+				logger.LogError(app.logger, &app.logBuffer, &app.logMutex, "入力ディレクトリを開けませんでした: %v", err)
+			}
+		},
+		// onOutput
+		func() {
+			if err := ui.OpenDirectory(app.Config.OutputDir); err != nil {
+				logger.LogError(app.logger, &app.logBuffer, &app.logMutex, "出力ディレクトリを開けませんでした: %v", err)
+			}
+		},
+		// onQuit
+		func() {
+			logger.LogInfo(app.logger, &app.logBuffer, &app.logMutex, "KoeMoji-Goを終了しています...")
+			cancel()
+		},
+	)
+
+	// Start background processing
+	go processor.StartProcessing(ctx, app.Config, app.logger, &app.logBuffer, &app.logMutex,
+		&app.lastScanTime, &app.queuedFiles, &app.processingFile, &app.isProcessing,
+		&app.processedFiles, &app.mu, &app.wg, app.debugMode)
+
+	logger.LogInfo(app.logger, &app.logBuffer, &app.logMutex, "KoeMoji-Go Rich TUI起動中...")
+	logger.LogInfo(app.logger, &app.logBuffer, &app.logMutex, "%sディレクトリを%d分ごとに監視しています", app.Config.InputDir, app.Config.ScanIntervalMinutes)
+
+	// Start periodic UI updates
+	go func() {
+		ticker := time.NewTicker(1 * time.Second)
+		defer ticker.Stop()
+
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case <-ticker.C:
+				// Update file counts
+				app.updateFileCounts()
+
+				// Update status
+				richTUI.UpdateStatus(
+					app.inputCount,
+					app.outputCount,
+					app.archiveCount,
+					app.processingFile,
+					app.isProcessing,
+					app.isRecording,
+					app.recordingStartTime,
+				)
+
+				// Update logs
+				richTUI.UpdateLogs()
+
+				// Update last scan time
+				richTUI.SetLastScanTime(app.lastScanTime)
+			}
+		}
+	}()
+
+	// Run TUI (blocking)
+	if err := richTUI.Run(); err != nil {
+		logger.LogError(app.logger, &app.logBuffer, &app.logMutex, "Rich TUIエラー: %v", err)
+	}
+
+	// Graceful shutdown
+	cancel()
+	logger.LogInfo(app.logger, &app.logBuffer, &app.logMutex, "シャットダウンを開始しました...")
+
+	// Wait for graceful shutdown with timeout
+	done := make(chan bool, 1)
+	go func() {
+		app.wg.Wait()
+		done <- true
+	}()
+
+	select {
+	case <-done:
+		logger.LogInfo(app.logger, &app.logBuffer, &app.logMutex, "シャットダウンが完了しました")
+	case <-time.After(10 * time.Second):
+		logger.LogInfo(app.logger, &app.logBuffer, &app.logMutex, "シャットダウンタイムアウト、強制終了します")
+	}
+}
+
+func (app *App) updateFileCounts() {
+	// Count files in each directory
+	if entries, err := os.ReadDir(app.Config.InputDir); err == nil {
+		app.inputCount = 0
+		for _, entry := range entries {
+			if !entry.IsDir() && ui.IsAudioFile(entry.Name()) {
+				app.inputCount++
+			}
+		}
+	}
+
+	if entries, err := os.ReadDir(app.Config.OutputDir); err == nil {
+		app.outputCount = len(entries)
+	}
+
+	if entries, err := os.ReadDir(app.Config.ArchiveDir); err == nil {
+		app.archiveCount = len(entries)
+	}
 }
