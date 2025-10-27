@@ -7,10 +7,10 @@
 ### 🎯 [user/](./user/) - ユーザー向けドキュメント
 エンドユーザーが使用するための詳細なガイドライン。
 
-- **[USAGE.md](./user/USAGE.md)** - 使用方法ガイドの目次・ナビゲーション
 - **[BASIC_USAGE.md](./user/BASIC_USAGE.md)** - 基本的な操作方法とコマンド
 - **[AI_FEATURES.md](./user/AI_FEATURES.md)** - AI要約機能の詳細設定
 - **[RECORDING_SETUP.md](./user/RECORDING_SETUP.md)** - 録音機能セットアップガイド
+- **[SYSTEM_AUDIO_RECORDING_MACOS.md](./user/SYSTEM_AUDIO_RECORDING_MACOS.md)** - macOSシステム音声録音ガイド
 - **[TROUBLESHOOTING.md](./user/TROUBLESHOOTING.md)** - 問題解決とFAQ
 
 ### 💻 [developer/](./developer/) - 開発者向けドキュメント
@@ -18,39 +18,54 @@
 
 - **[ARCHITECTURE.md](./developer/ARCHITECTURE.md)** - システムアーキテクチャ、パッケージ構成、設計思想
 - **[DEVELOPMENT.md](./developer/DEVELOPMENT.md)** - 開発環境構築、ビルドプロセス、テスト手順
+- **[MACOS_BUILD_GUIDE.md](./developer/MACOS_BUILD_GUIDE.md)** - macOS環境でのビルド手順
 - **[WINDOWS_BUILD_GUIDE.md](./developer/WINDOWS_BUILD_GUIDE.md)** - Windows環境でのビルド手順（MSYS2使用）
 - **[GITHUB_CLI.md](./developer/GITHUB_CLI.md)** - GitHub CLI自動化、リリース管理
-- **[CLAUDE.md](./developer/CLAUDE.md)** - AI開発アシスタント向けプロジェクト情報
+- **[PROGRAM_FLOW.md](./developer/PROGRAM_FLOW.md)** - プログラムフロー詳細
+- **[VERSION_UPDATE_CHECKLIST.md](./developer/VERSION_UPDATE_CHECKLIST.md)** - バージョン更新チェックリスト
 
 ### 📐 [design/](./design/) - 設計ドキュメント
 システム設計と仕様に関する詳細な設計書。
 
-- **[LICENSE_MVP.md](./design/LICENSE_MVP.md)** - ライセンス認証MVP計画（オフライン、Windows版のみ、4週間）
-- **[LICENSE_SPEC.md](./design/LICENSE_SPEC.md)** - ライセンス認証詳細仕様（データ構造、API、フロー図）
-- **[DASHBOARD_GUI_DESIGN.md](./design/DASHBOARD_GUI_DESIGN.md)** - GUI設計仕様、ユーザーインターフェース設計原則
-- **[SoundRecorderDesign.md](./design/SoundRecorderDesign.md)** - 音声録音システム設計書（v3.0完全実装版）
+- **[dual-recording-design.md](./design/dual-recording-design.md)** - デュアル録音設計（システム音声+マイク）
+- **[macos-system-audio-capture.md](./design/macos-system-audio-capture.md)** - macOSシステム音声キャプチャ設計
+- **[SoundRecorderDesign.md](./design/SoundRecorderDesign.md)** - 音声録音システム設計書
+- **[VoiceMeeterIntegration.md](./design/VoiceMeeterIntegration.md)** - VoiceMeeter統合設計
 - **[KISS-Design-Principles.md](./design/KISS-Design-Principles.md)** - シンプル設計原則
+- **[MOCK_TESTING_DESIGN.md](./design/MOCK_TESTING_DESIGN.md)** - モックテスト設計
+- **[UI_DEVELOPMENT_POLICY.md](./design/UI_DEVELOPMENT_POLICY.md)** - UI開発ポリシー
 
 ### 🔧 [technical/](./technical/) - 技術ノート
 実装時の技術的課題と解決策を記録したテクニカルノート。
 
+- **[FASTER_WHISPER.md](./technical/FASTER_WHISPER.md)** - FasterWhisper技術文書
 - **[fyne-implementation.md](./technical/fyne-implementation.md)** - Fyneフレームワーク実装における課題と解決策
-- **[windows-process-execution.md](./technical/windows-process-execution.md)** - Windows環境での外部プロセス起動とコンソールウィンドウ制御
 - **[Fyne-Deep-Research.md](./technical/Fyne-Deep-Research.md)** - Fyneフレームワークの詳細調査
+- **[windows-process-execution.md](./technical/windows-process-execution.md)** - Windows環境での外部プロセス起動とコンソールウィンドウ制御
 
-### 🎨 [creative/](./creative/) - 創作・教育コンテンツ
-技術学習や創作的なアプローチでのドキュメント。
+### 💼 [business/](./business/) - ビジネス・営業向けドキュメント
+商用利用ガイドと営業資料。
 
-- **[GO_LANGUAGE_ESSAY.md](./creative/GO_LANGUAGE_ESSAY.md)** - Go言語学習エッセイ
-- **[LYNCH_NARRATIVE.md](./creative/LYNCH_NARRATIVE.md)** - 芸術的解釈によるコードベース説明
+- **[COMMERCIAL_USE.md](./business/COMMERCIAL_USE.md)** - 商用利用ガイド
+- **[ONE_PAGER.md](./business/ONE_PAGER.md)** - 1ページ営業資料
+- **[SECURITY_WHITEPAPER.md](./business/SECURITY_WHITEPAPER.md)** - セキュリティホワイトペーパー
+- **[SERVICE_INTRODUCTION.md](./business/SERVICE_INTRODUCTION.md)** - サービス紹介
+- **[SUPPORT_PLANS.md](./business/SUPPORT_PLANS.md)** - サポートプラン詳細
 
-### 📊 [progress/](./progress/) - 開発進捗記録
-バージョンごとの開発進捗と問題解決の記録。
+### 🧪 [testing/](./testing/) - テスト関連ドキュメント
+テスト手順とチェックリスト。
 
-- **[v1.6.0-build-system-fix.md](./progress/v1.6.0-build-system-fix.md)** - Windowsビルドシステム修正の詳細記録（問題分析、解決策、検証、教訓）
-- **[v1.6.0-voicemeeter-issue.md](./progress/v1.6.0-voicemeeter-issue.md)** - VoiceMeeter統合機能の開発記録と問題解決
-- **[v1.6.0-voicemeeter-verification.md](./progress/v1.6.0-voicemeeter-verification.md)** - VoiceMeeter Banana実環境検証記録（設定手順、テスト結果、問題と解決策）
-- **[voicemeeter-background-verification.md](./progress/voicemeeter-background-verification.md)** - VoiceMeeterバックグラウンド起動検証手順
+- **[MANUAL_TEST_CHECKLIST.md](./testing/MANUAL_TEST_CHECKLIST.md)** - 手動テストチェックリスト
+
+### 📦 [archive/](./archive/) - アーカイブドキュメント
+過去のバージョンや非推奨ドキュメントの保管場所。
+
+- **[creative/](./archive/creative/)** - 創作・教育コンテンツ（3ファイル）
+- **[tasks/](./archive/tasks/)** - 完了済みタスク（2ファイル）
+- **[design/](./archive/design/)** - 古い設計文書（4ファイル）
+- **[progress/](./archive/progress/)** - v1.6.x開発進捗記録（7ファイル）
+- **[CODE_REVIEW_2025-10-27.md](./archive/CODE_REVIEW_2025-10-27.md)** - コードレビュー結果
+- **[USAGE.md](./archive/USAGE.md)** - 旧使用方法ガイド
 
 ## 🗂️ その他の重要なドキュメント
 
@@ -64,8 +79,8 @@
 
 ### 初めてのユーザー
 1. [README.md](../README.md) でプロジェクト概要とクイックスタートを確認
-2. [user/USAGE.md](./user/USAGE.md) で詳細な使用方法を学習
-3. 問題が発生したら [TROUBLESHOOTING.md](user/TROUBLESHOOTING.md) を確認
+2. [user/BASIC_USAGE.md](./user/BASIC_USAGE.md) で詳細な使用方法を学習
+3. 問題が発生したら [user/TROUBLESHOOTING.md](./user/TROUBLESHOOTING.md) を確認
 
 ### 開発者・コントリビューター
 1. [developer/ARCHITECTURE.md](./developer/ARCHITECTURE.md) でシステム構成を理解
@@ -73,8 +88,9 @@
 3. [technical/fyne-implementation.md](./technical/fyne-implementation.md) で実装課題を確認
 
 ### システム設計者
-1. [design/DASHBOARD_GUI_DESIGN.md](./design/DASHBOARD_GUI_DESIGN.md) でGUI設計を確認
+1. [design/dual-recording-design.md](./design/dual-recording-design.md) でデュアル録音設計を確認
 2. [design/SoundRecorderDesign.md](./design/SoundRecorderDesign.md) で音声システム設計を理解
+3. [design/macos-system-audio-capture.md](./design/macos-system-audio-capture.md) でmacOS音声キャプチャ設計を確認
 
 ## 🔄 ドキュメント更新方針
 
