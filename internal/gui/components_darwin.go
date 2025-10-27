@@ -38,7 +38,7 @@ func (app *GUIApp) initializeRecorder() error {
 				"[DEBUG] デュアル録音モード: システム音声(48kHz Stereo) + マイク(44.1kHz Mono)")
 		} else {
 			logger.LogInfo(app.logger, &app.logBuffer, &app.logMutex,
-				"デュアル録音モード: システム音声 + マイク（2ファイル出力）")
+				"デュアル録音モード: システム音声 + マイク")
 		}
 	} else {
 		// Use standard Recorder for single device
