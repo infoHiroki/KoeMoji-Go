@@ -1,18 +1,14 @@
 package main
 
 import (
-	"bufio"
 	"context"
 	"flag"
 	"fmt"
 	"io"
 	"log"
 	"os"
-	"os/signal"
 	"path/filepath"
-	"strings"
 	"sync"
-	"syscall"
 	"time"
 
 	"github.com/infoHiroki/KoeMoji-Go/internal/config"
@@ -67,7 +63,7 @@ type App struct {
 }
 
 func main() {
-	configPath, debugMode, showVersion, showHelp, configMode, tuiMode, tuiRichMode := parseFlags()
+	configPath, debugMode, showVersion, showHelp, configMode, tuiMode := parseFlags()
 
 	if showVersion {
 		fmt.Printf("KoeMoji-Go v%s\n", version)
@@ -79,9 +75,9 @@ func main() {
 		return
 	}
 
-	// Handle TUI modes (non-default)
-	if tuiMode || tuiRichMode {
-		runTUIMode(configPath, debugMode, configMode, tuiRichMode)
+	// Handle TUI mode
+	if tuiMode {
+		runTUIMode(configPath, debugMode, configMode)
 		return
 	}
 
@@ -89,7 +85,7 @@ func main() {
 	gui.Run(configPath, debugMode)
 }
 
-func runTUIMode(configPath string, debugMode bool, configMode bool, tuiRichMode bool) {
+func runTUIMode(configPath string, debugMode bool, configMode bool) {
 	app := &App{
 		configPath:     configPath,
 		debugMode:      debugMode,
@@ -133,24 +129,19 @@ func runTUIMode(configPath string, debugMode bool, configMode bool, tuiRichMode 
 		fmt.Fprintf(os.Stderr, "\nThe application will continue with limited functionality.\n")
 	}
 
-	// Run appropriate TUI mode
-	if tuiRichMode {
-		app.runRichTUI()
-	} else {
-		app.run()
-	}
+	// Run TUI
+	app.runTUI()
 }
 
-func parseFlags() (string, bool, bool, bool, bool, bool, bool) {
+func parseFlags() (string, bool, bool, bool, bool, bool) {
 	configPath := flag.String("config", config.GetConfigFilePath(), "Path to config file")
 	debugMode := flag.Bool("debug", false, "Enable debug mode")
 	showVersion := flag.Bool("version", false, "Show version")
 	showHelp := flag.Bool("help", false, "Show help")
 	configMode := flag.Bool("configure", false, "Enter configuration mode")
-	tuiMode := flag.Bool("tui", false, "Run in Terminal UI (TUI) mode (simple)")
-	tuiRichMode := flag.Bool("tui-rich", false, "Run in Rich Terminal UI (TUI) mode (tview)")
+	tuiMode := flag.Bool("tui", false, "Run in Terminal UI (TUI) mode")
 	flag.Parse()
-	return *configPath, *debugMode, *showVersion, *showHelp, *configMode, *tuiMode, *tuiRichMode
+	return *configPath, *debugMode, *showVersion, *showHelp, *configMode, *tuiMode
 }
 
 func showHelpText() {
@@ -161,9 +152,8 @@ func showHelpText() {
 	flag.PrintDefaults()
 	fmt.Println("\nModes:")
 	fmt.Println("  Default      - Graphical User Interface (GUI) mode")
-	fmt.Println("  --tui        - Terminal UI (TUI) mode (simple)")
-	fmt.Println("  --tui-rich   - Rich Terminal UI (TUI) mode (tview, recommended)")
-	fmt.Println("\nInteractive commands (TUI modes):")
+	fmt.Println("  --tui        - Terminal UI (TUI) mode")
+	fmt.Println("\nInteractive commands (TUI mode):")
 	fmt.Println("  F1/c - Configure settings")
 	fmt.Println("  F2/l - Display all logs")
 	fmt.Println("  F3/s - Scan now")
@@ -171,8 +161,6 @@ func showHelpText() {
 	fmt.Println("  i    - Open input directory")
 	fmt.Println("  o    - Open output directory")
 	fmt.Println("  q    - Quit")
-	fmt.Println("\nAdditional commands (--tui mode):")
-	fmt.Println("  Enter - Refresh display")
 }
 
 func (app *App) initLogger() {
@@ -192,116 +180,6 @@ func (app *App) initLogger() {
 	// Only timestamps for file logging, no prefix for console
 	app.logger = log.New(io.MultiWriter(logFile), "", log.LstdFlags)
 	logger.LogInfo(app.logger, &app.logBuffer, &app.logMutex, "KoeMoji-Go started")
-}
-
-func (app *App) run() {
-	// Phase 2: Create context for graceful shutdown
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-
-	sigChan := make(chan os.Signal, 1)
-	signal.Notify(sigChan, os.Interrupt, syscall.SIGTERM)
-	defer signal.Stop(sigChan)
-
-	go processor.StartProcessing(ctx, app.Config, app.logger, &app.logBuffer, &app.logMutex,
-		&app.lastScanTime, &app.queuedFiles, &app.processingFile, &app.isProcessing,
-		&app.processedFiles, &app.mu, &app.wg, app.debugMode)
-	go app.handleUserInput(ctx)
-
-	logger.LogInfo(app.logger, &app.logBuffer, &app.logMutex, "KoeMoji-Go is running. Use commands below to interact.")
-	logger.LogInfo(app.logger, &app.logBuffer, &app.logMutex, "Monitoring %s directory every %d minutes", app.Config.InputDir, app.Config.ScanIntervalMinutes)
-
-	// Display initial dashboard
-	// Brief wait for initialization
-	time.Sleep(100 * time.Millisecond)
-	ui.RefreshDisplay(app.Config, app.startTime, app.lastScanTime, &app.logBuffer,
-		&app.logMutex, app.inputCount, app.outputCount, app.archiveCount,
-		&app.queuedFiles, app.processingFile, app.isProcessing, &app.mu,
-		app.isRecording, app.recordingStartTime)
-
-	<-sigChan
-	logger.LogInfo(app.logger, &app.logBuffer, &app.logMutex, "Graceful shutdown initiated...")
-	cancel() // Signal all goroutines to stop
-
-	// Wait for graceful shutdown with timeout
-	done := make(chan bool, 1)
-	go func() {
-		app.wg.Wait()
-		done <- true
-	}()
-
-	select {
-	case <-done:
-		logger.LogInfo(app.logger, &app.logBuffer, &app.logMutex, "Shutdown completed successfully")
-	case <-time.After(10 * time.Second):
-		logger.LogInfo(app.logger, &app.logBuffer, &app.logMutex, "Shutdown timeout, forcing exit")
-	}
-}
-
-func (app *App) handleUserInput(ctx context.Context) {
-	reader := bufio.NewReader(os.Stdin)
-	for {
-		select {
-		case <-ctx.Done():
-			logger.LogInfo(app.logger, &app.logBuffer, &app.logMutex, "User input handler stopped")
-			return
-		default:
-			// Non-blocking input check would be complex, so we keep the blocking read
-			// The context cancellation will be handled when the process exits
-		}
-		input, err := reader.ReadString('\n')
-		if err != nil {
-			if err == io.EOF {
-				return
-			}
-			continue
-		}
-
-		switch strings.TrimSpace(strings.ToLower(input)) {
-		case "":
-			// Empty Enter = manual refresh
-			ui.RefreshDisplay(app.Config, app.startTime, app.lastScanTime, &app.logBuffer,
-				&app.logMutex, app.inputCount, app.outputCount, app.archiveCount,
-				&app.queuedFiles, app.processingFile, app.isProcessing, &app.mu,
-				app.isRecording, app.recordingStartTime)
-		case "c":
-			config.ConfigureSettings(app.Config, app.configPath, app.logger)
-			ui.RefreshDisplay(app.Config, app.startTime, app.lastScanTime, &app.logBuffer,
-				&app.logMutex, app.inputCount, app.outputCount, app.archiveCount,
-				&app.queuedFiles, app.processingFile, app.isProcessing, &app.mu,
-				app.isRecording, app.recordingStartTime)
-		case "l":
-			ui.DisplayLogs(app.Config)
-			fmt.Print("Press Enter to continue...")
-			bufio.NewReader(os.Stdin).ReadString('\n')
-			ui.RefreshDisplay(app.Config, app.startTime, app.lastScanTime, &app.logBuffer,
-				&app.logMutex, app.inputCount, app.outputCount, app.archiveCount,
-				&app.queuedFiles, app.processingFile, app.isProcessing, &app.mu,
-				app.isRecording, app.recordingStartTime)
-		case "s":
-			logger.LogInfo(app.logger, &app.logBuffer, &app.logMutex, "Manual scan triggered")
-			go processor.ScanAndProcess(app.Config, app.logger, &app.logBuffer, &app.logMutex,
-				&app.lastScanTime, &app.queuedFiles, &app.processingFile, &app.isProcessing,
-				&app.processedFiles, &app.mu, &app.wg, app.debugMode)
-		case "i":
-			if err := ui.OpenDirectory(app.Config.InputDir); err != nil {
-				logger.LogError(app.logger, &app.logBuffer, &app.logMutex, "Failed to open input directory: %v", err)
-			}
-		case "o":
-			if err := ui.OpenDirectory(app.Config.OutputDir); err != nil {
-				logger.LogError(app.logger, &app.logBuffer, &app.logMutex, "Failed to open output directory: %v", err)
-			}
-		case "r":
-			app.handleRecordingToggle()
-		case "q":
-			logger.LogInfo(app.logger, &app.logBuffer, &app.logMutex, "Shutting down KoeMoji-Go...")
-			os.Exit(0)
-		default:
-			if strings.TrimSpace(input) != "" {
-				fmt.Printf("Invalid command '%s' (use c/l/s/i/o/a/r/q or Enter to refresh)\n", strings.TrimSpace(input))
-			}
-		}
-	}
 }
 
 func (app *App) handleRecordingToggle() {
@@ -421,15 +299,15 @@ func (app *App) stopRecording() {
 		app.isRecording, app.recordingStartTime)
 }
 
-func (app *App) runRichTUI() {
-	// Phase 11: Integrated Rich TUI with actual functions
+func (app *App) runTUI() {
+	// Integrated TUI with actual functions
 
-	// Scan status tracking (Phase 13)
+	// Scan status tracking
 	isScanningFlag := false
 	scanStartTime := time.Time{}
 
-	// Create callbacks for Rich TUI
-	callbacks := &ui.RichTUICallbacks{
+	// Create callbacks for TUI
+	callbacks := &ui.TUICallbacks{
 		OnRecordingToggle: func() error {
 			app.handleRecordingToggle()
 			return nil
@@ -456,10 +334,10 @@ func (app *App) runRichTUI() {
 		},
 	}
 
-	// Create RichTUI with callbacks
-	richTUI := ui.NewRichTUI(app.Config, callbacks)
+	// Create TUI with callbacks
+	tui := ui.NewTUI(app.Config, callbacks)
 
-	logger.LogInfo(app.logger, &app.logBuffer, &app.logMutex, "KoeMoji-Go Rich TUI (Phase 11) 起動中...")
+	logger.LogInfo(app.logger, &app.logBuffer, &app.logMutex, "KoeMoji-Go TUI 起動中...")
 
 	// Start background processing (Phase 11)
 	ctx, cancel := context.WithCancel(context.Background())
@@ -486,7 +364,7 @@ func (app *App) runRichTUI() {
 				app.updateFileCounts()
 
 				// Update status
-				richTUI.UpdateStatus(
+				tui.UpdateStatus(
 					app.inputCount,
 					app.outputCount,
 					app.archiveCount,
@@ -501,27 +379,27 @@ func (app *App) runRichTUI() {
 				logBufferCopy := make([]logger.LogEntry, len(app.logBuffer))
 				copy(logBufferCopy, app.logBuffer)
 				app.logMutex.RUnlock()
-				richTUI.UpdateDashboard(logBufferCopy)
+				tui.UpdateDashboard(logBufferCopy)
 
 				// Update scan page (Phase 13: real-time scan status)
 				// Auto-reset scanning flag after 3 seconds
 				if isScanningFlag && time.Since(scanStartTime) > 3*time.Second {
 					isScanningFlag = false
 				}
-				richTUI.UpdateScanPage(app.lastScanTime, app.inputCount, isScanningFlag)
+				tui.UpdateScanPage(app.lastScanTime, app.inputCount, isScanningFlag)
 
 				// Update record page (Phase 13: real-time recording status)
 				deviceName := app.Config.RecordingDeviceName
-				richTUI.UpdateRecordPage(app.isRecording, app.recordingStartTime, deviceName)
+				tui.UpdateRecordPage(app.isRecording, app.recordingStartTime, deviceName)
 			case <-fileListTicker.C:
 				// Update file lists (Phase 11: real-time file list updates)
-				richTUI.UpdateFileLists()
+				tui.UpdateFileLists()
 			}
 		}
 	}()
 
 	// Run TUI (blocking)
-	if err := richTUI.Run(); err != nil {
+	if err := tui.Run(); err != nil {
 		logger.LogError(app.logger, &app.logBuffer, &app.logMutex, "Rich TUIエラー: %v", err)
 	}
 

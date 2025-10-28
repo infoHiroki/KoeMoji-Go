@@ -59,8 +59,8 @@ func volumeIndexToMicFloat(idx int) float64 {
 	return 1.6 // Default
 }
 
-// RichTUICallbacks contains callback functions for RichTUI actions (Phase 11)
-type RichTUICallbacks struct {
+// TUICallbacks contains callback functions for TUI actions (Phase 11)
+type TUICallbacks struct {
 	OnRecordingToggle func() error        // 録音開始/停止
 	OnScanTrigger     func() error        // 手動スキャン実行
 	OnOpenLogFile     func() error        // ログファイルを開く
@@ -68,12 +68,12 @@ type RichTUICallbacks struct {
 	OnRefreshFileList func() error        // ファイルリスト更新
 }
 
-// RichTUI represents a rich terminal UI (LazyGit/k9s style)
+// TUI represents a rich terminal UI (LazyGit/k9s style)
 // Phase 11: Integrated with actual application functions
-type RichTUI struct {
+type TUI struct {
 	app         *tview.Application
 	config      *config.Config
-	callbacks   *RichTUICallbacks // Phase 11: Callbacks for actions
+	callbacks   *TUICallbacks // Phase 11: Callbacks for actions
 	menuList    *tview.List
 	statusBar   *tview.TextView
 	helpBar     *tview.TextView
@@ -102,8 +102,8 @@ type RichTUI struct {
 	mu             sync.RWMutex
 }
 
-// NewRichTUI creates a new rich TUI (Phase 11: with callbacks)
-func NewRichTUI(cfg *config.Config, callbacks *RichTUICallbacks) *RichTUI {
+// NewTUI creates a new rich TUI (Phase 11: with callbacks)
+func NewTUI(cfg *config.Config, callbacks *TUICallbacks) *TUI {
 	app := tview.NewApplication()
 
 	// Create status bar (top, 3 lines)
@@ -207,8 +207,8 @@ func NewRichTUI(cfg *config.Config, callbacks *RichTUICallbacks) *RichTUI {
 		}
 	})
 
-	// Create RichTUI struct early to pass mainFlex to showRichHelpDialog
-	tui := &RichTUI{
+	// Create TUI struct early to pass mainFlex to showRichHelpDialog
+	tui := &TUI{
 		app:           app,
 		config:        cfg,
 		callbacks:     callbacks,     // Phase 11
@@ -304,12 +304,12 @@ func NewRichTUI(cfg *config.Config, callbacks *RichTUICallbacks) *RichTUI {
 }
 
 // Run starts the rich TUI
-func (t *RichTUI) Run() error {
+func (t *TUI) Run() error {
 	return t.app.SetRoot(t.mainFlex, true).Run()
 }
 
 // Stop stops the rich TUI
-func (t *RichTUI) Stop() {
+func (t *TUI) Stop() {
 	t.app.Stop()
 }
 
@@ -363,7 +363,7 @@ func showRichHelpDialog(app *tview.Application, mainFlex *tview.Flex) {
 }
 
 // updateStatusBar updates the status bar display (Phase 7)
-func (t *RichTUI) updateStatusBar() {
+func (t *TUI) updateStatusBar() {
 	t.mu.RLock()
 	defer t.mu.RUnlock()
 
@@ -399,7 +399,7 @@ func (t *RichTUI) updateStatusBar() {
 }
 
 // UpdateStatus updates status information from main goroutine (Phase 7)
-func (t *RichTUI) UpdateStatus(inputCount, outputCount, archiveCount int,
+func (t *TUI) UpdateStatus(inputCount, outputCount, archiveCount int,
 	processingFile string, isProcessing bool, isRecording bool, recordingStart time.Time) {
 
 	t.mu.Lock()
@@ -419,7 +419,7 @@ func (t *RichTUI) UpdateStatus(inputCount, outputCount, archiveCount int,
 }
 
 // UpdateFileLists updates the file lists for input/output/archive directories (Phase 11)
-func (t *RichTUI) UpdateFileLists() {
+func (t *TUI) UpdateFileLists() {
 	t.app.QueueUpdateDraw(func() {
 		// Update input file list
 		inputList, inputErr := CreateFileList(t.config.InputDir, t.app)
@@ -454,7 +454,7 @@ func (t *RichTUI) UpdateFileLists() {
 }
 
 // UpdateDashboard updates the dashboard page with real-time logs (Phase 12)
-func (t *RichTUI) UpdateDashboard(logBuffer []logger.LogEntry) {
+func (t *TUI) UpdateDashboard(logBuffer []logger.LogEntry) {
 	t.app.QueueUpdateDraw(func() {
 		// Build log text with colors
 		logText := "[yellow]リアルタイムログ（最新12件）[white]\n\n"
@@ -495,7 +495,7 @@ func getLogColorTUI(level string) string {
 }
 
 // UpdateScanPage updates the scan page with real-time scan status (Phase 13)
-func (t *RichTUI) UpdateScanPage(lastScanTime time.Time, fileCount int, isScanning bool) {
+func (t *TUI) UpdateScanPage(lastScanTime time.Time, fileCount int, isScanning bool) {
 	t.app.QueueUpdateDraw(func() {
 		var statusText string
 
@@ -514,7 +514,7 @@ func (t *RichTUI) UpdateScanPage(lastScanTime time.Time, fileCount int, isScanni
 }
 
 // UpdateRecordPage updates the record page with real-time recording status (Phase 13)
-func (t *RichTUI) UpdateRecordPage(isRecording bool, recordingStart time.Time, deviceName string) {
+func (t *TUI) UpdateRecordPage(isRecording bool, recordingStart time.Time, deviceName string) {
 	t.app.QueueUpdateDraw(func() {
 		var statusText string
 
@@ -550,7 +550,7 @@ func createBorderedTextView(title, text string) *tview.TextView {
 }
 
 // showConfigDialog shows configuration settings dialog (Phase 10 - split layout)
-func (t *RichTUI) showConfigDialog() {
+func (t *TUI) showConfigDialog() {
 	// Whisper models
 	whisperModels := []string{
 		"tiny", "tiny.en", "base", "base.en",

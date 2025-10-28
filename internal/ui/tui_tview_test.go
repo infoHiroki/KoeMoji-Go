@@ -10,17 +10,17 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-// createTestRichTUI creates a test RichTUI instance
-func createTestRichTUI(t *testing.T) *RichTUI {
+// createTestTUI creates a test TUI instance
+func createTestTUI(t *testing.T) *TUI {
 	cfg := config.GetDefaultConfig()
 	logBuffer := make([]logger.LogEntry, 0, 12)
 	logMutex := sync.RWMutex{}
 	queuedFiles := make([]string, 0)
 	mu := sync.Mutex{}
 
-	// Note: We don't call NewRichTUI here because it initializes tview.Application
-	// which requires a terminal. Instead, we create a minimal RichTUI for testing.
-	tui := &RichTUI{
+	// Note: We don't call NewTUI here because it initializes tview.Application
+	// which requires a terminal. Instead, we create a minimal TUI for testing.
+	tui := &TUI{
 		config:      cfg,
 		startTime:   time.Now(),
 		logBuffer:   &logBuffer,
@@ -32,8 +32,8 @@ func createTestRichTUI(t *testing.T) *RichTUI {
 	return tui
 }
 
-func TestRichTUI_Creation(t *testing.T) {
-	tui := createTestRichTUI(t)
+func TestTUI_Creation(t *testing.T) {
+	tui := createTestTUI(t)
 
 	assert.NotNil(t, tui.config)
 	assert.NotNil(t, tui.logBuffer)
@@ -43,8 +43,8 @@ func TestRichTUI_Creation(t *testing.T) {
 	assert.False(t, tui.startTime.IsZero())
 }
 
-func TestRichTUI_SetLastScanTime(t *testing.T) {
-	tui := createTestRichTUI(t)
+func TestTUI_SetLastScanTime(t *testing.T) {
+	tui := createTestTUI(t)
 
 	now := time.Now()
 	tui.SetLastScanTime(now)
@@ -52,8 +52,8 @@ func TestRichTUI_SetLastScanTime(t *testing.T) {
 	assert.Equal(t, now, tui.lastScanTime)
 }
 
-func TestRichTUI_LogColorCode(t *testing.T) {
-	tui := createTestRichTUI(t)
+func TestTUI_LogColorCode(t *testing.T) {
+	tui := createTestTUI(t)
 
 	tests := []struct {
 		level    string
@@ -75,8 +75,8 @@ func TestRichTUI_LogColorCode(t *testing.T) {
 	}
 }
 
-func TestRichTUI_StatusTracking(t *testing.T) {
-	tui := createTestRichTUI(t)
+func TestTUI_StatusTracking(t *testing.T) {
+	tui := createTestTUI(t)
 
 	// Test status tracking fields
 	assert.Equal(t, 0, tui.inputCount)
@@ -87,8 +87,8 @@ func TestRichTUI_StatusTracking(t *testing.T) {
 	assert.False(t, tui.isRecording)
 }
 
-func TestRichTUI_CallbacksNil(t *testing.T) {
-	tui := createTestRichTUI(t)
+func TestTUI_CallbacksNil(t *testing.T) {
+	tui := createTestTUI(t)
 
 	// Initially, callbacks should be nil
 	assert.Nil(t, tui.onScan)
@@ -100,8 +100,8 @@ func TestRichTUI_CallbacksNil(t *testing.T) {
 	assert.Nil(t, tui.onQuit)
 }
 
-func TestRichTUI_SetCallbacks(t *testing.T) {
-	tui := createTestRichTUI(t)
+func TestTUI_SetCallbacks(t *testing.T) {
+	tui := createTestTUI(t)
 
 	// Create test callbacks
 	scanCalled := false
@@ -154,8 +154,8 @@ func TestRichTUI_SetCallbacks(t *testing.T) {
 	assert.True(t, quitCalled)
 }
 
-func TestRichTUI_LogBuffer(t *testing.T) {
-	tui := createTestRichTUI(t)
+func TestTUI_LogBuffer(t *testing.T) {
+	tui := createTestTUI(t)
 
 	// Add log entries
 	tui.logMutex.Lock()
@@ -182,8 +182,8 @@ func TestRichTUI_LogBuffer(t *testing.T) {
 	assert.Equal(t, "Test error message", (*tui.logBuffer)[1].Message)
 }
 
-func TestRichTUI_QueuedFiles(t *testing.T) {
-	tui := createTestRichTUI(t)
+func TestTUI_QueuedFiles(t *testing.T) {
+	tui := createTestTUI(t)
 
 	// Add files to queue
 	tui.mu.Lock()
@@ -199,8 +199,8 @@ func TestRichTUI_QueuedFiles(t *testing.T) {
 	assert.Equal(t, "test2.wav", (*tui.queuedFiles)[1])
 }
 
-func TestRichTUI_ConcurrentAccess(t *testing.T) {
-	tui := createTestRichTUI(t)
+func TestTUI_ConcurrentAccess(t *testing.T) {
+	tui := createTestTUI(t)
 
 	var wg sync.WaitGroup
 	numGoroutines := 10
@@ -247,8 +247,8 @@ func TestRichTUI_ConcurrentAccess(t *testing.T) {
 }
 
 // Benchmark tests
-func BenchmarkRichTUI_LogColorCode(b *testing.B) {
-	tui := createTestRichTUI(&testing.T{})
+func BenchmarkTUI_LogColorCode(b *testing.B) {
+	tui := createTestTUI(&testing.T{})
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
@@ -256,8 +256,8 @@ func BenchmarkRichTUI_LogColorCode(b *testing.B) {
 	}
 }
 
-func BenchmarkRichTUI_SetLastScanTime(b *testing.B) {
-	tui := createTestRichTUI(&testing.T{})
+func BenchmarkTUI_SetLastScanTime(b *testing.B) {
+	tui := createTestTUI(&testing.T{})
 	now := time.Now()
 
 	b.ResetTimer()
