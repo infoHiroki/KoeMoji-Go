@@ -104,7 +104,7 @@ cd build/macos
 ls -lh ../releases/
 
 # 期待される出力:
-# koemoji-go-1.6.1-macos.tar.gz
+# koemoji-go-macos-1.6.1.tar.gz
 ```
 
 ### ステップ4: 動作確認
@@ -112,7 +112,7 @@ ls -lh ../releases/
 ```bash
 # 解凍
 cd ../releases
-tar -xzf koemoji-go-1.6.1-macos.tar.gz
+tar -xzf koemoji-go-macos-1.6.1.tar.gz
 cd koemoji-go-1.6.1
 
 # バージョン確認
@@ -228,7 +228,7 @@ xattr -d com.apple.quarantine koemoji-go-1.6.1/koemoji-go
 ### ファイル構成
 
 ```
-koemoji-go-1.6.1-macos.tar.gz
+koemoji-go-macos-1.6.1.tar.gz
 └── koemoji-go-1.6.1/
     ├── koemoji-go           # 実行ファイル
     ├── config.json          # 設定ファイル（サンプル）
@@ -248,13 +248,13 @@ koemoji-go-1.6.1-macos.tar.gz
    ```bash
    # GitHubリポジトリページに移動
    # Releases → Draft a new release
-   # アセットとしてアップロード: koemoji-go-1.6.1-macos.tar.gz
+   # アセットとしてアップロード: koemoji-go-macos-1.6.1.tar.gz
    ```
 
 2. **ダウンロード後の手順**（ユーザー向け）
    ```bash
    # 解凍
-   tar -xzf koemoji-go-1.6.1-macos.tar.gz
+   tar -xzf koemoji-go-macos-1.6.1.tar.gz
 
    # ディレクトリ移動
    cd koemoji-go-1.6.1

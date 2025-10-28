@@ -45,7 +45,7 @@ exit /b 0
 echo Cleaning build artifacts...
 if exist %DIST_DIR% rmdir /s /q %DIST_DIR%
 if exist temp rmdir /s /q temp
-if exist ..\releases\koemoji-go-windows-*.zip del /q ..\releases\koemoji-go-windows-*.zip
+if exist ..\releases\koemoji-go-*.zip del /q ..\releases\koemoji-go-*.zip
 echo Clean completed.
 exit /b 0
 
@@ -186,7 +186,7 @@ copy "%~dp0..\common\assets\README_RELEASE.md" "koemoji-go-%VERSION%\README.md" 
 
 rem Create ZIP package with new naming convention
 echo Creating ZIP package...
-set RELEASE_NAME=koemoji-go-windows-%VERSION%
+set RELEASE_NAME=koemoji-go-%VERSION%
 if exist "%RELEASE_NAME%.zip" del "%RELEASE_NAME%.zip"
 powershell -Command "Compress-Archive -Path 'koemoji-go-%VERSION%' -DestinationPath '%RELEASE_NAME%.zip' -Force"
 if %errorlevel% neq 0 (

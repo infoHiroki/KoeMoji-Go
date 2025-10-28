@@ -77,7 +77,7 @@ gh release create v1.1.1 \
 - EXEファイルのアイコン表示問題を修正
 EOF
 )" \
-  build/dist/koemoji-go-windows-1.1.0.zip \
+  build/dist/koemoji-go-1.1.0.zip \
   build/dist/koemoji-go-macos-arm64-1.1.0.tar.gz
 ```
 

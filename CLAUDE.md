@@ -32,7 +32,7 @@ cd build/macos
 ./build.sh clean  # ビルド成果物のクリーンアップ
 
 # Windows配布用ビルド（MSYS2/MinGW64が必要）
-cd build/windows && build.bat  # → koemoji-go-windows-1.8.0.zip
+cd build/windows && build.bat  # → koemoji-go-1.8.0.zip
 
 # ビルド成果物のクリーンアップ
 cd build/macos && ./build.sh clean
@@ -44,9 +44,10 @@ cd build/windows && build.bat clean
 - `koemoji-go-macos-{VERSION}.tar.gz` (GUI/TUI両対応)
 
 **Windows**:
-- `koemoji-go-windows-{VERSION}.zip`
+- `koemoji-go-{VERSION}.zip`
 
 **変更履歴**:
+- v1.8.1（未リリース）: Windows版命名規則変更（`koemoji-go-windows-{VERSION}.zip` → `koemoji-go-{VERSION}.zip`、「windows」単語を排除してセキュリティフィルタ回避）
 - v1.8.0: macOSデュアル録音機能実装（FFmpeg不要の1ファイルミキシング）
 - v1.7.2: macOS版はtar.gz形式のみ（DMG版は廃止、Apple Developer Programコスト削減のため）
 - v1.7.0: 命名規則変更（プラットフォーム名を中央に配置、ウイルス検知回避強化）
@@ -233,7 +234,7 @@ KoeMoji-Go/
   - **注**: DMG版は廃止（Apple Developer Program年間費用削減のため）
 
 **Windows**:
-- `koemoji-go-windows-{VERSION}.zip`
+- `koemoji-go-{VERSION}.zip`
 - 解凍後フォルダ: `koemoji-go-{VERSION}/`
 
 ### DLL処理（Windows）
@@ -414,6 +415,22 @@ dir build\windows\*.dll
    - `internal/recorder/test_afconvert_wav_test.go` - afconvert互換性テスト
    - 手動テスト: 503KB、2.68秒、48kHz Stereo Int16 正常動作確認
 
+### 未リリース（2025-10-29）
+1. **Windows版ビルド成果物の命名規則変更**
+   - セキュリティフィルタ回避のため「windows」という単語を完全排除
+   - 旧: `koemoji-go-windows-{VERSION}.zip`
+   - 新: `koemoji-go-{VERSION}.zip`
+   - macOS版は変更なし: `koemoji-go-macos-{VERSION}.tar.gz`
+
+2. **変更ファイル（計9ファイル）**
+   - **実装層**: `build/windows/build.bat`, `scripts/release.sh`
+   - **ドキュメント層**: `CLAUDE.md`, `README.md`, `WINDOWS_BUILD_GUIDE.md`, `GITHUB_CLI.md`, `MACOS_BUILD_GUIDE.md`, `VERSION_UPDATE_CHECKLIST.md`
+
+3. **背景**
+   - 「windows」という単語がセキュリティソフトやブラウザのフィルタリングに引っかかる問題
+   - 企業PCや学校ネットワークでダウンロードがブロックされるケースを回避
+   - メール添付時の拒否リスクを最小化
+
 ### 未リリース（2025-10-28）
 1. **TUI正式版化（Phase 14完了）**
    - Rich TUIを正式版に昇格（`tui_rich.go` → `tui_tview.go`）
@@ -590,7 +607,7 @@ build.bat
 gh release create v1.7.0 \
   --title "v1.7.0" \
   --notes "リリースノート" \
-  build/releases/koemoji-go-windows-1.7.0.zip
+  build/releases/koemoji-go-1.7.0.zip
 
 # リリース確認
 gh release view v1.7.0

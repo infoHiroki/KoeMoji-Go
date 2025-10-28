@@ -158,16 +158,16 @@ git push origin v1.7.0
 - 修正2の説明
 
 ### 📦 ダウンロード
-- Windows: `KoeMoji-Go-v1.7.0-win.zip`
-- macOS: `KoeMoji-Go-v1.7.0-mac.tar.gz`
+- Windows: `koemoji-go-1.7.0.zip`
+- macOS: `koemoji-go-macos-1.7.0.tar.gz`
 
 ### 📝 インストール手順
 [README.md](https://github.com/hirokitakamura/koemoji-go#installation) を参照してください。
 ```
 
 6. アセットをアップロード:
-   - `build/releases/KoeMoji-Go-v1.7.0-win.zip`
-   - `build/releases/KoeMoji-Go-v1.7.0-mac.tar.gz`
+   - `build/releases/koemoji-go-1.7.0.zip`
+   - `build/releases/koemoji-go-macos-1.7.0.tar.gz`
 
 7. **Publish release**
 

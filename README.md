@@ -37,7 +37,7 @@ Pythonがない場合は [Python公式ダウンロード](https://www.python.org
 
 #### 🪟 Windows
 
-1. **ダウンロード**: `koemoji-go-windows-1.7.0.zip`
+1. **ダウンロード**: `koemoji-go-1.7.0.zip`
 2. **展開後の構成**:
    ```
    📁 koemoji-go-1.7.0

@@ -147,7 +147,7 @@ Package portaudio-2.0 was not found in the pkg-config search path
 ビルド成功後、以下の構成で配布パッケージが作成されます:
 
 ```
-koemoji-go-windows-1.5.4.zip
+koemoji-go-1.5.4.zip
 ├── koemoji-go.exe          # 実行ファイル（アイコン付き）
 ├── libportaudio.dll        # PortAudioライブラリ
 ├── libgcc_s_seh-1.dll      # GCCランタイム

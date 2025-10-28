@@ -25,7 +25,7 @@ if [ ! -d "$RELEASE_DIR" ]; then
 fi
 
 # 3. ビルド成果物の確認
-WINDOWS_ZIP="build/releases/koemoji-go-windows-${VERSION}.zip"
+WINDOWS_ZIP="build/releases/koemoji-go-${VERSION}.zip"
 
 if [ ! -f "$WINDOWS_ZIP" ]; then
     echo "❌ Error: Windows build not found at $WINDOWS_ZIP"
@@ -56,7 +56,7 @@ RELEASE_NOTES="## KoeMoji-Go v${VERSION}
 - プラットフォーム別デフォルト設定
 
 ### ダウンロード
-- **Windows版**: koemoji-go-windows-${VERSION}.zip
+- **Windows版**: koemoji-go-${VERSION}.zip
 
 ### システム要件
 - Windows 10/11（64bit）
