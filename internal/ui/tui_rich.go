@@ -757,19 +757,20 @@ func (t *RichTUI) showConfigDialog() {
 				SetTitle(" UI言語を選択 ").
 				SetTitleAlign(tview.AlignCenter)
 
+			// SetSelectedFunc for when selection is confirmed
+			dropdown.SetSelectedFunc(func(displayName string, idx int) {
+				if idx == 0 {
+					t.config.UILanguage = "ja"
+				} else {
+					t.config.UILanguage = "en"
+				}
+				basicList.SetItemText(0, "UI言語", displayName)
+				closeEditDialog()
+			})
+
+			// SetInputCapture only for Escape
 			dropdown.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 				if event.Key() == tcell.KeyEscape {
-					closeEditDialog()
-					return nil
-				}
-				if event.Key() == tcell.KeyEnter {
-					idx, displayName := dropdown.GetCurrentOption()
-					if idx == 0 {
-						t.config.UILanguage = "ja"
-					} else {
-						t.config.UILanguage = "en"
-					}
-					basicList.SetItemText(0, "UI言語", displayName)
 					closeEditDialog()
 					return nil
 				}
@@ -788,16 +789,17 @@ func (t *RichTUI) showConfigDialog() {
 				SetTitle(" Whisperモデルを選択 ").
 				SetTitleAlign(tview.AlignCenter)
 
+			// SetSelectedFunc for when selection is confirmed
+			dropdown.SetSelectedFunc(func(modelName string, idx int) {
+				currentModelIndex = idx
+				t.config.WhisperModel = modelName
+				basicList.SetItemText(1, "Whisperモデル", modelName)
+				closeEditDialog()
+			})
+
+			// SetInputCapture only for Escape
 			dropdown.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 				if event.Key() == tcell.KeyEscape {
-					closeEditDialog()
-					return nil
-				}
-				if event.Key() == tcell.KeyEnter {
-					idx, modelName := dropdown.GetCurrentOption()
-					currentModelIndex = idx
-					t.config.WhisperModel = modelName
-					basicList.SetItemText(1, "Whisperモデル", modelName)
 					closeEditDialog()
 					return nil
 				}
@@ -816,16 +818,17 @@ func (t *RichTUI) showConfigDialog() {
 				SetTitle(" 認識言語を選択 ").
 				SetTitleAlign(tview.AlignCenter)
 
+			// SetSelectedFunc for when selection is confirmed
+			dropdown.SetSelectedFunc(func(_ string, idx int) {
+				currentLangIndex = idx
+				t.config.Language = languages[idx]
+				basicList.SetItemText(2, "認識言語", languageNames[idx])
+				closeEditDialog()
+			})
+
+			// SetInputCapture only for Escape
 			dropdown.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 				if event.Key() == tcell.KeyEscape {
-					closeEditDialog()
-					return nil
-				}
-				if event.Key() == tcell.KeyEnter {
-					idx, _ := dropdown.GetCurrentOption()
-					currentLangIndex = idx
-					t.config.Language = languages[idx]
-					basicList.SetItemText(2, "認識言語", languageNames[idx])
 					closeEditDialog()
 					return nil
 				}
@@ -997,15 +1000,16 @@ func (t *RichTUI) showConfigDialog() {
 				SetTitle(" LLMモデルを選択 ").
 				SetTitleAlign(tview.AlignCenter)
 
+			// SetSelectedFunc for when selection is confirmed
+			dropdown.SetSelectedFunc(func(modelName string, _ int) {
+				t.config.LLMModel = modelName
+				llmList.SetItemText(2, "LLMモデル", modelName)
+				closeEditDialog()
+			})
+
+			// SetInputCapture only for Escape
 			dropdown.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 				if event.Key() == tcell.KeyEscape {
-					closeEditDialog()
-					return nil
-				}
-				if event.Key() == tcell.KeyEnter {
-					_, modelName := dropdown.GetCurrentOption()
-					t.config.LLMModel = modelName
-					llmList.SetItemText(2, "LLMモデル", modelName)
 					closeEditDialog()
 					return nil
 				}
@@ -1097,20 +1101,21 @@ func (t *RichTUI) showConfigDialog() {
 				SetTitle(" 録音デバイスを選択 ").
 				SetTitleAlign(tview.AlignCenter)
 
+			// SetSelectedFunc for when selection is confirmed
+			dropdown.SetSelectedFunc(func(deviceName string, idx int) {
+				if idx == 0 {
+					t.config.RecordingDeviceName = ""
+					recordingList.SetItemText(0, "録音デバイス", "デフォルト")
+				} else {
+					t.config.RecordingDeviceName = deviceName
+					recordingList.SetItemText(0, "録音デバイス", deviceName)
+				}
+				closeEditDialog()
+			})
+
+			// SetInputCapture only for Escape
 			dropdown.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 				if event.Key() == tcell.KeyEscape {
-					closeEditDialog()
-					return nil
-				}
-				if event.Key() == tcell.KeyEnter {
-					idx, deviceName := dropdown.GetCurrentOption()
-					if idx == 0 {
-						t.config.RecordingDeviceName = ""
-						recordingList.SetItemText(0, "録音デバイス", "デフォルト")
-					} else {
-						t.config.RecordingDeviceName = deviceName
-						recordingList.SetItemText(0, "録音デバイス", deviceName)
-					}
 					closeEditDialog()
 					return nil
 				}
@@ -1138,19 +1143,20 @@ func (t *RichTUI) showConfigDialog() {
 				SetTitle(" 録音モードを選択 ").
 				SetTitleAlign(tview.AlignCenter)
 
+			// SetSelectedFunc for when selection is confirmed
+			dropdown.SetSelectedFunc(func(text string, index int) {
+				t.config.DualRecordingEnabled = (index == 1)
+				modeDisplay := "シングル"
+				if index == 1 {
+					modeDisplay = "デュアル"
+				}
+				recordingList.SetItemText(1, "録音モード", modeDisplay)
+				closeEditDialog()
+			})
+
+			// SetInputCapture only for Escape
 			dropdown.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 				if event.Key() == tcell.KeyEscape {
-					closeEditDialog()
-					return nil
-				}
-				if event.Key() == tcell.KeyEnter {
-					idx, _ := dropdown.GetCurrentOption()
-					t.config.DualRecordingEnabled = (idx == 1)
-					modeDisplay := "シングル"
-					if t.config.DualRecordingEnabled {
-						modeDisplay = "デュアル"
-					}
-					recordingList.SetItemText(1, "録音モード", modeDisplay)
 					closeEditDialog()
 					return nil
 				}
@@ -1319,6 +1325,8 @@ func (t *RichTUI) showConfigDialog() {
 				t.app.SetFocus(dirList)
 			case 2:
 				t.app.SetFocus(llmList)
+			case 3:
+				t.app.SetFocus(recordingList)
 			}
 			return nil
 		}
@@ -1357,6 +1365,7 @@ func (t *RichTUI) showConfigDialog() {
 	basicList.SetInputCapture(listInputCapture)
 	dirList.SetInputCapture(listInputCapture)
 	llmList.SetInputCapture(listInputCapture)
+	recordingList.SetInputCapture(listInputCapture)
 
 	// Show dialog
 	t.app.SetRoot(mainContainer, true).SetFocus(categoryList)
