@@ -16,7 +16,12 @@ import (
 // Architecture: 2-stream approach (separate files for system audio and microphone)
 // - System audio: ScreenCaptureKit (Swift CLI) → 48kHz, Float32, Stereo
 // - Microphone: PortAudio → 44.1kHz, Int16, Mono (configurable)
-// - Output: Two separate WAV files, optionally mixed with FFmpeg
+// - Output: Mixed to single WAV file (48kHz, Int16, Stereo)
+//
+// IMPORTANT: Headphones/earphones are recommended.
+// In speaker environments, the microphone may pick up system audio from speakers,
+// resulting in doubled system audio in the recording.
+// This is a physical limitation (acoustic coupling) and cannot be fully resolved by software.
 type DualRecorder struct {
 	// System audio (ScreenCaptureKit via Swift CLI)
 	systemRecorder *SystemAudioRecorder

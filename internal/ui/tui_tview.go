@@ -1143,6 +1143,21 @@ func (t *TUI) showConfigDialog() {
 				SetTitle(" 録音モードを選択 ").
 				SetTitleAlign(tview.AlignCenter)
 
+			// Information label for dual recording
+			infoLabel := tview.NewTextView().
+				SetDynamicColors(true).
+				SetText("[yellow]ℹ️  ヘッドホン/イヤホン推奨[white]\n" +
+					"スピーカーの音をマイクが拾い、\n" +
+					"システム音声が二重に録音される\n" +
+					"場合があります")
+			infoLabel.SetBorder(false)
+
+			// Combine dropdown and info label in a Flex
+			flex := tview.NewFlex().
+				SetDirection(tview.FlexRow).
+				AddItem(dropdown, 3, 0, true).
+				AddItem(infoLabel, 4, 0, false)
+
 			// SetSelectedFunc for when selection is confirmed
 			dropdown.SetSelectedFunc(func(text string, index int) {
 				t.config.DualRecordingEnabled = (index == 1)
@@ -1163,7 +1178,7 @@ func (t *TUI) showConfigDialog() {
 				return event
 			})
 
-			showEditDialog("録音モード", dropdown)
+			showEditDialog("録音モード", flex)
 
 		case 2: // System Volume
 			list := tview.NewList().ShowSecondaryText(false)
