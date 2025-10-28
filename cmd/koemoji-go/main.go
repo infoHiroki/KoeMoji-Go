@@ -67,7 +67,7 @@ type App struct {
 }
 
 func main() {
-	configPath, debugMode, showVersion, showHelp, configMode, tuiMode, tuiRichMode, tuiSimpleMode := parseFlags()
+	configPath, debugMode, showVersion, showHelp, configMode, tuiMode, tuiRichMode := parseFlags()
 
 	if showVersion {
 		fmt.Printf("KoeMoji-Go v%s\n", version)
@@ -80,11 +80,6 @@ func main() {
 	}
 
 	// Handle TUI modes (non-default)
-	if tuiSimpleMode {
-		runSimpleTUIMode(configPath, debugMode)
-		return
-	}
-
 	if tuiMode || tuiRichMode {
 		runTUIMode(configPath, debugMode, configMode, tuiRichMode)
 		return
@@ -146,7 +141,7 @@ func runTUIMode(configPath string, debugMode bool, configMode bool, tuiRichMode 
 	}
 }
 
-func parseFlags() (string, bool, bool, bool, bool, bool, bool, bool) {
+func parseFlags() (string, bool, bool, bool, bool, bool, bool) {
 	configPath := flag.String("config", config.GetConfigFilePath(), "Path to config file")
 	debugMode := flag.Bool("debug", false, "Enable debug mode")
 	showVersion := flag.Bool("version", false, "Show version")
@@ -154,9 +149,8 @@ func parseFlags() (string, bool, bool, bool, bool, bool, bool, bool) {
 	configMode := flag.Bool("configure", false, "Enter configuration mode")
 	tuiMode := flag.Bool("tui", false, "Run in Terminal UI (TUI) mode (simple)")
 	tuiRichMode := flag.Bool("tui-rich", false, "Run in Rich Terminal UI (TUI) mode (tview)")
-	tuiSimpleMode := flag.Bool("tui-simple", false, "Run in Simple TUI mode (for testing/debugging)")
 	flag.Parse()
-	return *configPath, *debugMode, *showVersion, *showHelp, *configMode, *tuiMode, *tuiRichMode, *tuiSimpleMode
+	return *configPath, *debugMode, *showVersion, *showHelp, *configMode, *tuiMode, *tuiRichMode
 }
 
 func showHelpText() {
@@ -571,33 +565,3 @@ func (app *App) updateFileCounts() {
 	}
 }
 
-func runSimpleTUIMode(configPath string, debugMode bool) {
-	// Load config
-	logPath := config.GetLogFilePath()
-	logDir := filepath.Dir(logPath)
-	if err := os.MkdirAll(logDir, 0755); err != nil {
-		log.Fatalf("Failed to create log directory: %v", err)
-	}
-
-	logFile, err := os.OpenFile(logPath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
-	if err != nil {
-		log.Fatalf("Failed to open log file: %v", err)
-	}
-	defer logFile.Close()
-
-	logger := log.New(io.MultiWriter(logFile), "", log.LstdFlags)
-
-	cfg, err := config.LoadConfig(configPath, logger)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Warning: Failed to load config: %v\n", err)
-		fmt.Fprintf(os.Stderr, "Using default configuration.\n")
-		cfg = config.GetDefaultConfig()
-	}
-
-	// Create and run SimpleTUI (Phase 0)
-	simpleTUI := ui.NewSimpleTUI(cfg)
-	if err := simpleTUI.Run(); err != nil {
-		fmt.Fprintf(os.Stderr, "SimpleTUI error: %v\n", err)
-		os.Exit(1)
-	}
-}
