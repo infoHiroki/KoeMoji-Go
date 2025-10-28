@@ -2,14 +2,57 @@ package ui
 
 import (
 	"fmt"
+	"strconv"
 	"sync"
 	"time"
 
 	"github.com/gdamore/tcell/v2"
 	"github.com/infoHiroki/KoeMoji-Go/internal/config"
 	"github.com/infoHiroki/KoeMoji-Go/internal/logger"
+	"github.com/infoHiroki/KoeMoji-Go/internal/recorder"
 	"github.com/rivo/tview"
 )
+
+// Helper functions for volume conversion (Phase 14)
+// Convert float64 volume (0.0-1.0) to index (0-4)
+func volumeFloatToIndex(vol float64) int {
+	systemVolumeScale := []float64{0.1, 0.2, 0.3, 0.5, 0.7}
+	micVolumeScale := []float64{1.0, 1.3, 1.6, 1.9, 2.2}
+
+	// Try system scale first
+	for i, v := range systemVolumeScale {
+		if vol <= v+0.05 { // Tolerance
+			return i
+		}
+	}
+
+	// Try mic scale
+	for i, v := range micVolumeScale {
+		if vol <= v+0.05 {
+			return i
+		}
+	}
+
+	return 2 // Default to middle (0)
+}
+
+// Convert index (0-4) to float64 volume for system audio
+func volumeIndexToSystemFloat(idx int) float64 {
+	systemVolumeScale := []float64{0.1, 0.2, 0.3, 0.5, 0.7}
+	if idx >= 0 && idx < len(systemVolumeScale) {
+		return systemVolumeScale[idx]
+	}
+	return 0.3 // Default
+}
+
+// Convert index (0-4) to float64 volume for microphone
+func volumeIndexToMicFloat(idx int) float64 {
+	micVolumeScale := []float64{1.0, 1.3, 1.6, 1.9, 2.2}
+	if idx >= 0 && idx < len(micVolumeScale) {
+		return micVolumeScale[idx]
+	}
+	return 1.6 // Default
+}
 
 // RichTUICallbacks contains callback functions for RichTUI actions (Phase 11)
 type RichTUICallbacks struct {
@@ -528,12 +571,13 @@ func (t *RichTUI) showConfigDialog() {
 		}
 	}
 
-	// Create category menu (left side)
+	// Create category menu (left side) - Phase 14: 4 categories
 	categoryList := tview.NewList().ShowSecondaryText(false)
 	categoryList.AddItem("1. 基本設定", "", 0, nil)
 	categoryList.AddItem("2. ディレクトリ", "", 0, nil)
 	categoryList.AddItem("3. LLM設定", "", 0, nil)
-	categoryList.AddItem("", "", 0, nil) // Separator
+	categoryList.AddItem("4. 録音設定", "", 0, nil) // Phase 14: NEW
+	categoryList.AddItem("", "", 0, nil)            // Separator
 	categoryList.AddItem("保存", "", 's', nil)
 	categoryList.AddItem("キャンセル", "", 'q', nil)
 	categoryList.SetBorder(true).
@@ -563,9 +607,17 @@ func (t *RichTUI) showConfigDialog() {
 	}
 
 	// === Page 1: Basic Settings List ===
+	// UI Language display
+	uiLangDisplay := "日本語"
+	if t.config.UILanguage == "en" {
+		uiLangDisplay = "English"
+	}
+
 	basicList := tview.NewList().ShowSecondaryText(true)
+	basicList.AddItem("UI言語", uiLangDisplay, 0, nil)
 	basicList.AddItem("Whisperモデル", t.config.WhisperModel, 0, nil)
 	basicList.AddItem("認識言語", langDisplay, 0, nil)
+	basicList.AddItem("スキャン間隔", fmt.Sprintf("%d分", t.config.ScanIntervalMinutes), 0, nil)
 	basicList.SetBorder(true).
 		SetTitle(" 基本設定 (Enterで編集) ").
 		SetTitleAlign(tview.AlignCenter)
@@ -592,21 +644,58 @@ func (t *RichTUI) showConfigDialog() {
 			apiKeyDisplay = "設定済み"
 		}
 	}
+	// Prompt template display (first 30 chars)
+	promptDisplay := t.config.SummaryPromptTemplate
+	if len(promptDisplay) > 30 {
+		promptDisplay = promptDisplay[:30] + "..."
+	}
+	if promptDisplay == "" {
+		promptDisplay = "デフォルト"
+	}
+
 	llmList := tview.NewList().ShowSecondaryText(true)
 	llmList.AddItem("LLM要約機能", llmStatusText, 0, nil)
 	llmList.AddItem("OpenAI APIキー", apiKeyDisplay, 0, nil)
+	llmList.AddItem("LLMモデル", t.config.LLMModel, 0, nil)
+	llmList.AddItem("プロンプト", promptDisplay, 0, nil)
 	llmList.SetBorder(true).
 		SetTitle(" LLM設定 (Enterで編集) ").
+		SetTitleAlign(tview.AlignCenter)
+
+	// === Page 4: Recording Settings List ===
+	deviceDisplay := t.config.RecordingDeviceName
+	if deviceDisplay == "" {
+		deviceDisplay = "デフォルト"
+	}
+	modeDisplay := "シングル"
+	if t.config.DualRecordingEnabled {
+		modeDisplay = "デュアル"
+	}
+	// Convert float64 (0.0-1.0) to display scale (-2 to +2)
+	// SystemAudioVolume: 0.1, 0.2, 0.3, 0.5, 0.7 -> display as -2, -1, 0, +1, +2
+	sysVolumeIdx := volumeFloatToIndex(t.config.SystemAudioVolume)
+	micVolumeIdx := volumeFloatToIndex(t.config.MicrophoneVolume)
+	sysVolumeDisplay := fmt.Sprintf("%+d", sysVolumeIdx-2)
+	micVolumeDisplay := fmt.Sprintf("%+d", micVolumeIdx-2)
+
+	recordingList := tview.NewList().ShowSecondaryText(true)
+	recordingList.AddItem("録音デバイス", deviceDisplay, 0, nil)
+	recordingList.AddItem("録音モード", modeDisplay, 0, nil)
+	recordingList.AddItem("システム音声音量", sysVolumeDisplay, 0, nil)
+	recordingList.AddItem("マイク音量", micVolumeDisplay, 0, nil)
+	recordingList.SetBorder(true).
+		SetTitle(" 録音設定 (Enterで編集) ").
 		SetTitleAlign(tview.AlignCenter)
 
 	// Add pages
 	contentArea.AddPage("basic", basicList, true, true)
 	contentArea.AddPage("directories", dirList, true, false)
 	contentArea.AddPage("llm", llmList, true, false)
+	contentArea.AddPage("recording", recordingList, true, false)
 
 	// Handle category selection (cursor movement)
 	categoryList.SetChangedFunc(func(index int, mainText, secondaryText string, shortcut rune) {
-		pageNames := []string{"basic", "directories", "llm"}
+		pageNames := []string{"basic", "directories", "llm", "recording"}
 		if index >= 0 && index < len(pageNames) {
 			contentArea.SwitchToPage(pageNames[index])
 		}
@@ -640,7 +729,44 @@ func (t *RichTUI) showConfigDialog() {
 	// Edit handlers for Basic Settings
 	basicList.SetSelectedFunc(func(index int, mainText, secondaryText string, shortcut rune) {
 		switch index {
-		case 0: // Whisper Model
+		case 0: // UI Language
+			dropdown := tview.NewDropDown().
+				SetLabel("UI言語: ").
+				SetOptions([]string{"日本語", "English"}, nil)
+
+			// Set current selection
+			if t.config.UILanguage == "en" {
+				dropdown.SetCurrentOption(1)
+			} else {
+				dropdown.SetCurrentOption(0)
+			}
+
+			dropdown.SetBorder(true).
+				SetTitle(" UI言語を選択 ").
+				SetTitleAlign(tview.AlignCenter)
+
+			dropdown.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+				if event.Key() == tcell.KeyEscape {
+					closeEditDialog()
+					return nil
+				}
+				if event.Key() == tcell.KeyEnter {
+					idx, displayName := dropdown.GetCurrentOption()
+					if idx == 0 {
+						t.config.UILanguage = "ja"
+					} else {
+						t.config.UILanguage = "en"
+					}
+					basicList.SetItemText(0, "UI言語", displayName)
+					closeEditDialog()
+					return nil
+				}
+				return event
+			})
+
+			showEditDialog("UI言語", dropdown)
+
+		case 1: // Whisper Model
 			dropdown := tview.NewDropDown().
 				SetLabel("Whisperモデル: ").
 				SetOptions(whisperModels, nil).
@@ -659,7 +785,7 @@ func (t *RichTUI) showConfigDialog() {
 					idx, modelName := dropdown.GetCurrentOption()
 					currentModelIndex = idx
 					t.config.WhisperModel = modelName
-					basicList.SetItemText(0, "Whisperモデル", modelName)
+					basicList.SetItemText(1, "Whisperモデル", modelName)
 					closeEditDialog()
 					return nil
 				}
@@ -668,7 +794,7 @@ func (t *RichTUI) showConfigDialog() {
 
 			showEditDialog("Whisperモデル", dropdown)
 
-		case 1: // Language
+		case 2: // Language
 			dropdown := tview.NewDropDown().
 				SetLabel("認識言語: ").
 				SetOptions(languageNames, nil).
@@ -687,7 +813,7 @@ func (t *RichTUI) showConfigDialog() {
 					idx, _ := dropdown.GetCurrentOption()
 					currentLangIndex = idx
 					t.config.Language = languages[idx]
-					basicList.SetItemText(1, "認識言語", languageNames[idx])
+					basicList.SetItemText(2, "認識言語", languageNames[idx])
 					closeEditDialog()
 					return nil
 				}
@@ -695,6 +821,31 @@ func (t *RichTUI) showConfigDialog() {
 			})
 
 			showEditDialog("認識言語", dropdown)
+
+		case 3: // Scan Interval
+			field := tview.NewInputField().
+				SetLabel("スキャン間隔（分）: ").
+				SetText(fmt.Sprintf("%d", t.config.ScanIntervalMinutes)).
+				SetFieldWidth(10)
+
+			field.SetBorder(true).
+				SetTitle(" スキャン間隔を編集 ").
+				SetTitleAlign(tview.AlignCenter)
+
+			field.SetDoneFunc(func(key tcell.Key) {
+				if key == tcell.KeyEscape {
+					closeEditDialog()
+				} else if key == tcell.KeyEnter {
+					text := field.GetText()
+					if interval, err := strconv.Atoi(text); err == nil && interval > 0 {
+						t.config.ScanIntervalMinutes = interval
+						basicList.SetItemText(3, "スキャン間隔", fmt.Sprintf("%d分", interval))
+					}
+					closeEditDialog()
+				}
+			})
+
+			showEditDialog("スキャン間隔", field)
 		}
 	})
 
@@ -814,6 +965,244 @@ func (t *RichTUI) showConfigDialog() {
 			})
 
 			showEditDialog("APIキー", field)
+
+		case 2: // LLM Model
+			llmModels := []string{"gpt-4o", "gpt-4-turbo", "gpt-3.5-turbo"}
+			currentModelIdx := 0
+			for i, model := range llmModels {
+				if model == t.config.LLMModel {
+					currentModelIdx = i
+					break
+				}
+			}
+
+			dropdown := tview.NewDropDown().
+				SetLabel("LLMモデル: ").
+				SetOptions(llmModels, nil).
+				SetCurrentOption(currentModelIdx)
+
+			dropdown.SetBorder(true).
+				SetTitle(" LLMモデルを選択 ").
+				SetTitleAlign(tview.AlignCenter)
+
+			dropdown.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+				if event.Key() == tcell.KeyEscape {
+					closeEditDialog()
+					return nil
+				}
+				if event.Key() == tcell.KeyEnter {
+					_, modelName := dropdown.GetCurrentOption()
+					t.config.LLMModel = modelName
+					llmList.SetItemText(2, "LLMモデル", modelName)
+					closeEditDialog()
+					return nil
+				}
+				return event
+			})
+
+			showEditDialog("LLMモデル", dropdown)
+
+		case 3: // Prompt Template
+			textArea := tview.NewTextArea().
+				SetText(t.config.SummaryPromptTemplate, true)
+
+			textArea.SetBorder(true).
+				SetTitle(" プロンプトテンプレートを編集 (Ctrl+S: 保存, Esc: キャンセル) ").
+				SetTitleAlign(tview.AlignCenter)
+
+			textArea.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+				if event.Key() == tcell.KeyEscape {
+					closeEditDialog()
+					return nil
+				}
+				// Ctrl+S to save
+				if event.Key() == tcell.KeyCtrlS {
+					newValue := textArea.GetText()
+					t.config.SummaryPromptTemplate = newValue
+
+					promptDisplay := newValue
+					if len(promptDisplay) > 30 {
+						promptDisplay = promptDisplay[:30] + "..."
+					}
+					if promptDisplay == "" {
+						promptDisplay = "デフォルト"
+					}
+					llmList.SetItemText(3, "プロンプト", promptDisplay)
+					closeEditDialog()
+					return nil
+				}
+				return event
+			})
+
+			showEditDialog("プロンプト", textArea)
+		}
+	})
+
+	// Edit handlers for Recording Settings
+	recordingList.SetSelectedFunc(func(index int, mainText, secondaryText string, shortcut rune) {
+		switch index {
+		case 0: // Recording Device
+			// Get device list from recorder
+			devices, err := recorder.ListDevices()
+			if err != nil {
+				// Show error
+				t.statusBar.SetText(fmt.Sprintf("[red]デバイス取得エラー: %v[white]", err))
+				time.AfterFunc(3*time.Second, func() {
+					t.app.QueueUpdateDraw(func() {
+						t.updateStatusBar()
+					})
+				})
+				return
+			}
+
+			deviceNames := make([]string, len(devices)+1)
+			deviceNames[0] = "デフォルト"
+			for i, dev := range devices {
+				deviceNames[i+1] = dev.Name
+			}
+
+			currentDeviceIdx := 0
+			if t.config.RecordingDeviceName != "" {
+				for i, name := range deviceNames {
+					if name == t.config.RecordingDeviceName {
+						currentDeviceIdx = i
+						break
+					}
+				}
+			}
+
+			dropdown := tview.NewDropDown().
+				SetLabel("録音デバイス: ").
+				SetOptions(deviceNames, nil).
+				SetCurrentOption(currentDeviceIdx)
+
+			dropdown.SetBorder(true).
+				SetTitle(" 録音デバイスを選択 ").
+				SetTitleAlign(tview.AlignCenter)
+
+			dropdown.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+				if event.Key() == tcell.KeyEscape {
+					closeEditDialog()
+					return nil
+				}
+				if event.Key() == tcell.KeyEnter {
+					idx, deviceName := dropdown.GetCurrentOption()
+					if idx == 0 {
+						t.config.RecordingDeviceName = ""
+						recordingList.SetItemText(0, "録音デバイス", "デフォルト")
+					} else {
+						t.config.RecordingDeviceName = deviceName
+						recordingList.SetItemText(0, "録音デバイス", deviceName)
+					}
+					closeEditDialog()
+					return nil
+				}
+				return event
+			})
+
+			showEditDialog("録音デバイス", dropdown)
+
+		case 1: // Recording Mode
+			list := tview.NewList().ShowSecondaryText(false)
+			list.AddItem("シングル録音（マイクのみ）", "", '1', nil)
+			list.AddItem("デュアル録音（システム音声+マイク）", "", '2', nil)
+
+			// Set current selection
+			if t.config.DualRecordingEnabled {
+				list.SetCurrentItem(1)
+			} else {
+				list.SetCurrentItem(0)
+			}
+
+			list.SetBorder(true).
+				SetTitle(" 録音モードを選択 ").
+				SetTitleAlign(tview.AlignCenter)
+
+			list.SetSelectedFunc(func(idx int, text, secondary string, r rune) {
+				t.config.DualRecordingEnabled = (idx == 1)
+				modeDisplay := "シングル"
+				if t.config.DualRecordingEnabled {
+					modeDisplay = "デュアル"
+				}
+				recordingList.SetItemText(1, "録音モード", modeDisplay)
+				closeEditDialog()
+			})
+
+			list.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+				if event.Key() == tcell.KeyEscape {
+					closeEditDialog()
+					return nil
+				}
+				return event
+			})
+
+			showEditDialog("録音モード", list)
+
+		case 2: // System Volume
+			list := tview.NewList().ShowSecondaryText(false)
+			volumeOptions := []string{"-2", "-1", "0", "+1", "+2"}
+			for _, vol := range volumeOptions {
+				list.AddItem(vol, "", 0, nil)
+			}
+
+			// Set current selection
+			currentIdx := volumeFloatToIndex(t.config.SystemAudioVolume)
+			if currentIdx >= 0 && currentIdx < 5 {
+				list.SetCurrentItem(currentIdx)
+			}
+
+			list.SetBorder(true).
+				SetTitle(" システム音声音量を選択 ").
+				SetTitleAlign(tview.AlignCenter)
+
+			list.SetSelectedFunc(func(idx int, text, secondary string, r rune) {
+				t.config.SystemAudioVolume = volumeIndexToSystemFloat(idx)
+				recordingList.SetItemText(2, "システム音声音量", fmt.Sprintf("%+d", idx-2))
+				closeEditDialog()
+			})
+
+			list.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+				if event.Key() == tcell.KeyEscape {
+					closeEditDialog()
+					return nil
+				}
+				return event
+			})
+
+			showEditDialog("システム音声音量", list)
+
+		case 3: // Mic Volume
+			list := tview.NewList().ShowSecondaryText(false)
+			volumeOptions := []string{"-2", "-1", "0", "+1", "+2"}
+			for _, vol := range volumeOptions {
+				list.AddItem(vol, "", 0, nil)
+			}
+
+			// Set current selection
+			currentIdx := volumeFloatToIndex(t.config.MicrophoneVolume)
+			if currentIdx >= 0 && currentIdx < 5 {
+				list.SetCurrentItem(currentIdx)
+			}
+
+			list.SetBorder(true).
+				SetTitle(" マイク音量を選択 ").
+				SetTitleAlign(tview.AlignCenter)
+
+			list.SetSelectedFunc(func(idx int, text, secondary string, r rune) {
+				t.config.MicrophoneVolume = volumeIndexToMicFloat(idx)
+				recordingList.SetItemText(3, "マイク音量", fmt.Sprintf("%+d", idx-2))
+				closeEditDialog()
+			})
+
+			list.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+				if event.Key() == tcell.KeyEscape {
+					closeEditDialog()
+					return nil
+				}
+				return event
+			})
+
+			showEditDialog("マイク音量", list)
 		}
 	})
 
