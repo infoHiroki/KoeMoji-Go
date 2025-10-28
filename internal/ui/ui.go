@@ -191,7 +191,7 @@ func OpenDirectory(dirPath string) error {
 	if err != nil {
 		absPath = dirPath // Fallback to original path
 	}
-	
+
 	var cmd *exec.Cmd
 	switch runtime.GOOS {
 	case "windows":
@@ -201,6 +201,30 @@ func OpenDirectory(dirPath string) error {
 		cmd = createCommand("open", absPath)
 	default:
 		return fmt.Errorf("opening directories not supported on this platform")
+	}
+
+	return cmd.Start()
+}
+
+// OpenLogFile opens the log file in the default editor (Phase 11)
+func OpenLogFile() error {
+	logPath := config.GetLogFilePath()
+
+	if _, err := os.Stat(logPath); os.IsNotExist(err) {
+		return fmt.Errorf("log file does not exist: %s", logPath)
+	}
+
+	var cmd *exec.Cmd
+	switch runtime.GOOS {
+	case "windows":
+		// Use full path to Windows notepad.exe to avoid Git's notepad wrapper
+		notepadPath := filepath.Join(os.Getenv("WINDIR"), "notepad.exe")
+		cmd = exec.Command(notepadPath, logPath)
+	case "darwin":
+		// Open with default text editor on macOS
+		cmd = createCommand("open", logPath)
+	default:
+		return fmt.Errorf("opening log file not supported on this platform")
 	}
 
 	return cmd.Start()

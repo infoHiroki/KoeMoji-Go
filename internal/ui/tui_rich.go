@@ -7,184 +7,346 @@ import (
 
 	"github.com/gdamore/tcell/v2"
 	"github.com/infoHiroki/KoeMoji-Go/internal/config"
-	"github.com/infoHiroki/KoeMoji-Go/internal/logger"
 	"github.com/rivo/tview"
 )
 
-// RichTUI represents the tview-based Terminal UI
+// RichTUICallbacks contains callback functions for RichTUI actions (Phase 11)
+type RichTUICallbacks struct {
+	OnRecordingToggle func() error        // 録音開始/停止
+	OnScanTrigger     func() error        // 手動スキャン実行
+	OnOpenLogFile     func() error        // ログファイルを開く
+	OnOpenDirectory   func(dir string) error // フォルダを開く
+	OnRefreshFileList func() error        // ファイルリスト更新
+}
+
+// RichTUI represents a rich terminal UI (LazyGit/k9s style)
+// Phase 11: Integrated with actual application functions
 type RichTUI struct {
-	app    *tview.Application
-	config *config.Config
-	pages  *tview.Pages
+	app         *tview.Application
+	config      *config.Config
+	callbacks   *RichTUICallbacks // Phase 11: Callbacks for actions
+	menuList    *tview.List
+	statusBar   *tview.TextView
+	helpBar     *tview.TextView
+	contentArea *tview.Pages // Phase 8: Changed from TextView to Pages
+	mainFlex    *tview.Flex
 
-	// Widgets
-	statusView  *tview.TextView
-	logView     *tview.TextView
-	commandView *tview.TextView
+	// Content pages (Phase 8)
+	settingsPage *tview.TextView
+	logsPage     *tview.TextView
+	scanPage     *tview.TextView
+	recordPage   *tview.TextView
+	inputPage    *tview.List // Phase 9: Changed to List for file display
+	outputPage   *tview.List // Phase 9: Changed to List for file display
+	archivePage  *tview.List // Phase 9: Archive folder file display
 
-	// State
-	startTime    time.Time
-	lastScanTime time.Time
-	logBuffer    *[]logger.LogEntry
-	logMutex     *sync.RWMutex
-
-	// Callbacks
-	onScan   func()
-	onRecord func()
-	onConfig func()
-	onLogs   func()
-	onInput  func()
-	onOutput func()
-	onQuit   func()
-
-	// Status tracking
+	// Status tracking (Phase 7)
+	startTime      time.Time
 	inputCount     int
 	outputCount    int
 	archiveCount   int
-	queuedFiles    *[]string
-	processingFile string
 	isProcessing   bool
-	mu             *sync.Mutex
+	processingFile string
 	isRecording    bool
 	recordingStart time.Time
+	mu             sync.RWMutex
 }
 
-// NewRichTUI creates a new rich terminal UI
-func NewRichTUI(cfg *config.Config, logBuffer *[]logger.LogEntry, logMutex *sync.RWMutex,
-	queuedFiles *[]string, mu *sync.Mutex) *RichTUI {
+// NewRichTUI creates a new rich TUI (Phase 11: with callbacks)
+func NewRichTUI(cfg *config.Config, callbacks *RichTUICallbacks) *RichTUI {
+	app := tview.NewApplication()
 
+	// Create status bar (top, 3 lines)
+	statusBar := tview.NewTextView().
+		SetDynamicColors(true).
+		SetText("[green]KoeMoji-Go Rich TUI[white] | Phase 7\n行2: ファイル数\n行3: タイミング情報")
+	statusBar.SetBorder(false)
+
+	// Create menu list (left side, fixed width)
+	list := tview.NewList().ShowSecondaryText(false)
+	list.AddItem("1. 設定", "", 0, nil)
+	list.AddItem("2. ログ", "", 0, nil)
+	list.AddItem("3. スキャン", "", 0, nil)
+	list.AddItem("4. 録音", "", 0, nil)
+	list.AddItem("5. 入力", "", 0, nil)
+	list.AddItem("6. 出力", "", 0, nil)
+	list.AddItem("7. アーカイブ", "", 0, nil)
+	list.AddItem("8. 終了", "", 0, nil)
+
+	list.SetBorder(true).
+		SetTitle(" メニュー ").
+		SetTitleAlign(tview.AlignCenter)
+
+	// Create content area with Pages (Phase 8)
+	contentArea := tview.NewPages()
+
+	// Create individual pages for each menu item (Phase 8/9)
+	settingsPage := createBorderedTextView(" 設定 ", "[yellow]1. 設定[white]\n\n設定画面の内容がここに表示されます\n\n• Whisperモデル\n• 入力/出力ディレクトリ\n• OpenAI API設定")
+	logsPage := createBorderedTextView(" ログ ", "[yellow]2. ログ[white]\n\nログ画面の内容がここに表示されます\n\n• アプリケーションログ\n• 処理履歴\n• エラーメッセージ")
+	scanPage := createBorderedTextView(" スキャン ", "[yellow]3. スキャン[white]\n\n入力フォルダをスキャンして音声ファイルを検出します\n\n• 手動スキャン実行\n• ファイル検出")
+	recordPage := createBorderedTextView(" 録音 ", "[yellow]4. 録音[white]\n\n音声録音機能\n\n• 録音開始/停止\n• デバイス選択\n• 音量調整")
+
+	// Phase 9: Create file lists for input/output folders
+	inputPage, inputErr := CreateFileList(cfg.InputDir, app)
+	if inputErr != nil {
+		// Fallback: create empty list with error message
+		inputPage = tview.NewList().ShowSecondaryText(false)
+		inputPage.AddItem(fmt.Sprintf("[red]エラー:[white] %v", inputErr), "", 0, nil)
+	}
+	inputPage.SetBorder(true).
+		SetTitle(GetFileListTitle("input", cfg.InputDir)).
+		SetTitleAlign(tview.AlignCenter)
+
+	outputPage, outputErr := CreateFileList(cfg.OutputDir, app)
+	if outputErr != nil {
+		// Fallback: create empty list with error message
+		outputPage = tview.NewList().ShowSecondaryText(false)
+		outputPage.AddItem(fmt.Sprintf("[red]エラー:[white] %v", outputErr), "", 0, nil)
+	}
+	outputPage.SetBorder(true).
+		SetTitle(GetFileListTitle("output", cfg.OutputDir)).
+		SetTitleAlign(tview.AlignCenter)
+
+	archivePage, archiveErr := CreateFileList(cfg.ArchiveDir, app)
+	if archiveErr != nil {
+		// Fallback: create empty list with error message
+		archivePage = tview.NewList().ShowSecondaryText(false)
+		archivePage.AddItem(fmt.Sprintf("[red]エラー:[white] %v", archiveErr), "", 0, nil)
+	}
+	archivePage.SetBorder(true).
+		SetTitle(GetFileListTitle("archive", cfg.ArchiveDir)).
+		SetTitleAlign(tview.AlignCenter)
+
+	// Add pages to content area
+	contentArea.AddPage("settings", settingsPage, true, true)
+	contentArea.AddPage("logs", logsPage, true, false)
+	contentArea.AddPage("scan", scanPage, true, false)
+	contentArea.AddPage("record", recordPage, true, false)
+	contentArea.AddPage("input", inputPage, true, false)
+	contentArea.AddPage("output", outputPage, true, false)
+	contentArea.AddPage("archive", archivePage, true, false)
+
+	// Create help bar (bottom, 1 line)
+	helpBar := tview.NewTextView().
+		SetDynamicColors(true).
+		SetText("[yellow]↑↓/j/k[white]:移動 [yellow]Enter[white]:選択 [yellow]q[white]:終了 [yellow]?[white]:ヘルプ")
+	helpBar.SetBorder(false)
+
+	// Create left-right split layout
+	middleFlex := tview.NewFlex().
+		SetDirection(tview.FlexColumn).
+		AddItem(list, 20, 0, true).         // Menu: fixed 20 chars width
+		AddItem(contentArea, 0, 1, false)   // Content: expand to fill
+
+	// Create 3-row layout (status / middle / help)
+	mainFlex := tview.NewFlex().
+		SetDirection(tview.FlexRow).
+		AddItem(statusBar, 3, 0, false).    // Fixed 3 lines (Phase 7)
+		AddItem(middleFlex, 0, 1, true).    // Expand to fill
+		AddItem(helpBar, 1, 0, false)       // Fixed 1 line
+
+	// Handle cursor movement: switch pages on selection change (Phase 8)
+	list.SetChangedFunc(func(index int, mainText, secondaryText string, shortcut rune) {
+		// Page names corresponding to menu indices
+		pageNames := []string{"settings", "logs", "scan", "record", "input", "output", "archive", "quit"}
+		if index >= 0 && index < len(pageNames) && index != 7 {
+			contentArea.SwitchToPage(pageNames[index])
+		}
+	})
+
+	// Create RichTUI struct early to pass mainFlex to showRichHelpDialog
 	tui := &RichTUI{
-		app:          tview.NewApplication(),
+		app:          app,
 		config:       cfg,
-		pages:        tview.NewPages(),
-		startTime:    time.Now(),
-		logBuffer:    logBuffer,
-		logMutex:     logMutex,
-		queuedFiles:  queuedFiles,
-		mu:           mu,
+		callbacks:    callbacks,    // Phase 11
+		menuList:     list,
+		statusBar:    statusBar,
+		helpBar:      helpBar,
+		contentArea:  contentArea,
+		mainFlex:     mainFlex,
+		settingsPage: settingsPage, // Phase 8
+		logsPage:     logsPage,     // Phase 8
+		scanPage:     scanPage,     // Phase 8
+		recordPage:   recordPage,   // Phase 8
+		inputPage:    inputPage,    // Phase 9
+		outputPage:   outputPage,   // Phase 9
+		archivePage:  archivePage,  // Phase 9
+		startTime:    time.Now(),   // Phase 7
 	}
 
-	tui.createUI()
-	return tui
-}
+	// Initial status update (Phase 7)
+	tui.updateStatusBar()
 
-func (t *RichTUI) createUI() {
-	msg := GetMessages(t.config)
-
-	// Create status panel (top) - 5 lines fixed
-	t.statusView = tview.NewTextView().
-		SetDynamicColors(true).
-		SetTextAlign(tview.AlignLeft)
-	t.statusView.SetBorder(true).
-		SetTitle(" KoeMoji-Go v1.9.0-alpha ").
-		SetBorderPadding(0, 0, 1, 1)
-
-	// Create log viewer (center) - scrollable
-	t.logView = tview.NewTextView().
-		SetDynamicColors(true).
-		SetScrollable(true).
-		SetChangedFunc(func() {
-			t.app.Draw()
-		})
-	t.logView.SetBorder(true).
-		SetTitle(" " + msg.LogTitle + " [↑↓でスクロール] ").
-		SetBorderPadding(0, 0, 1, 1)
-
-	// Create command panel (bottom) - 3 lines fixed
-	t.commandView = tview.NewTextView().
-		SetDynamicColors(true).
-		SetTextAlign(tview.AlignCenter)
-	t.commandView.SetBorder(true).
-		SetTitle(" " + msg.ConfigCmd + " ").
-		SetBorderPadding(0, 0, 1, 1)
-	t.updateCommandView()
-
-	// Create main layout (3 rows)
-	mainLayout := tview.NewFlex().
-		SetDirection(tview.FlexRow).
-		AddItem(t.statusView, 7, 0, false).     // Fixed height 7 lines
-		AddItem(t.logView, 0, 1, true).         // Flexible (main area)
-		AddItem(t.commandView, 3, 0, false)     // Fixed height 3 lines
-
-	// Add to pages
-	t.pages.AddPage("main", mainLayout, true, true)
-
-	// Set up key bindings
-	t.setupKeyBindings()
-
-	// Set root
-	t.app.SetRoot(t.pages, true).SetFocus(t.logView)
-}
-
-func (t *RichTUI) setupKeyBindings() {
-	t.app.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+	// Handle custom key bindings (j/k/q/?)
+	list.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		switch event.Key() {
-		case tcell.KeyF1:
-			if t.onConfig != nil {
-				t.showConfigDialog()
-			}
-			return nil
-		case tcell.KeyF2:
-			if t.onLogs != nil {
-				t.onLogs()
-			}
-			return nil
-		case tcell.KeyF3:
-			if t.onScan != nil {
-				t.onScan()
-			}
-			return nil
-		case tcell.KeyF4:
-			if t.onRecord != nil {
-				t.onRecord()
-			}
-			return nil
 		case tcell.KeyRune:
 			switch event.Rune() {
+			case 'j', 'J':
+				// j: Move down (same as ↓)
+				return tcell.NewEventKey(tcell.KeyDown, 0, tcell.ModNone)
+			case 'k', 'K':
+				// k: Move up (same as ↑)
+				return tcell.NewEventKey(tcell.KeyUp, 0, tcell.ModNone)
 			case 'q', 'Q':
-				if t.onQuit != nil {
-					t.onQuit()
-				}
-				t.app.Stop()
+				// q: Quit application
+				app.Stop()
 				return nil
-			case 'c', 'C':
-				if t.onConfig != nil {
-					t.showConfigDialog()
-				}
-				return nil
-			case 'l', 'L':
-				if t.onLogs != nil {
-					t.onLogs()
-				}
-				return nil
-			case 's', 'S':
-				if t.onScan != nil {
-					t.onScan()
-				}
-				return nil
-			case 'r', 'R':
-				if t.onRecord != nil {
-					t.onRecord()
-				}
-				return nil
-			case 'i', 'I':
-				if t.onInput != nil {
-					t.onInput()
-				}
-				return nil
-			case 'o', 'O':
-				if t.onOutput != nil {
-					t.onOutput()
-				}
+			case '?':
+				// ?: Show help dialog
+				showRichHelpDialog(app, mainFlex)
 				return nil
 			}
 		}
+		// Return event for default behavior (arrow keys, Enter, etc.)
 		return event
 	})
+
+	// Handle Enter key selection (Phase 11: integrated functions)
+	list.SetSelectedFunc(func(index int, mainText, secondaryText string, shortcut rune) {
+		switch index {
+		case 0:
+			// 設定 - Phase 10: Show config dialog
+			tui.showConfigDialog()
+		case 1:
+			// ログ - Phase 11: Open log file
+			if tui.callbacks != nil && tui.callbacks.OnOpenLogFile != nil {
+				tui.callbacks.OnOpenLogFile()
+			}
+		case 2:
+			// スキャン - Phase 11: Trigger manual scan
+			if tui.callbacks != nil && tui.callbacks.OnScanTrigger != nil {
+				tui.callbacks.OnScanTrigger()
+			}
+		case 3:
+			// 録音 - Phase 11: Toggle recording
+			if tui.callbacks != nil && tui.callbacks.OnRecordingToggle != nil {
+				tui.callbacks.OnRecordingToggle()
+			}
+		case 4:
+			// 入力フォルダ - Phase 11: Open input directory
+			if tui.callbacks != nil && tui.callbacks.OnOpenDirectory != nil {
+				tui.callbacks.OnOpenDirectory(tui.config.InputDir)
+			}
+		case 5:
+			// 出力フォルダ - Phase 11: Open output directory
+			if tui.callbacks != nil && tui.callbacks.OnOpenDirectory != nil {
+				tui.callbacks.OnOpenDirectory(tui.config.OutputDir)
+			}
+		case 6:
+			// アーカイブ - Phase 11: Open archive directory
+			if tui.callbacks != nil && tui.callbacks.OnOpenDirectory != nil {
+				tui.callbacks.OnOpenDirectory(tui.config.ArchiveDir)
+			}
+		case 7:
+			// 終了
+			app.Stop()
+		}
+	})
+
+	return tui
 }
 
-// UpdateStatus updates the status panel
-func (t *RichTUI) UpdateStatus(inputCount, outputCount, archiveCount int, processingFile string, isProcessing bool, isRecording bool, recordingStart time.Time) {
+// Run starts the rich TUI
+func (t *RichTUI) Run() error {
+	return t.app.SetRoot(t.mainFlex, true).Run()
+}
+
+// Stop stops the rich TUI
+func (t *RichTUI) Stop() {
+	t.app.Stop()
+}
+
+// showRichHelpDialog shows a help dialog with key bindings
+func showRichHelpDialog(app *tview.Application, mainFlex *tview.Flex) {
+	helpText := `[yellow]KoeMoji-Go Rich TUI - ヘルプ[white]
+
+[yellow]キー操作:[white]
+  ↑ / k     : 上に移動
+  ↓ / j     : 下に移動
+  Enter     : 選択 / フォルダを開く
+  r         : ファイルリスト再読み込み
+  q         : 終了
+  ?         : このヘルプを表示
+
+[yellow]Phase 9の状態:[white]
+  • 入力/出力/アーカイブフォルダに実際のファイル一覧を表示
+  • Enterでフォルダを開く、rで再読み込み
+  • 3行のステータスバー（リアルタイム更新）
+  • 8メニュー項目
+
+[yellow]メニュー:[white]
+  1. 設定        - アプリケーション設定
+  2. ログ        - ログ表示
+  3. スキャン    - 入力フォルダスキャン
+  4. 録音        - 音声録音
+  5. 入力        - 入力フォルダ一覧（実ファイル表示）
+  6. 出力        - 出力フォルダ一覧（実ファイル表示）
+  7. アーカイブ  - アーカイブフォルダ一覧（実ファイル表示）
+  8. 終了        - アプリケーション終了
+
+[green]Escキーまたは閉じるボタンで戻る[white]`
+
+	modal := tview.NewModal().
+		SetText(helpText).
+		AddButtons([]string{"閉じる"}).
+		SetDoneFunc(func(buttonIndex int, buttonLabel string) {
+			app.SetRoot(mainFlex, true)
+		})
+
+	// Handle Esc key to close
+	modal.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+		if event.Key() == tcell.KeyEscape {
+			app.SetRoot(mainFlex, true)
+			return nil
+		}
+		return event
+	})
+
+	app.SetRoot(modal, true)
+}
+
+// updateStatusBar updates the status bar display (Phase 7)
+func (t *RichTUI) updateStatusBar() {
+	t.mu.RLock()
+	defer t.mu.RUnlock()
+
+	// Line 1: Status and processing info
+	statusIcon := "[green]●[white]"
+	statusText := "待機中"
+
+	if t.isRecording {
+		statusIcon = "[red]●[white]"
+		elapsed := time.Since(t.recordingStart)
+		statusText = fmt.Sprintf("録音中 (%s)", formatDuration(elapsed))
+	} else if t.isProcessing {
+		statusIcon = "[yellow]●[white]"
+		if t.processingFile != "" {
+			statusText = fmt.Sprintf("処理中: %s", t.processingFile)
+		} else {
+			statusText = "処理中"
+		}
+	}
+
+	line1 := fmt.Sprintf("%s %s | Phase 7", statusIcon, statusText)
+
+	// Line 2: File counts
+	line2 := fmt.Sprintf("[blue]入力:[white]%d → [green]出力:[white]%d → [gray]保存:[white]%d",
+		t.inputCount, t.outputCount, t.archiveCount)
+
+	// Line 3: Timing info
+	uptime := time.Since(t.startTime)
+	line3 := fmt.Sprintf("[yellow]起動時間:[white] %s", formatDuration(uptime))
+
+	// Update status bar
+	t.statusBar.SetText(fmt.Sprintf("%s\n%s\n%s", line1, line2, line3))
+}
+
+// UpdateStatus updates status information from main goroutine (Phase 7)
+func (t *RichTUI) UpdateStatus(inputCount, outputCount, archiveCount int,
+	processingFile string, isProcessing bool, isRecording bool, recordingStart time.Time) {
+
+	t.mu.Lock()
 	t.inputCount = inputCount
 	t.outputCount = outputCount
 	t.archiveCount = archiveCount
@@ -192,163 +354,473 @@ func (t *RichTUI) UpdateStatus(inputCount, outputCount, archiveCount int, proces
 	t.isProcessing = isProcessing
 	t.isRecording = isRecording
 	t.recordingStart = recordingStart
+	t.mu.Unlock()
 
+	// Queue UI update
 	t.app.QueueUpdateDraw(func() {
-		msg := GetMessages(t.config)
-
-		// Status line
-		statusIcon := "🟢"
-		statusText := msg.Active
-		if isProcessing {
-			statusIcon = "🟡"
-			statusText = msg.Processing
-		}
-
-		t.mu.Lock()
-		queueCount := len(*t.queuedFiles)
-		processingDisplay := msg.None
-		if processingFile != "" {
-			processingDisplay = processingFile
-		}
-		t.mu.Unlock()
-
-		// Calculate timing
-		uptime := time.Since(t.startTime)
-		lastScanStr := msg.Never
-		nextScanStr := msg.Soon
-		if !t.lastScanTime.IsZero() {
-			lastScanStr = t.lastScanTime.Format("15:04:05")
-			nextScan := t.lastScanTime.Add(time.Duration(t.config.ScanIntervalMinutes) * time.Minute)
-			nextScanStr = nextScan.Format("15:04:05")
-		}
-
-		statusContent := fmt.Sprintf(
-			"%s [yellow]%s[white] | %s: %d | %s: %s\n"+
-				"📁 %s: %d → %s: %d → %s: %d\n"+
-				"⏰ %s: %s | %s: %s | %s: %s",
-			statusIcon, statusText, msg.Queue, queueCount, msg.Processing, processingDisplay,
-			msg.Input, inputCount, msg.Output, outputCount, msg.Archive, archiveCount,
-			msg.Last, lastScanStr, msg.Next, nextScanStr, msg.Uptime, formatDuration(uptime),
-		)
-
-		if isRecording {
-			elapsed := time.Since(recordingStart)
-			statusContent += fmt.Sprintf("\n🔴 [red]%s[white] - %s", msg.Recording, formatDuration(elapsed))
-		}
-
-		t.statusView.SetText(statusContent)
+		t.updateStatusBar()
 	})
 }
 
-// UpdateLogs updates the log viewer
-func (t *RichTUI) UpdateLogs() {
-	t.app.QueueUpdateDraw(func() {
-		t.logMutex.RLock()
-		defer t.logMutex.RUnlock()
-
-		msg := GetMessages(t.config)
-		t.logView.Clear()
-
-		if len(*t.logBuffer) == 0 {
-			t.logView.SetText("[gray]" + msg.LogPlaceholder)
-			return
-		}
-
-		for _, entry := range *t.logBuffer {
-			timestamp := entry.Timestamp.Format("15:04:05")
-			color := t.getLogColorCode(entry.Level)
-
-			// Localize log level
-			localizedLevel := entry.Level
-			switch entry.Level {
-			case "INFO":
-				localizedLevel = msg.LogInfo
-			case "PROC":
-				localizedLevel = msg.LogProc
-			case "DONE":
-				localizedLevel = msg.LogDone
-			case "ERROR":
-				localizedLevel = msg.LogError
-			case "DEBUG":
-				localizedLevel = msg.LogDebug
-			}
-
-			// tview color tags
-			fmt.Fprintf(t.logView, "[%s][%s][white] %s %s\n",
-				color, localizedLevel, timestamp, entry.Message)
-		}
-
-		// Auto-scroll to bottom
-		t.logView.ScrollToEnd()
-	})
+// createBorderedTextView creates a bordered TextView with title (Phase 8 helper)
+func createBorderedTextView(title, text string) *tview.TextView {
+	textView := tview.NewTextView().
+		SetDynamicColors(true).
+		SetText(text)
+	textView.SetBorder(true).
+		SetTitle(title).
+		SetTitleAlign(tview.AlignCenter)
+	return textView
 }
 
-func (t *RichTUI) getLogColorCode(level string) string {
-	switch level {
-	case "INFO":
-		return "blue"
-	case "PROC":
-		return "yellow"
-	case "DONE":
-		return "green"
-	case "ERROR":
-		return "red"
-	case "DEBUG":
-		return "gray"
-	default:
-		return "white"
-	}
-}
-
-func (t *RichTUI) updateCommandView() {
-	msg := GetMessages(t.config)
-	commands := fmt.Sprintf(
-		"[yellow]F1[white]/c=%s  [yellow]F2[white]/l=%s  [yellow]F3[white]/s=%s  [yellow]F4[white]/r=%s  i=%s  o=%s  [yellow]q[white]=%s",
-		msg.ConfigCmd, msg.LogsCmd, msg.ScanCmd, msg.RecordCmd, msg.InputDirCmd, msg.OutputDirCmd, msg.QuitCmd,
-	)
-	t.commandView.SetText(commands)
-}
-
-// SetCallbacks sets the callback functions
-func (t *RichTUI) SetCallbacks(onScan, onRecord, onConfig, onLogs, onInput, onOutput, onQuit func()) {
-	t.onScan = onScan
-	t.onRecord = onRecord
-	t.onConfig = onConfig
-	t.onLogs = onLogs
-	t.onInput = onInput
-	t.onOutput = onOutput
-	t.onQuit = onQuit
-}
-
-// SetLastScanTime sets the last scan time
-func (t *RichTUI) SetLastScanTime(lastScanTime time.Time) {
-	t.lastScanTime = lastScanTime
-}
-
-// Run starts the TUI application
-func (t *RichTUI) Run() error {
-	return t.app.Run()
-}
-
-// Stop stops the TUI application
-func (t *RichTUI) Stop() {
-	t.app.Stop()
-}
-
-// showConfigDialog displays the configuration dialog
+// showConfigDialog shows configuration settings dialog (Phase 10 - split layout)
 func (t *RichTUI) showConfigDialog() {
-	dialog := NewConfigDialog(t.app, t.pages, t.config)
-	dialog.Show(
-		// onSave callback
-		func() {
-			// Configuration saved, update display
-			if t.onConfig != nil {
-				t.onConfig()
+	// Whisper models
+	whisperModels := []string{
+		"tiny", "tiny.en", "base", "base.en",
+		"small", "small.en", "medium", "medium.en",
+		"large", "large-v1", "large-v2", "large-v3",
+	}
+	currentModelIndex := 0
+	for i, model := range whisperModels {
+		if model == t.config.WhisperModel {
+			currentModelIndex = i
+			break
+		}
+	}
+
+	// Languages
+	languages := []string{"auto", "ja", "en", "zh", "ko", "es", "fr", "de", "ru"}
+	languageNames := []string{"自動", "日本語", "English", "中文", "한국어", "Español", "Français", "Deutsch", "Русский"}
+	currentLangIndex := 0
+	for i, lang := range languages {
+		if lang == t.config.Language {
+			currentLangIndex = i
+			break
+		}
+	}
+
+	// Create category menu (left side)
+	categoryList := tview.NewList().ShowSecondaryText(false)
+	categoryList.AddItem("1. 基本設定", "", 0, nil)
+	categoryList.AddItem("2. ディレクトリ", "", 0, nil)
+	categoryList.AddItem("3. LLM設定", "", 0, nil)
+	categoryList.AddItem("", "", 0, nil) // Separator
+	categoryList.AddItem("保存", "", 's', nil)
+	categoryList.AddItem("キャンセル", "", 'q', nil)
+	categoryList.SetBorder(true).
+		SetTitle(" カテゴリ ").
+		SetTitleAlign(tview.AlignCenter)
+
+	// Create content area (right side) with Pages - List based for better navigation
+	contentArea := tview.NewPages()
+
+	// Language code to display name mapping
+	codeToDisplayMap := map[string]string{
+		"auto": "自動",
+		"ja":   "日本語",
+		"en":   "English",
+		"zh":   "中文",
+		"ko":   "한국어",
+		"es":   "Español",
+		"fr":   "Français",
+		"de":   "Deutsch",
+		"ru":   "Русский",
+	}
+
+	// Get current language display name
+	langDisplay := "日本語"
+	if display, exists := codeToDisplayMap[t.config.Language]; exists {
+		langDisplay = display
+	}
+
+	// === Page 1: Basic Settings List ===
+	basicList := tview.NewList().ShowSecondaryText(true)
+	basicList.AddItem("Whisperモデル", t.config.WhisperModel, 0, nil)
+	basicList.AddItem("認識言語", langDisplay, 0, nil)
+	basicList.SetBorder(true).
+		SetTitle(" 基本設定 (Enterで編集) ").
+		SetTitleAlign(tview.AlignCenter)
+
+	// === Page 2: Directories List ===
+	dirList := tview.NewList().ShowSecondaryText(true)
+	dirList.AddItem("入力フォルダ", t.config.InputDir, 0, nil)
+	dirList.AddItem("出力フォルダ", t.config.OutputDir, 0, nil)
+	dirList.AddItem("保存フォルダ", t.config.ArchiveDir, 0, nil)
+	dirList.SetBorder(true).
+		SetTitle(" ディレクトリ設定 (Enterで編集) ").
+		SetTitleAlign(tview.AlignCenter)
+
+	// === Page 3: LLM Settings List ===
+	llmStatusText := "無効"
+	if t.config.LLMSummaryEnabled {
+		llmStatusText = "有効"
+	}
+	apiKeyDisplay := "未設定"
+	if t.config.LLMAPIKey != "" {
+		if len(t.config.LLMAPIKey) >= 10 {
+			apiKeyDisplay = t.config.LLMAPIKey[:4] + "..." + t.config.LLMAPIKey[len(t.config.LLMAPIKey)-4:]
+		} else {
+			apiKeyDisplay = "設定済み"
+		}
+	}
+	llmList := tview.NewList().ShowSecondaryText(true)
+	llmList.AddItem("LLM要約機能", llmStatusText, 0, nil)
+	llmList.AddItem("OpenAI APIキー", apiKeyDisplay, 0, nil)
+	llmList.SetBorder(true).
+		SetTitle(" LLM設定 (Enterで編集) ").
+		SetTitleAlign(tview.AlignCenter)
+
+	// Add pages
+	contentArea.AddPage("basic", basicList, true, true)
+	contentArea.AddPage("directories", dirList, true, false)
+	contentArea.AddPage("llm", llmList, true, false)
+
+	// Handle category selection (cursor movement)
+	categoryList.SetChangedFunc(func(index int, mainText, secondaryText string, shortcut rune) {
+		pageNames := []string{"basic", "directories", "llm"}
+		if index >= 0 && index < len(pageNames) {
+			contentArea.SwitchToPage(pageNames[index])
+		}
+	})
+
+	// Create main container (will be populated later)
+	var mainContainer *tview.Flex
+
+	// Helper function to show edit dialog
+	showEditDialog := func(title string, widget tview.Primitive) {
+
+		// Create modal container
+		modal := tview.NewFlex().
+			SetDirection(tview.FlexRow).
+			AddItem(nil, 0, 1, false).
+			AddItem(tview.NewFlex().
+				SetDirection(tview.FlexColumn).
+				AddItem(nil, 0, 1, false).
+				AddItem(widget, 100, 1, true).
+				AddItem(nil, 0, 1, false), 20, 1, true).
+			AddItem(nil, 0, 1, false)
+
+		t.app.SetRoot(modal, true).SetFocus(widget)
+	}
+
+	// Close edit dialog and return to main
+	closeEditDialog := func() {
+		t.app.SetRoot(mainContainer, true).SetFocus(contentArea)
+	}
+
+	// Edit handlers for Basic Settings
+	basicList.SetSelectedFunc(func(index int, mainText, secondaryText string, shortcut rune) {
+		switch index {
+		case 0: // Whisper Model
+			dropdown := tview.NewDropDown().
+				SetLabel("Whisperモデル: ").
+				SetOptions(whisperModels, nil).
+				SetCurrentOption(currentModelIndex)
+
+			dropdown.SetBorder(true).
+				SetTitle(" Whisperモデルを選択 ").
+				SetTitleAlign(tview.AlignCenter)
+
+			dropdown.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+				if event.Key() == tcell.KeyEscape {
+					closeEditDialog()
+					return nil
+				}
+				if event.Key() == tcell.KeyEnter {
+					idx, modelName := dropdown.GetCurrentOption()
+					currentModelIndex = idx
+					t.config.WhisperModel = modelName
+					basicList.SetItemText(0, "Whisperモデル", modelName)
+					closeEditDialog()
+					return nil
+				}
+				return event
+			})
+
+			showEditDialog("Whisperモデル", dropdown)
+
+		case 1: // Language
+			dropdown := tview.NewDropDown().
+				SetLabel("認識言語: ").
+				SetOptions(languageNames, nil).
+				SetCurrentOption(currentLangIndex)
+
+			dropdown.SetBorder(true).
+				SetTitle(" 認識言語を選択 ").
+				SetTitleAlign(tview.AlignCenter)
+
+			dropdown.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+				if event.Key() == tcell.KeyEscape {
+					closeEditDialog()
+					return nil
+				}
+				if event.Key() == tcell.KeyEnter {
+					idx, _ := dropdown.GetCurrentOption()
+					currentLangIndex = idx
+					t.config.Language = languages[idx]
+					basicList.SetItemText(1, "認識言語", languageNames[idx])
+					closeEditDialog()
+					return nil
+				}
+				return event
+			})
+
+			showEditDialog("認識言語", dropdown)
+		}
+	})
+
+	// Edit handlers for Directories
+	dirList.SetSelectedFunc(func(index int, mainText, secondaryText string, shortcut rune) {
+		var field *tview.InputField
+		var targetConfig *string
+		var itemIndex int = index
+
+		switch index {
+		case 0: // Input Dir
+			field = tview.NewInputField().
+				SetLabel("入力フォルダ: ").
+				SetText(t.config.InputDir).
+				SetFieldWidth(70)
+			targetConfig = &t.config.InputDir
+		case 1: // Output Dir
+			field = tview.NewInputField().
+				SetLabel("出力フォルダ: ").
+				SetText(t.config.OutputDir).
+				SetFieldWidth(70)
+			targetConfig = &t.config.OutputDir
+		case 2: // Archive Dir
+			field = tview.NewInputField().
+				SetLabel("保存フォルダ: ").
+				SetText(t.config.ArchiveDir).
+				SetFieldWidth(70)
+			targetConfig = &t.config.ArchiveDir
+		}
+
+		field.SetBorder(true).
+			SetTitle(" " + mainText + " を編集 ").
+			SetTitleAlign(tview.AlignCenter)
+
+		field.SetDoneFunc(func(key tcell.Key) {
+			if key == tcell.KeyEscape {
+				closeEditDialog()
+			} else if key == tcell.KeyEnter {
+				newValue := field.GetText()
+				*targetConfig = newValue
+				dirList.SetItemText(itemIndex, mainText, newValue)
+				closeEditDialog()
 			}
-		},
-		// onCancel callback
-		func() {
-			// Dialog cancelled, do nothing
-		},
-	)
+		})
+
+		showEditDialog(mainText, field)
+	})
+
+	// Edit handlers for LLM Settings
+	llmList.SetSelectedFunc(func(index int, mainText, secondaryText string, shortcut rune) {
+		switch index {
+		case 0: // LLM Status toggle
+			list := tview.NewList().ShowSecondaryText(false)
+			list.AddItem("有効", "", '1', nil)
+			list.AddItem("無効", "", '2', nil)
+
+			// Set current selection
+			if t.config.LLMSummaryEnabled {
+				list.SetCurrentItem(0)
+			} else {
+				list.SetCurrentItem(1)
+			}
+
+			list.SetBorder(true).
+				SetTitle(" LLM要約機能 ").
+				SetTitleAlign(tview.AlignCenter)
+
+			list.SetSelectedFunc(func(idx int, text, secondary string, r rune) {
+				t.config.LLMSummaryEnabled = (idx == 0)
+				statusText := "無効"
+				if t.config.LLMSummaryEnabled {
+					statusText = "有効"
+				}
+				llmList.SetItemText(0, "LLM要約機能", statusText)
+				closeEditDialog()
+			})
+
+			list.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+				if event.Key() == tcell.KeyEscape {
+					closeEditDialog()
+					return nil
+				}
+				return event
+			})
+
+			showEditDialog("LLM要約機能", list)
+
+		case 1: // API Key
+			field := tview.NewInputField().
+				SetLabel("APIキー: ").
+				SetText(t.config.LLMAPIKey).
+				SetFieldWidth(70).
+				SetMaskCharacter('*')
+
+			field.SetBorder(true).
+				SetTitle(" OpenAI APIキー を編集 ").
+				SetTitleAlign(tview.AlignCenter)
+
+			field.SetDoneFunc(func(key tcell.Key) {
+				if key == tcell.KeyEscape {
+					closeEditDialog()
+				} else if key == tcell.KeyEnter {
+					newValue := field.GetText()
+					t.config.LLMAPIKey = newValue
+
+					apiKeyDisplay := "未設定"
+					if newValue != "" {
+						if len(newValue) >= 10 {
+							apiKeyDisplay = newValue[:4] + "..." + newValue[len(newValue)-4:]
+						} else {
+							apiKeyDisplay = "設定済み"
+						}
+					}
+					llmList.SetItemText(1, "OpenAI APIキー", apiKeyDisplay)
+					closeEditDialog()
+				}
+			})
+
+			showEditDialog("APIキー", field)
+		}
+	})
+
+	// Save function
+	saveConfig := func() {
+		// Configuration is already saved in real-time during editing
+
+		// Save to file
+		if err := config.SaveConfig(t.config, "config.json"); err != nil {
+			// Show error message temporarily
+			t.statusBar.SetText(fmt.Sprintf("[red]設定の保存に失敗: %v[white]", err))
+			time.AfterFunc(3*time.Second, func() {
+				t.app.QueueUpdateDraw(func() {
+					t.updateStatusBar()
+				})
+			})
+		} else {
+			// Show success message temporarily
+			t.statusBar.SetText("[green]設定を保存しました[white]")
+			time.AfterFunc(2*time.Second, func() {
+				t.app.QueueUpdateDraw(func() {
+					t.updateStatusBar()
+				})
+			})
+		}
+
+		// Close dialog
+		t.app.SetRoot(t.mainFlex, true)
+	}
+
+	// Handle Enter key on menu items - move focus to right side
+	categoryList.SetSelectedFunc(func(index int, mainText, secondaryText string, shortcut rune) {
+		switch index {
+		case 0:
+			t.app.SetFocus(basicList)
+		case 1:
+			t.app.SetFocus(dirList)
+		case 2:
+			t.app.SetFocus(llmList)
+		case 4:
+			// Save
+			saveConfig()
+		case 5:
+			// Cancel
+			t.app.SetRoot(t.mainFlex, true)
+		}
+	})
+
+	// Create split layout (left: menu, right: content)
+	splitFlex := tview.NewFlex().
+		SetDirection(tview.FlexColumn).
+		AddItem(categoryList, 22, 0, true).
+		AddItem(contentArea, 0, 1, false)
+
+	// Create help bar
+	helpBar := tview.NewTextView().
+		SetDynamicColors(true).
+		SetText("[yellow]↑↓/j/k[white]:移動 [yellow]←→[white]:左右移動 [yellow]Enter[white]:編集/決定 [yellow]s[white]:保存 [yellow]q/Esc[white]:閉じる")
+	helpBar.SetBorder(false)
+
+	// Populate main container
+	mainContainer = tview.NewFlex().
+		SetDirection(tview.FlexRow).
+		AddItem(splitFlex, 0, 1, true).
+		AddItem(helpBar, 1, 0, false)
+
+	// Handle keyboard shortcuts on left side
+	categoryList.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+		switch event.Key() {
+		case tcell.KeyRune:
+			switch event.Rune() {
+			case 'j', 'J':
+				return tcell.NewEventKey(tcell.KeyDown, 0, tcell.ModNone)
+			case 'k', 'K':
+				return tcell.NewEventKey(tcell.KeyUp, 0, tcell.ModNone)
+			case 's', 'S':
+				saveConfig()
+				return nil
+			case 'q', 'Q':
+				t.app.SetRoot(t.mainFlex, true)
+				return nil
+			}
+		case tcell.KeyEscape:
+			t.app.SetRoot(t.mainFlex, true)
+			return nil
+		case tcell.KeyRight:
+			// Move to right side
+			currentIndex := categoryList.GetCurrentItem()
+			switch currentIndex {
+			case 0:
+				t.app.SetFocus(basicList)
+			case 1:
+				t.app.SetFocus(dirList)
+			case 2:
+				t.app.SetFocus(llmList)
+			}
+			return nil
+		}
+		return event
+	})
+
+	// Handle keyboard on right side lists
+	listInputCapture := func(event *tcell.EventKey) *tcell.EventKey {
+		switch event.Key() {
+		case tcell.KeyLeft:
+			// Move back to left menu
+			t.app.SetFocus(categoryList)
+			return nil
+		case tcell.KeyEscape:
+			// Close dialog
+			t.app.SetRoot(t.mainFlex, true)
+			return nil
+		case tcell.KeyRune:
+			switch event.Rune() {
+			case 'j', 'J':
+				return tcell.NewEventKey(tcell.KeyDown, 0, tcell.ModNone)
+			case 'k', 'K':
+				return tcell.NewEventKey(tcell.KeyUp, 0, tcell.ModNone)
+			case 's', 'S':
+				saveConfig()
+				return nil
+			case 'q', 'Q':
+				t.app.SetRoot(t.mainFlex, true)
+				return nil
+			}
+		}
+		// Allow up/down arrows for list navigation
+		return event
+	}
+
+	basicList.SetInputCapture(listInputCapture)
+	dirList.SetInputCapture(listInputCapture)
+	llmList.SetInputCapture(listInputCapture)
+
+	// Show dialog
+	t.app.SetRoot(mainContainer, true).SetFocus(categoryList)
 }
+
