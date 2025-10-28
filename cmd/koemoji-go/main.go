@@ -471,14 +471,16 @@ func (app *App) runRichTUI() {
 
 	// Start periodic status updates
 	go func() {
-		ticker := time.NewTicker(1 * time.Second)
-		defer ticker.Stop()
+		statusTicker := time.NewTicker(1 * time.Second)
+		fileListTicker := time.NewTicker(5 * time.Second) // Update file lists every 5 seconds
+		defer statusTicker.Stop()
+		defer fileListTicker.Stop()
 
 		for {
 			select {
 			case <-ctx.Done():
 				return
-			case <-ticker.C:
+			case <-statusTicker.C:
 				// Update file counts
 				app.updateFileCounts()
 
@@ -492,6 +494,9 @@ func (app *App) runRichTUI() {
 					app.isRecording,
 					app.recordingStartTime,
 				)
+			case <-fileListTicker.C:
+				// Update file lists (Phase 11: real-time file list updates)
+				richTUI.UpdateFileLists()
 			}
 		}
 	}()

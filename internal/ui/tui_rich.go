@@ -362,6 +362,41 @@ func (t *RichTUI) UpdateStatus(inputCount, outputCount, archiveCount int,
 	})
 }
 
+// UpdateFileLists updates the file lists for input/output/archive directories (Phase 11)
+func (t *RichTUI) UpdateFileLists() {
+	t.app.QueueUpdateDraw(func() {
+		// Update input file list
+		inputList, inputErr := CreateFileList(t.config.InputDir, t.app)
+		if inputErr == nil {
+			inputList.SetBorder(true).
+				SetTitle(GetFileListTitle("input", t.config.InputDir)).
+				SetTitleAlign(tview.AlignCenter)
+			t.contentArea.AddPage("input", inputList, true, false)
+			t.inputPage = inputList
+		}
+
+		// Update output file list
+		outputList, outputErr := CreateFileList(t.config.OutputDir, t.app)
+		if outputErr == nil {
+			outputList.SetBorder(true).
+				SetTitle(GetFileListTitle("output", t.config.OutputDir)).
+				SetTitleAlign(tview.AlignCenter)
+			t.contentArea.AddPage("output", outputList, true, false)
+			t.outputPage = outputList
+		}
+
+		// Update archive file list
+		archiveList, archiveErr := CreateFileList(t.config.ArchiveDir, t.app)
+		if archiveErr == nil {
+			archiveList.SetBorder(true).
+				SetTitle(GetFileListTitle("archive", t.config.ArchiveDir)).
+				SetTitleAlign(tview.AlignCenter)
+			t.contentArea.AddPage("archive", archiveList, true, false)
+			t.archivePage = archiveList
+		}
+	})
+}
+
 // createBorderedTextView creates a bordered TextView with title (Phase 8 helper)
 func createBorderedTextView(title, text string) *tview.TextView {
 	textView := tview.NewTextView().

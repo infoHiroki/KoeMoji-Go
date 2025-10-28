@@ -102,6 +102,11 @@ func ReadDirFiles(dir string) ([]FileInfo, error) {
 			continue
 		}
 
+		// Skip hidden files (starting with .)
+		if len(entry.Name()) > 0 && entry.Name()[0] == '.' {
+			continue
+		}
+
 		info, err := entry.Info()
 		if err != nil {
 			continue
