@@ -125,16 +125,23 @@ func (d *ConfigDialog) Show(onSave, onCancel func()) {
 		AddItem(d.cancelButton, 14, 0, false).
 		AddItem(nil, 0, 1, false)
 
+	// Help text
+	helpText := tview.NewTextView().
+		SetText("操作: ↑↓でタブ選択 | Tab/Enter で項目移動 | Enterでドロップダウン展開 | ESCで閉じる").
+		SetTextAlign(tview.AlignCenter).
+		SetDynamicColors(true)
+
 	// Main layout: tab list (left) + tab content (right)
 	contentFlex := tview.NewFlex().
 		AddItem(d.tabList, 20, 0, true).
 		AddItem(d.tabPages, 0, 1, false)
 
-	// Overall layout: content + buttons
+	// Overall layout: content + help + buttons
 	d.mainFlex = tview.NewFlex().
 		SetDirection(tview.FlexRow).
 		AddItem(contentFlex, 0, 1, true).
-		AddItem(d.buttonFlex, 1, 0, false)
+		AddItem(helpText, 1, 0, false).
+		AddItem(d.buttonFlex, 3, 0, false)
 
 	d.mainFlex.SetBorder(true).
 		SetTitle(" " + msg.SettingsTitle + " ").
@@ -247,7 +254,9 @@ func (d *ConfigDialog) createBasicTab(msg *Messages) {
 		AddFormItem(d.languageDropDown).
 		AddFormItem(d.scanIntervalField)
 
-	form.SetBorder(true).SetTitle(" " + msg.BasicTab + " ")
+	form.SetBorder(true).
+		SetTitle(" " + msg.BasicTab + " ").
+		SetBorderPadding(0, 1, 1, 1) // Add bottom padding to avoid button overlap
 	d.tabPages.AddPage("basic", form, true, true)
 }
 
@@ -277,7 +286,9 @@ func (d *ConfigDialog) createDirectoriesTab(msg *Messages) {
 		AddFormItem(d.outputDirField).
 		AddFormItem(d.archiveDirField)
 
-	form.SetBorder(true).SetTitle(" " + msg.DirectoriesTab + " ")
+	form.SetBorder(true).
+		SetTitle(" " + msg.DirectoriesTab + " ").
+		SetBorderPadding(0, 1, 1, 1)
 	d.tabPages.AddPage("directories", form, true, false)
 }
 
@@ -315,7 +326,9 @@ func (d *ConfigDialog) createLLMTab(msg *Messages) {
 		AddFormItem(d.llmAPIKeyField).
 		AddFormItem(d.llmModelDropDown)
 
-	form.SetBorder(true).SetTitle(" " + msg.LLMTab + " ")
+	form.SetBorder(true).
+		SetTitle(" " + msg.LLMTab + " ").
+		SetBorderPadding(0, 1, 1, 1)
 	d.tabPages.AddPage("llm", form, true, false)
 }
 
@@ -341,7 +354,9 @@ func (d *ConfigDialog) createRecordingTab(msg *Messages) {
 		form.AddFormItem(d.dualRecordingCheckbox)
 	}
 
-	form.SetBorder(true).SetTitle(" " + msg.RecordingTab + " ")
+	form.SetBorder(true).
+		SetTitle(" " + msg.RecordingTab + " ").
+		SetBorderPadding(0, 1, 1, 1)
 	d.tabPages.AddPage("recording", form, true, false)
 }
 
@@ -388,7 +403,9 @@ func (d *ConfigDialog) createAdvancedTab(msg *Messages) {
 		AddFormItem(d.outputFormatDropDown).
 		AddFormItem(d.maxCpuField)
 
-	form.SetBorder(true).SetTitle(" 詳細設定 ")
+	form.SetBorder(true).
+		SetTitle(" 詳細設定 ").
+		SetBorderPadding(0, 1, 1, 1)
 	d.tabPages.AddPage("advanced", form, true, false)
 }
 
