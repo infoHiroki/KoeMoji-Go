@@ -14,6 +14,10 @@ import (
 	"github.com/rivo/tview"
 )
 
+// Default prompt template (Phase 14 修正)
+// プレースホルダー{language}{text}は不要（内部で自動結合）
+const defaultPromptTemplate = "以下の文字起こしテキストを日本語で詳細に要約してください。プレーンテキストで出力し、マークダウンは使用しないでください。"
+
 // Helper functions for volume conversion (Phase 14)
 // Convert float64 volume (0.0-1.0) to index (0-4)
 func volumeFloatToIndex(vol float64) int {
@@ -646,12 +650,13 @@ func (t *RichTUI) showConfigDialog() {
 		}
 	}
 	// Prompt template display (first 30 chars)
+	// 空の場合はデフォルト値を使用
 	promptDisplay := t.config.SummaryPromptTemplate
+	if promptDisplay == "" {
+		promptDisplay = defaultPromptTemplate
+	}
 	if len(promptDisplay) > 30 {
 		promptDisplay = promptDisplay[:30] + "..."
-	}
-	if promptDisplay == "" {
-		promptDisplay = "デフォルト"
 	}
 
 	llmList := tview.NewList().ShowSecondaryText(true)
@@ -1010,8 +1015,13 @@ func (t *RichTUI) showConfigDialog() {
 			showEditDialog("LLMモデル", dropdown)
 
 		case 3: // Prompt Template
+			// 空の場合はデフォルト値を初期値として使用
+			initialPrompt := t.config.SummaryPromptTemplate
+			if initialPrompt == "" {
+				initialPrompt = defaultPromptTemplate
+			}
 			textArea := tview.NewTextArea().
-				SetText(t.config.SummaryPromptTemplate, true)
+				SetText(initialPrompt, true)
 
 			textArea.SetBorder(true).
 				SetTitle(" プロンプトテンプレートを編集 (Ctrl+S: 保存, Esc: キャンセル) ").
@@ -1110,40 +1120,44 @@ func (t *RichTUI) showConfigDialog() {
 			showEditDialog("録音デバイス", dropdown)
 
 		case 1: // Recording Mode
-			list := tview.NewList().ShowSecondaryText(false)
-			list.AddItem("シングル録音（マイクのみ）", "", '1', nil)
-			list.AddItem("デュアル録音（システム音声+マイク）", "", '2', nil)
+			// DropDownに変更（矢印キーで直接切り替え可能）
+			modeOptions := []string{"シングル録音（マイクのみ）", "デュアル録音（システム音声+マイク）"}
+
+			dropdown := tview.NewDropDown().
+				SetLabel("録音モード: ").
+				SetOptions(modeOptions, nil)
 
 			// Set current selection
 			if t.config.DualRecordingEnabled {
-				list.SetCurrentItem(1)
+				dropdown.SetCurrentOption(1)
 			} else {
-				list.SetCurrentItem(0)
+				dropdown.SetCurrentOption(0)
 			}
 
-			list.SetBorder(true).
+			dropdown.SetBorder(true).
 				SetTitle(" 録音モードを選択 ").
 				SetTitleAlign(tview.AlignCenter)
 
-			list.SetSelectedFunc(func(idx int, text, secondary string, r rune) {
-				t.config.DualRecordingEnabled = (idx == 1)
-				modeDisplay := "シングル"
-				if t.config.DualRecordingEnabled {
-					modeDisplay = "デュアル"
-				}
-				recordingList.SetItemText(1, "録音モード", modeDisplay)
-				closeEditDialog()
-			})
-
-			list.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+			dropdown.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 				if event.Key() == tcell.KeyEscape {
+					closeEditDialog()
+					return nil
+				}
+				if event.Key() == tcell.KeyEnter {
+					idx, _ := dropdown.GetCurrentOption()
+					t.config.DualRecordingEnabled = (idx == 1)
+					modeDisplay := "シングル"
+					if t.config.DualRecordingEnabled {
+						modeDisplay = "デュアル"
+					}
+					recordingList.SetItemText(1, "録音モード", modeDisplay)
 					closeEditDialog()
 					return nil
 				}
 				return event
 			})
 
-			showEditDialog("録音モード", list)
+			showEditDialog("録音モード", dropdown)
 
 		case 2: // System Volume
 			list := tview.NewList().ShowSecondaryText(false)
