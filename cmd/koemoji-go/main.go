@@ -430,6 +430,10 @@ func (app *App) stopRecording() {
 func (app *App) runRichTUI() {
 	// Phase 11: Integrated Rich TUI with actual functions
 
+	// Scan status tracking (Phase 13)
+	isScanningFlag := false
+	scanStartTime := time.Time{}
+
 	// Create callbacks for Rich TUI
 	callbacks := &ui.RichTUICallbacks{
 		OnRecordingToggle: func() error {
@@ -438,6 +442,9 @@ func (app *App) runRichTUI() {
 		},
 		OnScanTrigger: func() error {
 			logger.LogInfo(app.logger, &app.logBuffer, &app.logMutex, "手動スキャンを実行中...")
+			// Set scanning flag (Phase 13)
+			isScanningFlag = true
+			scanStartTime = time.Now()
 			go processor.ScanAndProcess(app.Config, app.logger, &app.logBuffer, &app.logMutex,
 				&app.lastScanTime, &app.queuedFiles, &app.processingFile, &app.isProcessing,
 				&app.processedFiles, &app.mu, &app.wg, app.debugMode)
@@ -501,6 +508,17 @@ func (app *App) runRichTUI() {
 				copy(logBufferCopy, app.logBuffer)
 				app.logMutex.RUnlock()
 				richTUI.UpdateDashboard(logBufferCopy)
+
+				// Update scan page (Phase 13: real-time scan status)
+				// Auto-reset scanning flag after 3 seconds
+				if isScanningFlag && time.Since(scanStartTime) > 3*time.Second {
+					isScanningFlag = false
+				}
+				richTUI.UpdateScanPage(app.lastScanTime, app.inputCount, isScanningFlag)
+
+				// Update record page (Phase 13: real-time recording status)
+				deviceName := app.Config.RecordingDeviceName
+				richTUI.UpdateRecordPage(app.isRecording, app.recordingStartTime, deviceName)
 			case <-fileListTicker.C:
 				// Update file lists (Phase 11: real-time file list updates)
 				richTUI.UpdateFileLists()

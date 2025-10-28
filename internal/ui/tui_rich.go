@@ -446,6 +446,50 @@ func getLogColorTUI(level string) string {
 	}
 }
 
+// UpdateScanPage updates the scan page with real-time scan status (Phase 13)
+func (t *RichTUI) UpdateScanPage(lastScanTime time.Time, fileCount int, isScanning bool) {
+	t.app.QueueUpdateDraw(func() {
+		var statusText string
+
+		if isScanning {
+			statusText = "[yellow]スキャン実行中...[white]\n\n• 入力フォルダをスキャンしています"
+		} else if !lastScanTime.IsZero() {
+			timeStr := lastScanTime.Format("15:04:05")
+			statusText = fmt.Sprintf("[green]スキャン完了[white]\n\n• 最終スキャン: %s\n• 検出ファイル数: %d件", timeStr, fileCount)
+		} else {
+			statusText = "Enterキーで手動スキャン実行\n\n• 入力フォルダをスキャンして音声ファイルを検出します"
+		}
+
+		fullText := "[yellow]4. スキャン[white]\n\n" + statusText
+		t.scanPage.SetText(fullText)
+	})
+}
+
+// UpdateRecordPage updates the record page with real-time recording status (Phase 13)
+func (t *RichTUI) UpdateRecordPage(isRecording bool, recordingStart time.Time, deviceName string) {
+	t.app.QueueUpdateDraw(func() {
+		var statusText string
+
+		if isRecording {
+			elapsed := time.Since(recordingStart)
+			elapsedStr := formatDuration(elapsed)
+			now := time.Now()
+			filename := fmt.Sprintf("recording_%s.wav", now.Format("20060102_1504"))
+
+			statusText = fmt.Sprintf("[red]🔴 録音中: %s[white]\n\n• Enterキーで停止\n• ファイル: %s", elapsedStr, filename)
+		} else {
+			deviceText := "デフォルトデバイス"
+			if deviceName != "" && deviceName != "デフォルトデバイス" {
+				deviceText = deviceName
+			}
+			statusText = fmt.Sprintf("Enterキーで録音開始\n\n• 録音デバイス: %s\n• 録音準備完了", deviceText)
+		}
+
+		fullText := "[yellow]5. 録音[white]\n\n" + statusText
+		t.recordPage.SetText(fullText)
+	})
+}
+
 // createBorderedTextView creates a bordered TextView with title (Phase 8 helper)
 func createBorderedTextView(title, text string) *tview.TextView {
 	textView := tview.NewTextView().
