@@ -1,18 +1,14 @@
 package main
 
 import (
-	"bufio"
 	"context"
 	"flag"
 	"fmt"
 	"io"
 	"log"
 	"os"
-	"os/signal"
 	"path/filepath"
-	"strings"
 	"sync"
-	"syscall"
 	"time"
 
 	"github.com/infoHiroki/KoeMoji-Go/internal/config"
@@ -79,7 +75,7 @@ func main() {
 		return
 	}
 
-	// Handle TUI mode (non-default)
+	// Handle TUI mode
 	if tuiMode {
 		runTUIMode(configPath, debugMode, configMode)
 		return
@@ -132,7 +128,9 @@ func runTUIMode(configPath string, debugMode bool, configMode bool) {
 		fmt.Fprintf(os.Stderr, "  2. Restart the application\n")
 		fmt.Fprintf(os.Stderr, "\nThe application will continue with limited functionality.\n")
 	}
-	app.run()
+
+	// Run TUI
+	app.runTUI()
 }
 
 func parseFlags() (string, bool, bool, bool, bool, bool) {
@@ -153,17 +151,16 @@ func showHelpText() {
 	fmt.Println("\nOptions:")
 	flag.PrintDefaults()
 	fmt.Println("\nModes:")
-	fmt.Println("  Default - Graphical User Interface (GUI) mode")
-	fmt.Println("  --tui   - Terminal UI (TUI) mode")
-	fmt.Println("\nInteractive commands (TUI mode only):")
-	fmt.Println("  c - Configure settings")
-	fmt.Println("  l - Display all logs")
-	fmt.Println("  s - Scan now")
-	fmt.Println("  i - Open input directory")
-	fmt.Println("  o - Open output directory")
-	fmt.Println("  r - Start/stop recording")
-	fmt.Println("  q - Quit")
-	fmt.Println("  Enter - Refresh display")
+	fmt.Println("  Default      - Graphical User Interface (GUI) mode")
+	fmt.Println("  --tui        - Terminal UI (TUI) mode")
+	fmt.Println("\nInteractive commands (TUI mode):")
+	fmt.Println("  F1/c - Configure settings")
+	fmt.Println("  F2/l - Display all logs")
+	fmt.Println("  F3/s - Scan now")
+	fmt.Println("  F4/r - Start/stop recording")
+	fmt.Println("  i    - Open input directory")
+	fmt.Println("  o    - Open output directory")
+	fmt.Println("  q    - Quit")
 }
 
 func (app *App) initLogger() {
@@ -183,116 +180,6 @@ func (app *App) initLogger() {
 	// Only timestamps for file logging, no prefix for console
 	app.logger = log.New(io.MultiWriter(logFile), "", log.LstdFlags)
 	logger.LogInfo(app.logger, &app.logBuffer, &app.logMutex, "KoeMoji-Go started")
-}
-
-func (app *App) run() {
-	// Phase 2: Create context for graceful shutdown
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-
-	sigChan := make(chan os.Signal, 1)
-	signal.Notify(sigChan, os.Interrupt, syscall.SIGTERM)
-	defer signal.Stop(sigChan)
-
-	go processor.StartProcessing(ctx, app.Config, app.logger, &app.logBuffer, &app.logMutex,
-		&app.lastScanTime, &app.queuedFiles, &app.processingFile, &app.isProcessing,
-		&app.processedFiles, &app.mu, &app.wg, app.debugMode)
-	go app.handleUserInput(ctx)
-
-	logger.LogInfo(app.logger, &app.logBuffer, &app.logMutex, "KoeMoji-Go is running. Use commands below to interact.")
-	logger.LogInfo(app.logger, &app.logBuffer, &app.logMutex, "Monitoring %s directory every %d minutes", app.Config.InputDir, app.Config.ScanIntervalMinutes)
-
-	// Display initial dashboard
-	// Brief wait for initialization
-	time.Sleep(100 * time.Millisecond)
-	ui.RefreshDisplay(app.Config, app.startTime, app.lastScanTime, &app.logBuffer,
-		&app.logMutex, app.inputCount, app.outputCount, app.archiveCount,
-		&app.queuedFiles, app.processingFile, app.isProcessing, &app.mu,
-		app.isRecording, app.recordingStartTime)
-
-	<-sigChan
-	logger.LogInfo(app.logger, &app.logBuffer, &app.logMutex, "Graceful shutdown initiated...")
-	cancel() // Signal all goroutines to stop
-
-	// Wait for graceful shutdown with timeout
-	done := make(chan bool, 1)
-	go func() {
-		app.wg.Wait()
-		done <- true
-	}()
-
-	select {
-	case <-done:
-		logger.LogInfo(app.logger, &app.logBuffer, &app.logMutex, "Shutdown completed successfully")
-	case <-time.After(10 * time.Second):
-		logger.LogInfo(app.logger, &app.logBuffer, &app.logMutex, "Shutdown timeout, forcing exit")
-	}
-}
-
-func (app *App) handleUserInput(ctx context.Context) {
-	reader := bufio.NewReader(os.Stdin)
-	for {
-		select {
-		case <-ctx.Done():
-			logger.LogInfo(app.logger, &app.logBuffer, &app.logMutex, "User input handler stopped")
-			return
-		default:
-			// Non-blocking input check would be complex, so we keep the blocking read
-			// The context cancellation will be handled when the process exits
-		}
-		input, err := reader.ReadString('\n')
-		if err != nil {
-			if err == io.EOF {
-				return
-			}
-			continue
-		}
-
-		switch strings.TrimSpace(strings.ToLower(input)) {
-		case "":
-			// Empty Enter = manual refresh
-			ui.RefreshDisplay(app.Config, app.startTime, app.lastScanTime, &app.logBuffer,
-				&app.logMutex, app.inputCount, app.outputCount, app.archiveCount,
-				&app.queuedFiles, app.processingFile, app.isProcessing, &app.mu,
-				app.isRecording, app.recordingStartTime)
-		case "c":
-			config.ConfigureSettings(app.Config, app.configPath, app.logger)
-			ui.RefreshDisplay(app.Config, app.startTime, app.lastScanTime, &app.logBuffer,
-				&app.logMutex, app.inputCount, app.outputCount, app.archiveCount,
-				&app.queuedFiles, app.processingFile, app.isProcessing, &app.mu,
-				app.isRecording, app.recordingStartTime)
-		case "l":
-			ui.DisplayLogs(app.Config)
-			fmt.Print("Press Enter to continue...")
-			bufio.NewReader(os.Stdin).ReadString('\n')
-			ui.RefreshDisplay(app.Config, app.startTime, app.lastScanTime, &app.logBuffer,
-				&app.logMutex, app.inputCount, app.outputCount, app.archiveCount,
-				&app.queuedFiles, app.processingFile, app.isProcessing, &app.mu,
-				app.isRecording, app.recordingStartTime)
-		case "s":
-			logger.LogInfo(app.logger, &app.logBuffer, &app.logMutex, "Manual scan triggered")
-			go processor.ScanAndProcess(app.Config, app.logger, &app.logBuffer, &app.logMutex,
-				&app.lastScanTime, &app.queuedFiles, &app.processingFile, &app.isProcessing,
-				&app.processedFiles, &app.mu, &app.wg, app.debugMode)
-		case "i":
-			if err := ui.OpenDirectory(app.Config.InputDir); err != nil {
-				logger.LogError(app.logger, &app.logBuffer, &app.logMutex, "Failed to open input directory: %v", err)
-			}
-		case "o":
-			if err := ui.OpenDirectory(app.Config.OutputDir); err != nil {
-				logger.LogError(app.logger, &app.logBuffer, &app.logMutex, "Failed to open output directory: %v", err)
-			}
-		case "r":
-			app.handleRecordingToggle()
-		case "q":
-			logger.LogInfo(app.logger, &app.logBuffer, &app.logMutex, "Shutting down KoeMoji-Go...")
-			os.Exit(0)
-		default:
-			if strings.TrimSpace(input) != "" {
-				fmt.Printf("Invalid command '%s' (use c/l/s/i/o/a/r/q or Enter to refresh)\n", strings.TrimSpace(input))
-			}
-		}
-	}
 }
 
 func (app *App) handleRecordingToggle() {
@@ -411,3 +298,148 @@ func (app *App) stopRecording() {
 		&app.queuedFiles, app.processingFile, app.isProcessing, &app.mu,
 		app.isRecording, app.recordingStartTime)
 }
+
+func (app *App) runTUI() {
+	// Integrated TUI with actual functions
+
+	// Scan status tracking
+	isScanningFlag := false
+	scanStartTime := time.Time{}
+
+	// Create callbacks for TUI
+	callbacks := &ui.TUICallbacks{
+		OnRecordingToggle: func() error {
+			app.handleRecordingToggle()
+			return nil
+		},
+		OnScanTrigger: func() error {
+			logger.LogInfo(app.logger, &app.logBuffer, &app.logMutex, "手動スキャンを実行中...")
+			// Set scanning flag (Phase 13)
+			isScanningFlag = true
+			scanStartTime = time.Now()
+			go processor.ScanAndProcess(app.Config, app.logger, &app.logBuffer, &app.logMutex,
+				&app.lastScanTime, &app.queuedFiles, &app.processingFile, &app.isProcessing,
+				&app.processedFiles, &app.mu, &app.wg, app.debugMode)
+			return nil
+		},
+		OnOpenLogFile: func() error {
+			return ui.OpenLogFile()
+		},
+		OnOpenDirectory: func(dir string) error {
+			return ui.OpenDirectory(dir)
+		},
+		OnRefreshFileList: func() error {
+			app.updateFileCounts()
+			return nil
+		},
+	}
+
+	// Create TUI with callbacks
+	tui := ui.NewTUI(app.Config, callbacks)
+
+	logger.LogInfo(app.logger, &app.logBuffer, &app.logMutex, "KoeMoji-Go TUI 起動中...")
+
+	// Start background processing (Phase 11)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	// Start file processing goroutine
+	go processor.StartProcessing(ctx, app.Config, app.logger, &app.logBuffer, &app.logMutex,
+		&app.lastScanTime, &app.queuedFiles, &app.processingFile, &app.isProcessing,
+		&app.processedFiles, &app.mu, &app.wg, app.debugMode)
+
+	// Start periodic status updates
+	go func() {
+		statusTicker := time.NewTicker(1 * time.Second)
+		fileListTicker := time.NewTicker(5 * time.Second) // Update file lists every 5 seconds
+		defer statusTicker.Stop()
+		defer fileListTicker.Stop()
+
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case <-statusTicker.C:
+				// Update file counts
+				app.updateFileCounts()
+
+				// Update status
+				tui.UpdateStatus(
+					app.inputCount,
+					app.outputCount,
+					app.archiveCount,
+					app.processingFile,
+					app.isProcessing,
+					app.isRecording,
+					app.recordingStartTime,
+				)
+
+				// Update dashboard (Phase 12: real-time logs)
+				app.logMutex.RLock()
+				logBufferCopy := make([]logger.LogEntry, len(app.logBuffer))
+				copy(logBufferCopy, app.logBuffer)
+				app.logMutex.RUnlock()
+				tui.UpdateDashboard(logBufferCopy)
+
+				// Update scan page (Phase 13: real-time scan status)
+				// Auto-reset scanning flag after 3 seconds
+				if isScanningFlag && time.Since(scanStartTime) > 3*time.Second {
+					isScanningFlag = false
+				}
+				tui.UpdateScanPage(app.lastScanTime, app.inputCount, isScanningFlag)
+
+				// Update record page (Phase 13: real-time recording status)
+				deviceName := app.Config.RecordingDeviceName
+				tui.UpdateRecordPage(app.isRecording, app.recordingStartTime, deviceName)
+			case <-fileListTicker.C:
+				// Update file lists (Phase 11: real-time file list updates)
+				tui.UpdateFileLists()
+			}
+		}
+	}()
+
+	// Run TUI (blocking)
+	if err := tui.Run(); err != nil {
+		logger.LogError(app.logger, &app.logBuffer, &app.logMutex, "Rich TUIエラー: %v", err)
+	}
+
+	// Stop background processing and periodic updates
+	cancel()
+
+	// Wait for graceful shutdown with timeout
+	done := make(chan bool, 1)
+	go func() {
+		app.wg.Wait()
+		done <- true
+	}()
+
+	select {
+	case <-done:
+		logger.LogInfo(app.logger, &app.logBuffer, &app.logMutex, "バックグラウンド処理を正常終了しました")
+	case <-time.After(5 * time.Second):
+		logger.LogInfo(app.logger, &app.logBuffer, &app.logMutex, "シャットダウンタイムアウト、強制終了します")
+	}
+
+	logger.LogInfo(app.logger, &app.logBuffer, &app.logMutex, "Rich TUI を終了しました")
+}
+
+func (app *App) updateFileCounts() {
+	// Count files in each directory
+	if entries, err := os.ReadDir(app.Config.InputDir); err == nil {
+		app.inputCount = 0
+		for _, entry := range entries {
+			if !entry.IsDir() && ui.IsAudioFile(entry.Name()) {
+				app.inputCount++
+			}
+		}
+	}
+
+	if entries, err := os.ReadDir(app.Config.OutputDir); err == nil {
+		app.outputCount = len(entries)
+	}
+
+	if entries, err := os.ReadDir(app.Config.ArchiveDir); err == nil {
+		app.archiveCount = len(entries)
+	}
+}
+

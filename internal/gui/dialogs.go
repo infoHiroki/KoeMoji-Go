@@ -309,9 +309,18 @@ func (app *GUIApp) createRecordingForm() *widget.Form {
 		recordingModeRadio.Horizontal = false
 		app.dualRecordingRadio = recordingModeRadio
 
-		// Info label for macOS dual recording requirements
-		infoLabel := widget.NewLabel("※ macOS 13以降、画面収録権限が必要です")
-		dualSettingsContainer = container.NewVBox(infoLabel)
+		// Info labels for macOS dual recording
+		requirementLabel := widget.NewLabel("※ macOS 13以降、画面収録権限が必要です")
+		headphoneLabel := widget.NewLabel("⚠️ ヘッドホン/イヤホン推奨")
+		headphoneLabel.TextStyle.Bold = true
+		warningLabel := widget.NewLabel("スピーカーの音をマイクが拾い、システム音声が二重に録音される場合があります")
+
+		dualSettingsContainer = container.NewVBox(
+			requirementLabel,
+			widget.NewSeparator(),
+			headphoneLabel,
+			warningLabel,
+		)
 		app.dualSettingsContainer = dualSettingsContainer
 
 		// Initially hide/show based on current config

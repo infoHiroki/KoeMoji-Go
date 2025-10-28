@@ -88,6 +88,7 @@ type Messages struct {
 	ModelLabel           string
 	PromptTemplateLabel  string
 	RecordingDeviceLabel string
+	DualRecordingLabel   string
 	BrowseBtn            string
 
 	// Additional GUI messages
@@ -194,6 +195,7 @@ var messagesEN = Messages{
 	ModelLabel:           "Model",
 	PromptTemplateLabel:  "Prompt Template",
 	RecordingDeviceLabel: "Recording Device",
+	DualRecordingLabel:   "Dual Recording (System Audio + Mic)",
 	BrowseBtn:            "Browse...",
 
 	// Additional GUI messages
@@ -300,6 +302,7 @@ var messagesJA = Messages{
 	ModelLabel:           "モデル",
 	PromptTemplateLabel:  "プロンプトテンプレート",
 	RecordingDeviceLabel: "録音デバイス",
+	DualRecordingLabel:   "デュアル録音（システム音声+マイク）",
 	BrowseBtn:            "参照...",
 
 	// Additional GUI messages
