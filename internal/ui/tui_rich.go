@@ -7,6 +7,7 @@ import (
 
 	"github.com/gdamore/tcell/v2"
 	"github.com/infoHiroki/KoeMoji-Go/internal/config"
+	"github.com/infoHiroki/KoeMoji-Go/internal/logger"
 	"github.com/rivo/tview"
 )
 
@@ -32,13 +33,14 @@ type RichTUI struct {
 	mainFlex    *tview.Flex
 
 	// Content pages (Phase 8)
-	settingsPage *tview.TextView
-	logsPage     *tview.TextView
-	scanPage     *tview.TextView
-	recordPage   *tview.TextView
-	inputPage    *tview.List // Phase 9: Changed to List for file display
-	outputPage   *tview.List // Phase 9: Changed to List for file display
-	archivePage  *tview.List // Phase 9: Archive folder file display
+	dashboardPage *tview.TextView // Phase 12: Real-time log display
+	settingsPage  *tview.TextView
+	logsPage      *tview.TextView
+	scanPage      *tview.TextView
+	recordPage    *tview.TextView
+	inputPage     *tview.List // Phase 9: Changed to List for file display
+	outputPage    *tview.List // Phase 9: Changed to List for file display
+	archivePage   *tview.List // Phase 9: Archive folder file display
 
 	// Status tracking (Phase 7)
 	startTime      time.Time
@@ -62,16 +64,17 @@ func NewRichTUI(cfg *config.Config, callbacks *RichTUICallbacks) *RichTUI {
 		SetText("[green]KoeMoji-Go Rich TUI[white] | Phase 7\n行2: ファイル数\n行3: タイミング情報")
 	statusBar.SetBorder(false)
 
-	// Create menu list (left side, fixed width)
+	// Create menu list (left side, fixed width) - Phase 12: 9 items
 	list := tview.NewList().ShowSecondaryText(false)
-	list.AddItem("1. 設定", "", 0, nil)
-	list.AddItem("2. ログ", "", 0, nil)
-	list.AddItem("3. スキャン", "", 0, nil)
-	list.AddItem("4. 録音", "", 0, nil)
-	list.AddItem("5. 入力", "", 0, nil)
-	list.AddItem("6. 出力", "", 0, nil)
-	list.AddItem("7. アーカイブ", "", 0, nil)
-	list.AddItem("8. 終了", "", 0, nil)
+	list.AddItem("1. ダッシュボード", "", 0, nil) // Phase 12: Real-time logs
+	list.AddItem("2. 設定", "", 0, nil)
+	list.AddItem("3. ログファイル", "", 0, nil)
+	list.AddItem("4. スキャン", "", 0, nil)
+	list.AddItem("5. 録音", "", 0, nil)
+	list.AddItem("6. 入力", "", 0, nil)
+	list.AddItem("7. 出力", "", 0, nil)
+	list.AddItem("8. アーカイブ", "", 0, nil)
+	list.AddItem("9. 終了", "", 0, nil)
 
 	list.SetBorder(true).
 		SetTitle(" メニュー ").
@@ -80,11 +83,12 @@ func NewRichTUI(cfg *config.Config, callbacks *RichTUICallbacks) *RichTUI {
 	// Create content area with Pages (Phase 8)
 	contentArea := tview.NewPages()
 
-	// Create individual pages for each menu item (Phase 8/9)
-	settingsPage := createBorderedTextView(" 設定 ", "[yellow]1. 設定[white]\n\n設定画面の内容がここに表示されます\n\n• Whisperモデル\n• 入力/出力ディレクトリ\n• OpenAI API設定")
-	logsPage := createBorderedTextView(" ログ ", "[yellow]2. ログ[white]\n\nログ画面の内容がここに表示されます\n\n• アプリケーションログ\n• 処理履歴\n• エラーメッセージ")
-	scanPage := createBorderedTextView(" スキャン ", "[yellow]3. スキャン[white]\n\n入力フォルダをスキャンして音声ファイルを検出します\n\n• 手動スキャン実行\n• ファイル検出")
-	recordPage := createBorderedTextView(" 録音 ", "[yellow]4. 録音[white]\n\n音声録音機能\n\n• 録音開始/停止\n• デバイス選択\n• 音量調整")
+	// Create individual pages for each menu item (Phase 8/9/12)
+	dashboardPage := createBorderedTextView(" ダッシュボード ", "[yellow]1. ダッシュボード[white]\n\nリアルタイムログ（最新12件）\n\n起動中...")
+	settingsPage := createBorderedTextView(" 設定 ", "[yellow]2. 設定[white]\n\n設定画面の内容がここに表示されます\n\n• Whisperモデル\n• 入力/出力ディレクトリ\n• OpenAI API設定")
+	logsPage := createBorderedTextView(" ログファイル ", "[yellow]3. ログファイル[white]\n\nログファイルを開きます\n\n• Enterキーでログファイルを開く")
+	scanPage := createBorderedTextView(" スキャン ", "[yellow]4. スキャン[white]\n\n入力フォルダをスキャンして音声ファイルを検出します\n\n• 手動スキャン実行\n• ファイル検出")
+	recordPage := createBorderedTextView(" 録音 ", "[yellow]5. 録音[white]\n\n音声録音機能\n\n• 録音開始/停止\n• デバイス選択\n• 音量調整")
 
 	// Phase 9: Create file lists for input/output folders
 	inputPage, inputErr := CreateFileList(cfg.InputDir, app)
@@ -117,8 +121,9 @@ func NewRichTUI(cfg *config.Config, callbacks *RichTUICallbacks) *RichTUI {
 		SetTitle(GetFileListTitle("archive", cfg.ArchiveDir)).
 		SetTitleAlign(tview.AlignCenter)
 
-	// Add pages to content area
-	contentArea.AddPage("settings", settingsPage, true, true)
+	// Add pages to content area (Phase 12: dashboard first)
+	contentArea.AddPage("dashboard", dashboardPage, true, true)
+	contentArea.AddPage("settings", settingsPage, true, false)
 	contentArea.AddPage("logs", logsPage, true, false)
 	contentArea.AddPage("scan", scanPage, true, false)
 	contentArea.AddPage("record", recordPage, true, false)
@@ -145,33 +150,34 @@ func NewRichTUI(cfg *config.Config, callbacks *RichTUICallbacks) *RichTUI {
 		AddItem(middleFlex, 0, 1, true).    // Expand to fill
 		AddItem(helpBar, 1, 0, false)       // Fixed 1 line
 
-	// Handle cursor movement: switch pages on selection change (Phase 8)
+	// Handle cursor movement: switch pages on selection change (Phase 8/12)
 	list.SetChangedFunc(func(index int, mainText, secondaryText string, shortcut rune) {
-		// Page names corresponding to menu indices
-		pageNames := []string{"settings", "logs", "scan", "record", "input", "output", "archive", "quit"}
-		if index >= 0 && index < len(pageNames) && index != 7 {
+		// Page names corresponding to menu indices (Phase 12: 9 items)
+		pageNames := []string{"dashboard", "settings", "logs", "scan", "record", "input", "output", "archive", "quit"}
+		if index >= 0 && index < len(pageNames) && index != 8 {
 			contentArea.SwitchToPage(pageNames[index])
 		}
 	})
 
 	// Create RichTUI struct early to pass mainFlex to showRichHelpDialog
 	tui := &RichTUI{
-		app:          app,
-		config:       cfg,
-		callbacks:    callbacks,    // Phase 11
-		menuList:     list,
-		statusBar:    statusBar,
-		helpBar:      helpBar,
-		contentArea:  contentArea,
-		mainFlex:     mainFlex,
-		settingsPage: settingsPage, // Phase 8
-		logsPage:     logsPage,     // Phase 8
-		scanPage:     scanPage,     // Phase 8
-		recordPage:   recordPage,   // Phase 8
-		inputPage:    inputPage,    // Phase 9
-		outputPage:   outputPage,   // Phase 9
-		archivePage:  archivePage,  // Phase 9
-		startTime:    time.Now(),   // Phase 7
+		app:           app,
+		config:        cfg,
+		callbacks:     callbacks,     // Phase 11
+		menuList:      list,
+		statusBar:     statusBar,
+		helpBar:       helpBar,
+		contentArea:   contentArea,
+		mainFlex:      mainFlex,
+		dashboardPage: dashboardPage, // Phase 12
+		settingsPage:  settingsPage,  // Phase 8
+		logsPage:      logsPage,      // Phase 8
+		scanPage:      scanPage,      // Phase 8
+		recordPage:    recordPage,    // Phase 8
+		inputPage:     inputPage,     // Phase 9
+		outputPage:    outputPage,    // Phase 9
+		archivePage:   archivePage,   // Phase 9
+		startTime:     time.Now(),    // Phase 7
 	}
 
 	// Initial status update (Phase 7)
@@ -202,43 +208,45 @@ func NewRichTUI(cfg *config.Config, callbacks *RichTUICallbacks) *RichTUI {
 		return event
 	})
 
-	// Handle Enter key selection (Phase 11: integrated functions)
+	// Handle Enter key selection (Phase 11/12: integrated functions)
 	list.SetSelectedFunc(func(index int, mainText, secondaryText string, shortcut rune) {
 		switch index {
 		case 0:
+			// ダッシュボード - Phase 12: Just display (no action needed)
+		case 1:
 			// 設定 - Phase 10: Show config dialog
 			tui.showConfigDialog()
-		case 1:
-			// ログ - Phase 11: Open log file
+		case 2:
+			// ログファイル - Phase 11: Open log file
 			if tui.callbacks != nil && tui.callbacks.OnOpenLogFile != nil {
 				tui.callbacks.OnOpenLogFile()
 			}
-		case 2:
+		case 3:
 			// スキャン - Phase 11: Trigger manual scan
 			if tui.callbacks != nil && tui.callbacks.OnScanTrigger != nil {
 				tui.callbacks.OnScanTrigger()
 			}
-		case 3:
+		case 4:
 			// 録音 - Phase 11: Toggle recording
 			if tui.callbacks != nil && tui.callbacks.OnRecordingToggle != nil {
 				tui.callbacks.OnRecordingToggle()
 			}
-		case 4:
+		case 5:
 			// 入力フォルダ - Phase 11: Open input directory
 			if tui.callbacks != nil && tui.callbacks.OnOpenDirectory != nil {
 				tui.callbacks.OnOpenDirectory(tui.config.InputDir)
 			}
-		case 5:
+		case 6:
 			// 出力フォルダ - Phase 11: Open output directory
 			if tui.callbacks != nil && tui.callbacks.OnOpenDirectory != nil {
 				tui.callbacks.OnOpenDirectory(tui.config.OutputDir)
 			}
-		case 6:
+		case 7:
 			// アーカイブ - Phase 11: Open archive directory
 			if tui.callbacks != nil && tui.callbacks.OnOpenDirectory != nil {
 				tui.callbacks.OnOpenDirectory(tui.config.ArchiveDir)
 			}
-		case 7:
+		case 8:
 			// 終了
 			app.Stop()
 		}
@@ -395,6 +403,47 @@ func (t *RichTUI) UpdateFileLists() {
 			t.archivePage = archiveList
 		}
 	})
+}
+
+// UpdateDashboard updates the dashboard page with real-time logs (Phase 12)
+func (t *RichTUI) UpdateDashboard(logBuffer []logger.LogEntry) {
+	t.app.QueueUpdateDraw(func() {
+		// Build log text with colors
+		logText := "[yellow]リアルタイムログ（最新12件）[white]\n\n"
+
+		if len(logBuffer) == 0 {
+			logText += "[gray]ログがありません[white]"
+		} else {
+			for _, entry := range logBuffer {
+				// Get color based on log level
+				color := getLogColorTUI(entry.Level)
+				timestamp := entry.Timestamp.Format("15:04:05")
+
+				// Format: [COLOR]LEVEL[white] HH:MM:SS Message
+				logText += fmt.Sprintf("%s%-5s[white] %s %s\n", color, entry.Level, timestamp, entry.Message)
+			}
+		}
+
+		t.dashboardPage.SetText(logText)
+	})
+}
+
+// getLogColorTUI returns tview color tag for log level (Phase 12)
+func getLogColorTUI(level string) string {
+	switch level {
+	case "INFO":
+		return "[blue]"
+	case "PROC":
+		return "[yellow]"
+	case "DONE":
+		return "[green]"
+	case "ERROR":
+		return "[red]"
+	case "DEBUG":
+		return "[gray]"
+	default:
+		return "[white]"
+	}
 }
 
 // createBorderedTextView creates a bordered TextView with title (Phase 8 helper)

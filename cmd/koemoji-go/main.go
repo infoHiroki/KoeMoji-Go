@@ -494,6 +494,13 @@ func (app *App) runRichTUI() {
 					app.isRecording,
 					app.recordingStartTime,
 				)
+
+				// Update dashboard (Phase 12: real-time logs)
+				app.logMutex.RLock()
+				logBufferCopy := make([]logger.LogEntry, len(app.logBuffer))
+				copy(logBufferCopy, app.logBuffer)
+				app.logMutex.RUnlock()
+				richTUI.UpdateDashboard(logBufferCopy)
 			case <-fileListTicker.C:
 				// Update file lists (Phase 11: real-time file list updates)
 				richTUI.UpdateFileLists()
