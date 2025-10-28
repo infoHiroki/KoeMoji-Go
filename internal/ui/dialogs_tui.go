@@ -92,7 +92,8 @@ func (d *ConfigDialog) Show(onSave, onCancel func()) {
 		SetTitle(" タブ ").
 		SetTitleAlign(tview.AlignCenter)
 
-	d.tabList.SetSelectedFunc(func(index int, mainText string, secondaryText string, shortcut rune) {
+	// ↑↓で即座にタブ切り替え（Enterキー不要）
+	d.tabList.SetChangedFunc(func(index int, mainText string, secondaryText string, shortcut rune) {
 		d.switchTab(index)
 	})
 
@@ -127,7 +128,7 @@ func (d *ConfigDialog) Show(onSave, onCancel func()) {
 
 	// Help text
 	helpText := tview.NewTextView().
-		SetText("操作: ↑↓でタブ選択 | Tab/Enter で項目移動 | Enterでドロップダウン展開 | ESCで閉じる").
+		SetText("操作: ↑↓で項目選択 | Tabでタブ切替 | Enterで決定 | Spaceでチェックボックス | ESCで閉じる").
 		SetTextAlign(tview.AlignCenter).
 		SetDynamicColors(true)
 
@@ -157,12 +158,34 @@ func (d *ConfigDialog) Show(onSave, onCancel func()) {
 			}
 			return nil
 		case tcell.KeyTab:
-			// Cycle focus: tabList -> tabPages -> buttons -> tabList
-			if d.app.GetFocus() == d.tabList {
-				d.app.SetFocus(d.tabPages)
-			} else if d.app.GetFocus() == d.tabPages {
+			// Tabキーでフォーカス移動: form -> tabList -> buttons -> form
+			currentFocus := d.app.GetFocus()
+			_, primitive := d.tabPages.GetFrontPage()
+
+			if currentFocus == primitive {
+				// form -> tabList
+				d.app.SetFocus(d.tabList)
+			} else if currentFocus == d.tabList {
+				// tabList -> buttons
 				d.app.SetFocus(d.saveButton)
 			} else {
+				// buttons -> form
+				d.app.SetFocus(primitive)
+			}
+			return nil
+		case tcell.KeyBacktab: // Shift+Tab
+			// 逆方向に移動
+			currentFocus := d.app.GetFocus()
+			_, primitive := d.tabPages.GetFrontPage()
+
+			if currentFocus == primitive {
+				// form -> buttons
+				d.app.SetFocus(d.cancelButton)
+			} else if currentFocus == d.tabList {
+				// tabList -> form
+				d.app.SetFocus(primitive)
+			} else {
+				// buttons -> tabList
 				d.app.SetFocus(d.tabList)
 			}
 			return nil
@@ -172,7 +195,12 @@ func (d *ConfigDialog) Show(onSave, onCancel func()) {
 
 	// Add to pages
 	d.pages.AddPage("config", d.mainFlex, true, true)
-	d.app.SetFocus(d.tabList)
+
+	// 初期フォーカスを設定項目に設定（すぐに編集できるように）
+	_, primitive := d.tabPages.GetFrontPage()
+	if primitive != nil {
+		d.app.SetFocus(primitive)
+	}
 }
 
 // switchTab changes the active tab
@@ -181,6 +209,13 @@ func (d *ConfigDialog) switchTab(index int) {
 	if index >= 0 && index < len(tabs) {
 		d.tabPages.SwitchToPage(tabs[index])
 		d.tabList.SetCurrentItem(index)
+
+		// 切り替え後、自動的にそのタブのコンテンツにフォーカスを移動
+		// これにより、すぐに設定を編集できる
+		_, primitive := d.tabPages.GetFrontPage()
+		if primitive != nil {
+			d.app.SetFocus(primitive)
+		}
 	}
 }
 
