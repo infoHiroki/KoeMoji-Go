@@ -2,6 +2,7 @@ package ui
 
 import (
 	"fmt"
+	"runtime"
 	"strconv"
 	"sync"
 	"time"
@@ -671,18 +672,24 @@ func (t *RichTUI) showConfigDialog() {
 	if t.config.DualRecordingEnabled {
 		modeDisplay = "デュアル"
 	}
-	// Convert float64 (0.0-1.0) to display scale (-2 to +2)
-	// SystemAudioVolume: 0.1, 0.2, 0.3, 0.5, 0.7 -> display as -2, -1, 0, +1, +2
-	sysVolumeIdx := volumeFloatToIndex(t.config.SystemAudioVolume)
-	micVolumeIdx := volumeFloatToIndex(t.config.MicrophoneVolume)
-	sysVolumeDisplay := fmt.Sprintf("%+d", sysVolumeIdx-2)
-	micVolumeDisplay := fmt.Sprintf("%+d", micVolumeIdx-2)
 
 	recordingList := tview.NewList().ShowSecondaryText(true)
 	recordingList.AddItem("録音デバイス", deviceDisplay, 0, nil)
 	recordingList.AddItem("録音モード", modeDisplay, 0, nil)
-	recordingList.AddItem("システム音声音量", sysVolumeDisplay, 0, nil)
-	recordingList.AddItem("マイク音量", micVolumeDisplay, 0, nil)
+
+	// Platform-specific settings: Volume controls only on Windows
+	if runtime.GOOS == "windows" {
+		// Convert float64 (0.0-1.0) to display scale (-2 to +2)
+		// SystemAudioVolume: 0.1, 0.2, 0.3, 0.5, 0.7 -> display as -2, -1, 0, +1, +2
+		sysVolumeIdx := volumeFloatToIndex(t.config.SystemAudioVolume)
+		micVolumeIdx := volumeFloatToIndex(t.config.MicrophoneVolume)
+		sysVolumeDisplay := fmt.Sprintf("%+d", sysVolumeIdx-2)
+		micVolumeDisplay := fmt.Sprintf("%+d", micVolumeIdx-2)
+
+		recordingList.AddItem("システム音声音量", sysVolumeDisplay, 0, nil)
+		recordingList.AddItem("マイク音量", micVolumeDisplay, 0, nil)
+	}
+
 	recordingList.SetBorder(true).
 		SetTitle(" 録音設定 (Enterで編集) ").
 		SetTitleAlign(tview.AlignCenter)
