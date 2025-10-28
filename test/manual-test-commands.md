@@ -159,7 +159,7 @@ ps aux | grep koemoji-go
 
 #### 7.1 TUIモードでの録音
 ```bash
-./koemoji-go
+./koemoji-go --tui
 ```
 
 **キーボード操作**:
