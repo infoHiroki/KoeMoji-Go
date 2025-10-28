@@ -1,267 +1,246 @@
 package ui
 
 import (
-	"sync"
 	"testing"
 	"time"
 
 	"github.com/infoHiroki/KoeMoji-Go/internal/config"
-	"github.com/infoHiroki/KoeMoji-Go/internal/logger"
 	"github.com/stretchr/testify/assert"
 )
 
-// createTestTUI creates a test TUI instance
-func createTestTUI(t *testing.T) *TUI {
-	cfg := config.GetDefaultConfig()
-	logBuffer := make([]logger.LogEntry, 0, 12)
-	logMutex := sync.RWMutex{}
-	queuedFiles := make([]string, 0)
-	mu := sync.Mutex{}
-
-	// Note: We don't call NewTUI here because it initializes tview.Application
-	// which requires a terminal. Instead, we create a minimal TUI for testing.
-	tui := &TUI{
-		config:      cfg,
-		startTime:   time.Now(),
-		logBuffer:   &logBuffer,
-		logMutex:    &logMutex,
-		queuedFiles: &queuedFiles,
-		mu:          &mu,
+// TestTUICallbacks_Initialization tests TUICallbacks struct initialization
+func TestTUICallbacks_Initialization(t *testing.T) {
+	callbacks := &TUICallbacks{
+		OnRecordingToggle: func() error { return nil },
+		OnScanTrigger:     func() error { return nil },
+		OnOpenLogFile:     func() error { return nil },
+		OnOpenDirectory:   func(dir string) error { return nil },
+		OnRefreshFileList: func() error { return nil },
 	}
 
-	return tui
+	assert.NotNil(t, callbacks.OnRecordingToggle)
+	assert.NotNil(t, callbacks.OnScanTrigger)
+	assert.NotNil(t, callbacks.OnOpenLogFile)
+	assert.NotNil(t, callbacks.OnOpenDirectory)
+	assert.NotNil(t, callbacks.OnRefreshFileList)
 }
 
-func TestTUI_Creation(t *testing.T) {
-	tui := createTestTUI(t)
+// TestTUICallbacks_Execution tests callback execution
+func TestTUICallbacks_Execution(t *testing.T) {
+	recordingCalled := false
+	scanCalled := false
+	logFileCalled := false
+	directoryCalled := false
+	refreshCalled := false
 
-	assert.NotNil(t, tui.config)
-	assert.NotNil(t, tui.logBuffer)
-	assert.NotNil(t, tui.logMutex)
-	assert.NotNil(t, tui.queuedFiles)
-	assert.NotNil(t, tui.mu)
-	assert.False(t, tui.startTime.IsZero())
+	callbacks := &TUICallbacks{
+		OnRecordingToggle: func() error {
+			recordingCalled = true
+			return nil
+		},
+		OnScanTrigger: func() error {
+			scanCalled = true
+			return nil
+		},
+		OnOpenLogFile: func() error {
+			logFileCalled = true
+			return nil
+		},
+		OnOpenDirectory: func(dir string) error {
+			directoryCalled = true
+			return nil
+		},
+		OnRefreshFileList: func() error {
+			refreshCalled = true
+			return nil
+		},
+	}
+
+	// Execute callbacks
+	callbacks.OnRecordingToggle()
+	assert.True(t, recordingCalled)
+
+	callbacks.OnScanTrigger()
+	assert.True(t, scanCalled)
+
+	callbacks.OnOpenLogFile()
+	assert.True(t, logFileCalled)
+
+	callbacks.OnOpenDirectory("/test/path")
+	assert.True(t, directoryCalled)
+
+	callbacks.OnRefreshFileList()
+	assert.True(t, refreshCalled)
 }
 
-func TestTUI_SetLastScanTime(t *testing.T) {
-	tui := createTestTUI(t)
-
-	now := time.Now()
-	tui.SetLastScanTime(now)
-
-	assert.Equal(t, now, tui.lastScanTime)
-}
-
-func TestTUI_LogColorCode(t *testing.T) {
-	tui := createTestTUI(t)
-
+// TestVolumeFloatToIndex tests volume conversion from float to index
+func TestVolumeFloatToIndex(t *testing.T) {
 	tests := []struct {
-		level    string
-		expected string
+		name     string
+		volume   float64
+		expected int
 	}{
-		{"INFO", "blue"},
-		{"PROC", "yellow"},
-		{"DONE", "green"},
-		{"ERROR", "red"},
-		{"DEBUG", "gray"},
-		{"UNKNOWN", "white"},
+		{"System volume 0.1", 0.1, 0},
+		{"System volume 0.2", 0.2, 1},
+		{"System volume 0.3", 0.3, 2},
+		{"System volume 0.5", 0.5, 3},
+		{"System volume 0.7", 0.7, 4},
+		{"Mic volume 1.0", 1.0, 0},
+		{"Mic volume 1.3", 1.3, 1},
+		{"Mic volume 1.6", 1.6, 2},
+		{"Mic volume 1.9", 1.9, 3},
+		{"Mic volume 2.2", 2.2, 4},
+		{"Default fallback", 999.9, 2},
 	}
 
 	for _, tt := range tests {
-		t.Run(tt.level, func(t *testing.T) {
-			color := tui.getLogColorCode(tt.level)
-			assert.Equal(t, tt.expected, color)
+		t.Run(tt.name, func(t *testing.T) {
+			result := volumeFloatToIndex(tt.volume)
+			assert.Equal(t, tt.expected, result)
 		})
 	}
 }
 
-func TestTUI_StatusTracking(t *testing.T) {
-	tui := createTestTUI(t)
+// TestVolumeIndexToSystemFloat tests system volume conversion from index to float
+func TestVolumeIndexToSystemFloat(t *testing.T) {
+	tests := []struct {
+		name     string
+		index    int
+		expected float64
+	}{
+		{"Index 0", 0, 0.1},
+		{"Index 1", 1, 0.2},
+		{"Index 2", 2, 0.3},
+		{"Index 3", 3, 0.5},
+		{"Index 4", 4, 0.7},
+		{"Out of range -1", -1, 0.3}, // Default
+		{"Out of range 10", 10, 0.3}, // Default
+	}
 
-	// Test status tracking fields
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := volumeIndexToSystemFloat(tt.index)
+			assert.Equal(t, tt.expected, result)
+		})
+	}
+}
+
+// TestVolumeIndexToMicFloat tests microphone volume conversion from index to float
+func TestVolumeIndexToMicFloat(t *testing.T) {
+	tests := []struct {
+		name     string
+		index    int
+		expected float64
+	}{
+		{"Index 0", 0, 1.0},
+		{"Index 1", 1, 1.3},
+		{"Index 2", 2, 1.6},
+		{"Index 3", 3, 1.9},
+		{"Index 4", 4, 2.2},
+		{"Out of range -1", -1, 1.6}, // Default
+		{"Out of range 10", 10, 1.6}, // Default
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := volumeIndexToMicFloat(tt.index)
+			assert.Equal(t, tt.expected, result)
+		})
+	}
+}
+
+// TestNewTUI_BasicStructure tests NewTUI creates valid structure
+// Note: We can't fully test tview.Application without a terminal,
+// but we can verify the function doesn't panic and returns non-nil
+func TestNewTUI_BasicStructure(t *testing.T) {
+	cfg := config.GetDefaultConfig()
+	callbacks := &TUICallbacks{
+		OnRecordingToggle: func() error { return nil },
+		OnScanTrigger:     func() error { return nil },
+		OnOpenLogFile:     func() error { return nil },
+		OnOpenDirectory:   func(dir string) error { return nil },
+		OnRefreshFileList: func() error { return nil },
+	}
+
+	// This will create tview components but won't run the application
+	tui := NewTUI(cfg, callbacks)
+
+	// Verify basic fields are initialized
+	assert.NotNil(t, tui)
+	assert.NotNil(t, tui.app)
+	assert.NotNil(t, tui.config)
+	assert.NotNil(t, tui.callbacks)
+	assert.NotNil(t, tui.menuList)
+	assert.NotNil(t, tui.statusBar)
+	assert.NotNil(t, tui.helpBar)
+	assert.NotNil(t, tui.contentArea)
+	assert.NotNil(t, tui.mainFlex)
+	assert.False(t, tui.startTime.IsZero())
+}
+
+// TestTUI_StatusFields tests status tracking fields initialization
+func TestTUI_StatusFields(t *testing.T) {
+	cfg := config.GetDefaultConfig()
+	callbacks := &TUICallbacks{
+		OnRecordingToggle: func() error { return nil },
+		OnScanTrigger:     func() error { return nil },
+		OnOpenLogFile:     func() error { return nil },
+		OnOpenDirectory:   func(dir string) error { return nil },
+		OnRefreshFileList: func() error { return nil },
+	}
+
+	tui := NewTUI(cfg, callbacks)
+
+	// Verify initial status values
+	tui.mu.RLock()
+	defer tui.mu.RUnlock()
+
 	assert.Equal(t, 0, tui.inputCount)
 	assert.Equal(t, 0, tui.outputCount)
 	assert.Equal(t, 0, tui.archiveCount)
 	assert.Empty(t, tui.processingFile)
 	assert.False(t, tui.isProcessing)
 	assert.False(t, tui.isRecording)
+	assert.True(t, tui.recordingStart.IsZero())
+	assert.False(t, tui.startTime.IsZero())
 }
 
-func TestTUI_CallbacksNil(t *testing.T) {
-	tui := createTestTUI(t)
-
-	// Initially, callbacks should be nil
-	assert.Nil(t, tui.onScan)
-	assert.Nil(t, tui.onRecord)
-	assert.Nil(t, tui.onConfig)
-	assert.Nil(t, tui.onLogs)
-	assert.Nil(t, tui.onInput)
-	assert.Nil(t, tui.onOutput)
-	assert.Nil(t, tui.onQuit)
-}
-
-func TestTUI_SetCallbacks(t *testing.T) {
-	tui := createTestTUI(t)
-
-	// Create test callbacks
-	scanCalled := false
-	recordCalled := false
-	configCalled := false
-	logsCalled := false
-	inputCalled := false
-	outputCalled := false
-	quitCalled := false
-
-	tui.SetCallbacks(
-		func() { scanCalled = true },
-		func() { recordCalled = true },
-		func() { configCalled = true },
-		func() { logsCalled = true },
-		func() { inputCalled = true },
-		func() { outputCalled = true },
-		func() { quitCalled = true },
-	)
-
-	// Test that callbacks are set
-	assert.NotNil(t, tui.onScan)
-	assert.NotNil(t, tui.onRecord)
-	assert.NotNil(t, tui.onConfig)
-	assert.NotNil(t, tui.onLogs)
-	assert.NotNil(t, tui.onInput)
-	assert.NotNil(t, tui.onOutput)
-	assert.NotNil(t, tui.onQuit)
-
-	// Test that callbacks work
-	tui.onScan()
-	assert.True(t, scanCalled)
-
-	tui.onRecord()
-	assert.True(t, recordCalled)
-
-	tui.onConfig()
-	assert.True(t, configCalled)
-
-	tui.onLogs()
-	assert.True(t, logsCalled)
-
-	tui.onInput()
-	assert.True(t, inputCalled)
-
-	tui.onOutput()
-	assert.True(t, outputCalled)
-
-	tui.onQuit()
-	assert.True(t, quitCalled)
-}
-
-func TestTUI_LogBuffer(t *testing.T) {
-	tui := createTestTUI(t)
-
-	// Add log entries
-	tui.logMutex.Lock()
-	*tui.logBuffer = append(*tui.logBuffer, logger.LogEntry{
-		Timestamp: time.Now(),
-		Level:     "INFO",
-		Message:   "Test info message",
-	})
-	*tui.logBuffer = append(*tui.logBuffer, logger.LogEntry{
-		Timestamp: time.Now(),
-		Level:     "ERROR",
-		Message:   "Test error message",
-	})
-	tui.logMutex.Unlock()
-
-	// Verify log buffer
-	tui.logMutex.RLock()
-	defer tui.logMutex.RUnlock()
-
-	assert.Len(t, *tui.logBuffer, 2)
-	assert.Equal(t, "INFO", (*tui.logBuffer)[0].Level)
-	assert.Equal(t, "Test info message", (*tui.logBuffer)[0].Message)
-	assert.Equal(t, "ERROR", (*tui.logBuffer)[1].Level)
-	assert.Equal(t, "Test error message", (*tui.logBuffer)[1].Message)
-}
-
-func TestTUI_QueuedFiles(t *testing.T) {
-	tui := createTestTUI(t)
-
-	// Add files to queue
-	tui.mu.Lock()
-	*tui.queuedFiles = append(*tui.queuedFiles, "test1.wav", "test2.wav")
-	tui.mu.Unlock()
-
-	// Verify queue
-	tui.mu.Lock()
-	defer tui.mu.Unlock()
-
-	assert.Len(t, *tui.queuedFiles, 2)
-	assert.Equal(t, "test1.wav", (*tui.queuedFiles)[0])
-	assert.Equal(t, "test2.wav", (*tui.queuedFiles)[1])
-}
-
-func TestTUI_ConcurrentAccess(t *testing.T) {
-	tui := createTestTUI(t)
-
-	var wg sync.WaitGroup
-	numGoroutines := 10
-
-	// Test concurrent log writing
-	for i := 0; i < numGoroutines; i++ {
-		wg.Add(1)
-		go func(id int) {
-			defer wg.Done()
-			tui.logMutex.Lock()
-			*tui.logBuffer = append(*tui.logBuffer, logger.LogEntry{
-				Timestamp: time.Now(),
-				Level:     "INFO",
-				Message:   "Concurrent message",
-			})
-			tui.logMutex.Unlock()
-		}(i)
+// TestTUI_TimeTracking tests time tracking functionality
+func TestTUI_TimeTracking(t *testing.T) {
+	cfg := config.GetDefaultConfig()
+	callbacks := &TUICallbacks{
+		OnRecordingToggle: func() error { return nil },
+		OnScanTrigger:     func() error { return nil },
+		OnOpenLogFile:     func() error { return nil },
+		OnOpenDirectory:   func(dir string) error { return nil },
+		OnRefreshFileList: func() error { return nil },
 	}
 
-	// Test concurrent queue operations
-	for i := 0; i < numGoroutines; i++ {
-		wg.Add(1)
-		go func(id int) {
-			defer wg.Done()
-			tui.mu.Lock()
-			*tui.queuedFiles = append(*tui.queuedFiles, "file.wav")
-			tui.mu.Unlock()
-		}(i)
-	}
+	tui := NewTUI(cfg, callbacks)
 
-	wg.Wait()
-
-	// Verify results
-	tui.logMutex.RLock()
-	logCount := len(*tui.logBuffer)
-	tui.logMutex.RUnlock()
-
-	tui.mu.Lock()
-	queueCount := len(*tui.queuedFiles)
-	tui.mu.Unlock()
-
-	assert.Equal(t, numGoroutines, logCount)
-	assert.Equal(t, numGoroutines, queueCount)
+	// Verify startTime is set
+	assert.False(t, tui.startTime.IsZero())
+	assert.WithinDuration(t, time.Now(), tui.startTime, time.Second)
 }
 
 // Benchmark tests
-func BenchmarkTUI_LogColorCode(b *testing.B) {
-	tui := createTestTUI(&testing.T{})
-
+func BenchmarkVolumeFloatToIndex(b *testing.B) {
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		tui.getLogColorCode("INFO")
+		volumeFloatToIndex(0.3)
 	}
 }
 
-func BenchmarkTUI_SetLastScanTime(b *testing.B) {
-	tui := createTestTUI(&testing.T{})
-	now := time.Now()
-
+func BenchmarkVolumeIndexToSystemFloat(b *testing.B) {
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		tui.SetLastScanTime(now)
+		volumeIndexToSystemFloat(2)
+	}
+}
+
+func BenchmarkVolumeIndexToMicFloat(b *testing.B) {
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		volumeIndexToMicFloat(2)
 	}
 }
