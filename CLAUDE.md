@@ -47,7 +47,7 @@ cd build/windows && build.bat clean
 - `koemoji-go-{VERSION}.zip`
 
 **変更履歴**:
-- v1.8.1（未リリース）: Windows版命名規則変更（`koemoji-go-windows-{VERSION}.zip` → `koemoji-go-{VERSION}.zip`、「windows」単語を排除してセキュリティフィルタ回避）
+- v1.8.1: Windows版命名規則変更（`koemoji-go-windows-{VERSION}.zip` → `koemoji-go-{VERSION}.zip`、「windows」単語を排除してセキュリティフィルタ回避）
 - v1.8.0: macOSデュアル録音機能実装（FFmpeg不要の1ファイルミキシング）
 - v1.7.2: macOS版はtar.gz形式のみ（DMG版は廃止、Apple Developer Programコスト削減のため）
 - v1.7.0: 命名規則変更（プラットフォーム名を中央に配置、ウイルス検知回避強化）
@@ -365,6 +365,39 @@ dir build\windows\*.dll
 
 ## 最近の重要な変更
 
+### v1.8.1での変更（2025-10-29）
+1. **TUI正式版化（Phase 14完了）**
+   - Rich TUIを正式版に昇格（`tui_rich.go` → `tui_tview.go`）
+   - `RichTUI` → `TUI`に命名を簡素化
+   - `--tui-rich`フラグを削除、`--tui`に統一（6文字削減）
+   - 旧Simple TUI実装を削除（~110行削除）
+   - テスト全面書き直し（247行、全合格）
+   - 未使用コードクリーンアップ（正味-97行）
+
+2. **Windows版ビルド成果物の命名規則変更**
+   - セキュリティフィルタ回避のため「windows」という単語を完全排除
+   - 旧: `koemoji-go-windows-{VERSION}.zip`
+   - 新: `koemoji-go-{VERSION}.zip`
+   - macOS版は変更なし: `koemoji-go-macos-{VERSION}.tar.gz`
+   - 背景: 「windows」という単語がセキュリティソフトやブラウザのフィルタリングに引っかかる問題
+   - 企業PCや学校ネットワークでダウンロードがブロックされるケースを回避
+
+3. **TUI制限のドキュメント明記**
+   - TUIモード（`--tui`）はmacOS専用であることを明記
+   - WindowsではGUIモードのみサポート
+   - 理由: tview/tcellライブラリのWindows互換性問題（"The handle is invalid."エラー）
+
+4. **デュアル録音の注意喚起追加**
+   - ヘッドホン/イヤホン推奨の警告をドキュメントに追加
+   - GUI設定画面に情報ラベル追加（macOS向け）
+   - 物理的な音響結合問題をわかりやすく説明
+   - GitHub Issue #18作成（将来のエコーキャンセレーション機能）
+
+5. **TUI設定画面のバグ修正**
+   - キャンセルボタンが動作しない問題を修正
+   - 録音設定追加後のインデックスずれに対応
+   - case文のインデックスを正しく更新（case 5→6に修正）
+
 ### v1.8.0での変更（2025-10-27）
 1. **macOSデュアル録音機能実装**（Phase 0-4完了）
    - ScreenCaptureKit APIを使用したシステム音声キャプチャ
@@ -416,69 +449,6 @@ dir build\windows\*.dll
    - `internal/recorder/mixer_test.go` (290行) - 8つのユニットテスト（全合格）
    - `internal/recorder/test_afconvert_wav_test.go` - afconvert互換性テスト
    - 手動テスト: 503KB、2.68秒、48kHz Stereo Int16 正常動作確認
-
-### 未リリース（2025-10-29）
-1. **Windows版ビルド成果物の命名規則変更**
-   - セキュリティフィルタ回避のため「windows」という単語を完全排除
-   - 旧: `koemoji-go-windows-{VERSION}.zip`
-   - 新: `koemoji-go-{VERSION}.zip`
-   - macOS版は変更なし: `koemoji-go-macos-{VERSION}.tar.gz`
-
-2. **TUI制限のドキュメント明記**
-   - TUIモード（`--tui`）はmacOS専用であることを明記
-   - WindowsではGUIモードのみサポート
-   - 理由: tview/tcellライブラリのWindows互換性問題（"The handle is invalid."エラー）
-   - 影響ファイル: `CLAUDE.md`, `README.md`
-
-3. **変更ファイル（計11ファイル）**
-   - **実装層**: `build/windows/build.bat`, `scripts/release.sh`
-   - **ドキュメント層**: `CLAUDE.md`, `README.md`, `WINDOWS_BUILD_GUIDE.md`, `GITHUB_CLI.md`, `MACOS_BUILD_GUIDE.md`, `VERSION_UPDATE_CHECKLIST.md`
-
-4. **背景**
-   - 「windows」という単語がセキュリティソフトやブラウザのフィルタリングに引っかかる問題
-   - 企業PCや学校ネットワークでダウンロードがブロックされるケースを回避
-   - メール添付時の拒否リスクを最小化
-
-### 未リリース（2025-10-28）
-1. **TUI正式版化（Phase 14完了）**
-   - Rich TUIを正式版に昇格（`tui_rich.go` → `tui_tview.go`）
-   - `RichTUI` → `TUI`に命名を簡素化
-   - `--tui-rich`フラグを削除、`--tui`に統一（6文字削減）
-   - 旧Simple TUI実装を削除（~110行削除）
-   - テスト全面書き直し（247行、全合格）
-   - 未使用コードクリーンアップ（正味-97行）
-
-2. **デュアル録音の注意喚起追加**
-   - ヘッドホン/イヤホン推奨の警告をドキュメントに追加
-   - GUI設定画面に情報ラベル追加（macOS向け）
-   - 物理的な音響結合問題をわかりやすく説明
-   - GitHub Issue #18作成（将来のエコーキャンセレーション機能）
-
-3. **TUI設定画面のバグ修正**
-   - キャンセルボタンが動作しない問題を修正
-   - 録音設定追加後のインデックスずれに対応
-   - case文のインデックスを正しく更新（case 5→6に修正）
-
-### 未リリース（2025-10-25）
-1. **ログシステムの改善**
-   - GUIモードでファイル処理ログがファイルに記録されない問題を修正
-   - `internal/gui/components.go`: `processor`呼び出し時に`app.logger`を正しく渡すように修正
-   - デバッグモード（`--debug`）で詳細ログ（Whisper実行、OpenAI API詳細）を記録
-   - 通常モードでは`[INFO]`, `[PROC]`, `[DONE]`, `[ERROR]`のみ記録
-
-2. **エラーメッセージ表示の改善**
-   - OpenAI APIエラーレスポンスを1000文字に制限（GUIでの表示切れ対策）
-   - ユーザー向けエラーメッセージをシンプル化
-   - 詳細情報は`koemoji.log`に記録
-
-3. **コードの簡素化**
-   - AI要約プロンプトの後方互換性処理を削除（ユーザー数が少ないため不要）
-   - `preparePrompt()`関数をシンプル化
-   - 関連テストを新仕様に更新
-
-4. **ログボタンの修正**
-   - Windows環境でGitのnotepadラッパーが開く問題を修正
-   - `C:\Windows\notepad.exe`を直接指定するように変更
 
 ### v1.6.1での変更（2025-01-22）
 1. **Windows GUI 日本語文字化け修正**
