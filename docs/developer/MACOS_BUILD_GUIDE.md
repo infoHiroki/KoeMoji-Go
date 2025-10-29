@@ -104,7 +104,7 @@ cd build/macos
 ls -lh ../releases/
 
 # 期待される出力:
-# koemoji-go-macos-1.6.1.tar.gz
+# koemoji-go-macos-1.8.1.tar.gz
 ```
 
 ### ステップ4: 動作確認
@@ -112,12 +112,12 @@ ls -lh ../releases/
 ```bash
 # 解凍
 cd ../releases
-tar -xzf koemoji-go-macos-1.6.1.tar.gz
-cd koemoji-go-1.6.1
+tar -xzf koemoji-go-macos-1.8.1.tar.gz
+cd koemoji-go-1.8.1
 
 # バージョン確認
 ./koemoji-go --version
-# 期待される出力: KoeMoji-Go v1.6.1
+# 期待される出力: KoeMoji-Go v1.8.1
 
 # GUIモード起動
 ./koemoji-go
@@ -206,10 +206,10 @@ which whisper-ctranslate2
 **解決策**:
 ```bash
 # アプリに実行権限付与
-xattr -cr koemoji-go-1.6.1/
+xattr -cr koemoji-go-1.8.1/
 
 # または個別に
-xattr -d com.apple.quarantine koemoji-go-1.6.1/koemoji-go
+xattr -d com.apple.quarantine koemoji-go-1.8.1/koemoji-go
 ```
 
 ### エラー6: マイクアクセス許可エラー
@@ -228,8 +228,8 @@ xattr -d com.apple.quarantine koemoji-go-1.6.1/koemoji-go
 ### ファイル構成
 
 ```
-koemoji-go-macos-1.6.1.tar.gz
-└── koemoji-go-1.6.1/
+koemoji-go-macos-1.8.1.tar.gz
+└── koemoji-go-1.8.1/
     ├── koemoji-go           # 実行ファイル
     ├── config.json          # 設定ファイル（サンプル）
     └── README.md            # リリースノート
@@ -248,16 +248,16 @@ koemoji-go-macos-1.6.1.tar.gz
    ```bash
    # GitHubリポジトリページに移動
    # Releases → Draft a new release
-   # アセットとしてアップロード: koemoji-go-macos-1.6.1.tar.gz
+   # アセットとしてアップロード: koemoji-go-macos-1.8.1.tar.gz
    ```
 
 2. **ダウンロード後の手順**（ユーザー向け）
    ```bash
    # 解凍
-   tar -xzf koemoji-go-macos-1.6.1.tar.gz
+   tar -xzf koemoji-go-macos-1.8.1.tar.gz
 
    # ディレクトリ移動
-   cd koemoji-go-1.6.1
+   cd koemoji-go-1.8.1
 
    # 実行権限付与（必要に応じて）
    chmod +x koemoji-go

@@ -4,10 +4,12 @@
 
 ## 前提条件
 
-**Python 3.8以上** が必要です。
+**Python 3.12** を推奨します（3.13以降は非対応）。
 ```bash
-python --version  # 3.8以上であることを確認
+python --version  # 3.12であることを確認
 ```
+
+> **重要**: Python 3.13/3.14や3.8など古いバージョンでは動作しません。
 
 Pythonがない場合は [Python公式ダウンロード](https://www.python.org/downloads/) からインストールしてください。
 
@@ -40,10 +42,12 @@ koemoji-go.exe
   ```bash
   ./koemoji-go
   ```
-- **TUI モード**: ターミナル画面
+- **TUI モード（macOS専用）**: ターミナル画面
   ```bash
   ./koemoji-go --tui
   ```
+
+> **注意**: TUIモードはmacOS専用です。WindowsではGUIモードをご利用ください。
 
 ### 4. 録音機能（オプション）
 

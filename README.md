@@ -37,10 +37,10 @@ Pythonがない場合は [Python公式ダウンロード](https://www.python.org
 
 #### 🪟 Windows
 
-1. **ダウンロード**: `koemoji-go-1.7.0.zip`
+1. **ダウンロード**: `koemoji-go-1.8.1.zip`
 2. **展開後の構成**:
    ```
-   📁 koemoji-go-1.7.0
+   📁 koemoji-go-1.8.1
    ├── koemoji-go.exe          # 実行ファイル（アイコン付き）
    ├── libportaudio.dll        # 録音機能用ライブラリ
    ├── libgcc_s_seh-1.dll      # GCCランタイム
@@ -60,11 +60,11 @@ Pythonがない場合は [Python公式ダウンロード](https://www.python.org
 #### 🍎 macOS
 
 1. **ダウンロード**:
-   - **Apple Silicon (M1/M2/M3)**: `koemoji-go-macos-1.8.0.tar.gz`
+   - **Apple Silicon (M1/M2/M3)**: `koemoji-go-macos-1.8.1.tar.gz`
 
 2. **展開後の構成**:
    ```
-   📁 koemoji-go-1.8.0
+   📁 koemoji-go-1.8.1
    ├── koemoji-go         # 実行ファイル（GUI/TUI両対応）
    ├── config.json        # 設定ファイル
    └── README.md          # 説明書
