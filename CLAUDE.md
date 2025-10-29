@@ -8,7 +8,7 @@ KoeMoji-Goは、Goで書かれた音声・動画ファイル自動文字起こ�
 
 ### 主な特徴
 - **クロスプラットフォーム**: Windows、macOS対応（Linux未テスト）
-- **二つのUI**: GUI（Fyne）とTUI（Terminal UI）
+- **二つのUI**: GUI（Fyne）とTUI（Terminal UI、macOS専用）
 - **高精度音声認識**: FasterWhisper（OpenAI Whisperの高速版）
 - **Python 3.12（推奨）**: FasterWhisperバックエンド用（3.13以降は非対応）
 - **デュアル録音**: システム音声+マイク同時録音（Windows: v1.7.0～、macOS: v1.8.0～）
@@ -80,7 +80,7 @@ go test ./test
 # GUIモード（デフォルト）
 ./koemoji-go
 
-# ターミナルUIモード
+# ターミナルUIモード（macOS専用）
 ./koemoji-go --tui
 
 # 設定モード
@@ -88,8 +88,10 @@ go test ./test
 
 # デバッグモード（詳細ログを記録）
 ./koemoji-go --debug
-./koemoji-go --tui --debug  # TUIでもデバッグモード可能
+./koemoji-go --tui --debug  # TUIでもデバッグモード可能（macOS専用）
 ```
+
+**注意**: TUIモード（`--tui`）はmacOS専用です。WindowsではGUIモードのみサポートされています。
 
 **デバッグモードについて**:
 - 通常モード: `[INFO]`, `[PROC]`, `[DONE]`, `[ERROR]`レベルのログのみ記録
@@ -422,11 +424,17 @@ dir build\windows\*.dll
    - 新: `koemoji-go-{VERSION}.zip`
    - macOS版は変更なし: `koemoji-go-macos-{VERSION}.tar.gz`
 
-2. **変更ファイル（計9ファイル）**
+2. **TUI制限のドキュメント明記**
+   - TUIモード（`--tui`）はmacOS専用であることを明記
+   - WindowsではGUIモードのみサポート
+   - 理由: tview/tcellライブラリのWindows互換性問題（"The handle is invalid."エラー）
+   - 影響ファイル: `CLAUDE.md`, `README.md`
+
+3. **変更ファイル（計11ファイル）**
    - **実装層**: `build/windows/build.bat`, `scripts/release.sh`
    - **ドキュメント層**: `CLAUDE.md`, `README.md`, `WINDOWS_BUILD_GUIDE.md`, `GITHUB_CLI.md`, `MACOS_BUILD_GUIDE.md`, `VERSION_UPDATE_CHECKLIST.md`
 
-3. **背景**
+4. **背景**
    - 「windows」という単語がセキュリティソフトやブラウザのフィルタリングに引っかかる問題
    - 企業PCや学校ネットワークでダウンロードがブロックされるケースを回避
    - メール添付時の拒否リスクを最小化
