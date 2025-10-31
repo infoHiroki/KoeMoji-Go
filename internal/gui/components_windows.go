@@ -20,7 +20,7 @@ func (app *GUIApp) initializeRecorder() error {
 		// Check for actual device name (not UI placeholder strings)
 		if app.Config.RecordingDeviceName != "" &&
 			app.Config.RecordingDeviceName != "デフォルトデバイス" {
-			dr, err = recorder.NewDualRecorderWithDevices(app.Config.RecordingDeviceName)
+			dr, err = recorder.NewDualRecorderWithDevices(app.Config.RecordingDeviceName, app.logger, &app.logBuffer, &app.logMutex, app.debugMode)
 		} else {
 			dr, err = recorder.NewDualRecorder()
 		}

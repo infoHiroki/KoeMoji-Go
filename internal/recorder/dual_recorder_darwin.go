@@ -4,12 +4,15 @@ package recorder
 
 import (
 	"fmt"
+	"log"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/infoHiroki/KoeMoji-Go/internal/logger"
 )
 
 // DualRecorder records system audio and microphone simultaneously on macOS
@@ -49,6 +52,12 @@ type DualRecorder struct {
 	systemOutputPath string
 	micOutputPath    string
 	mixedOutputPath  string
+
+	// Logging
+	log       *log.Logger
+	logBuffer *[]logger.LogEntry
+	logMutex  *sync.RWMutex
+	debugMode bool
 }
 
 // NewDualRecorder creates a new dual recorder with default settings
@@ -77,7 +86,7 @@ func NewDualRecorder() (*DualRecorder, error) {
 }
 
 // NewDualRecorderWithDevices creates a dual recorder with specific microphone device
-func NewDualRecorderWithDevices(micDeviceName string) (*DualRecorder, error) {
+func NewDualRecorderWithDevices(micDeviceName string, log *log.Logger, logBuffer *[]logger.LogEntry, logMutex *sync.RWMutex, debugMode bool) (*DualRecorder, error) {
 	// Create system audio recorder
 	systemRecorder, err := NewSystemAudioRecorder()
 	if err != nil {
@@ -106,6 +115,10 @@ func NewDualRecorderWithDevices(micDeviceName string) (*DualRecorder, error) {
 		recording:      false,
 		maxDuration:    0, // Unlimited
 		maxFileSize:    0, // Unlimited
+		log:            log,
+		logBuffer:      logBuffer,
+		logMutex:       logMutex,
+		debugMode:      debugMode,
 	}, nil
 }
 
@@ -153,6 +166,9 @@ func (dr *DualRecorder) Start() error {
 				dr.mutex.Lock()
 				dr.recordError = fmt.Errorf("system audio: %w", err)
 				dr.mutex.Unlock()
+				if dr.log != nil {
+					logger.LogError(dr.log, dr.logBuffer, dr.logMutex, "System audio recording error: %v", err)
+				}
 				return
 			}
 		}()
@@ -167,6 +183,9 @@ func (dr *DualRecorder) Start() error {
 				dr.mutex.Lock()
 				dr.recordError = fmt.Errorf("microphone: %w", err)
 				dr.mutex.Unlock()
+				if dr.log != nil {
+					logger.LogError(dr.log, dr.logBuffer, dr.logMutex, "Microphone recording error: %v", err)
+				}
 				return
 			}
 		}()
