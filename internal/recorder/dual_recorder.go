@@ -5,6 +5,7 @@ package recorder
 import (
 	"errors"
 	"fmt"
+	"log"
 	"sync"
 	"time"
 	"unsafe"
@@ -12,6 +13,7 @@ import (
 	"github.com/go-ole/go-ole"
 	"github.com/gordonklaus/portaudio"
 	"github.com/moutend/go-wca/pkg/wca"
+	"github.com/infoHiroki/KoeMoji-Go/internal/logger"
 )
 
 // DualRecorder records system audio and microphone simultaneously
@@ -49,6 +51,12 @@ type DualRecorder struct {
 	startTime   time.Time
 	maxDuration time.Duration
 	maxFileSize int64
+
+	// Logging
+	log       *log.Logger
+	logBuffer *[]logger.LogEntry
+	logMutex  *sync.RWMutex
+	debugMode bool
 }
 
 // NewDualRecorder creates a new dual recorder with default settings
@@ -73,11 +81,17 @@ func NewDualRecorder() (*DualRecorder, error) {
 }
 
 // NewDualRecorderWithDevices creates a dual recorder with specific devices
-func NewDualRecorderWithDevices(micDeviceName string) (*DualRecorder, error) {
+func NewDualRecorderWithDevices(micDeviceName string, log *log.Logger, logBuffer *[]logger.LogEntry, logMutex *sync.RWMutex, debugMode bool) (*DualRecorder, error) {
 	dr, err := NewDualRecorder()
 	if err != nil {
 		return nil, err
 	}
+
+	// Set logger
+	dr.log = log
+	dr.logBuffer = logBuffer
+	dr.logMutex = logMutex
+	dr.debugMode = debugMode
 
 	// Find microphone device
 	if micDeviceName != "" {
@@ -149,12 +163,16 @@ func (dr *DualRecorder) Start() error {
 		go func() {
 			defer func() {
 				if r := recover(); r != nil {
-					fmt.Printf("System audio capture panic: %v\n", r)
+					if dr.log != nil {
+						logger.LogError(dr.log, dr.logBuffer, dr.logMutex, "System audio capture panic: %v", r)
+					}
 				}
 				dr.wg.Done()
 			}()
 			if err := dr.captureSystemAudio(); err != nil {
-				fmt.Printf("System audio capture error: %v\n", err)
+				if dr.log != nil {
+					logger.LogError(dr.log, dr.logBuffer, dr.logMutex, "System audio capture error: %v", err)
+				}
 			}
 		}()
 	}
@@ -165,12 +183,16 @@ func (dr *DualRecorder) Start() error {
 		go func() {
 			defer func() {
 				if r := recover(); r != nil {
-					fmt.Printf("Microphone capture panic: %v\n", r)
+					if dr.log != nil {
+						logger.LogError(dr.log, dr.logBuffer, dr.logMutex, "Microphone capture panic: %v", r)
+					}
 				}
 				dr.wg.Done()
 			}()
 			if err := dr.captureMicrophone(); err != nil {
-				fmt.Printf("Microphone capture error: %v\n", err)
+				if dr.log != nil {
+					logger.LogError(dr.log, dr.logBuffer, dr.logMutex, "Microphone capture error: %v", err)
+				}
 			}
 		}()
 	}
@@ -180,7 +202,9 @@ func (dr *DualRecorder) Start() error {
 	go func() {
 		defer func() {
 			if r := recover(); r != nil {
-				fmt.Printf("Mixer panic: %v\n", r)
+				if dr.log != nil {
+					logger.LogError(dr.log, dr.logBuffer, dr.logMutex, "Mixer panic: %v", r)
+				}
 			}
 			dr.wg.Done()
 		}()
