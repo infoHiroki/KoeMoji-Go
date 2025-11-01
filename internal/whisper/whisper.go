@@ -410,9 +410,9 @@ func validateOutputFile(outputPath string, config *config.Config) error {
 	fileInfo, err := os.Stat(outputPath)
 	if os.IsNotExist(err) {
 		if config.UILanguage == "ja" {
-			return fmt.Errorf("出力ファイルが生成されませんでした: %s\n\n考えられる原因:\n・音声ファイルが破損している可能性があります\n・音声認識エンジンが処理できない形式です\n\n対処方法:\n・WAV形式に変換してから再度処理してください", outputPath)
+			return fmt.Errorf("出力ファイルが生成されませんでした: %s\n\n考えられる原因:\n・音声/動画ファイルが破損している可能性があります\n・音声認識エンジンが処理できない形式です\n\n対処方法:\n・WAV形式に変換してから再度処理してください\n\n元ファイルはinputフォルダに保持されています。", outputPath)
 		}
-		return fmt.Errorf("output file was not created: %s\n\nPossible causes:\n・Audio file may be corrupted\n・Format not supported by recognition engine\n\nSolution:\n・Convert to WAV format and try again", outputPath)
+		return fmt.Errorf("output file was not created: %s\n\nPossible causes:\n・Audio/video file may be corrupted\n・Format not supported by recognition engine\n\nSolution:\n・Convert to WAV format and try again\n\nOriginal file has been kept in input folder.", outputPath)
 	}
 	if err != nil {
 		return fmt.Errorf("failed to check output file: %w", err)
@@ -420,9 +420,9 @@ func validateOutputFile(outputPath string, config *config.Config) error {
 
 	if fileInfo.Size() == 0 {
 		if config.UILanguage == "ja" {
-			return fmt.Errorf("出力ファイルが空です（0バイト）: %s\n\n考えられる原因:\n・AACファイルが破損している可能性があります（スマートフォン録音で発生しやすい）\n・音声が検出されませんでした\n\n対処方法:\n1. 外部ツールでWAV形式に変換してから再度処理\n2. FFmpegがある場合: ffmpeg -i input.aac -ar 16000 -ac 1 output.wav\n\n元ファイルはinputフォルダに保持されています。", outputPath)
+			return fmt.Errorf("出力ファイルが空です（0バイト）: %s\n\n考えられる原因:\n・音声/動画ファイルが破損している可能性があります\n・音声が検出されませんでした\n\n対処方法:\n・WAV形式に変換してから再度処理してください\n\n元ファイルはinputフォルダに保持されています。", outputPath)
 		}
-		return fmt.Errorf("output file is empty (0 bytes): %s\n\nPossible causes:\n・AAC file may be corrupted (common with smartphone recordings)\n・No audio detected\n\nSolution:\n1. Convert to WAV format using external tool\n2. If FFmpeg is available: ffmpeg -i input.aac -ar 16000 -ac 1 output.wav\n\nOriginal file has been kept in input folder.", outputPath)
+		return fmt.Errorf("output file is empty (0 bytes): %s\n\nPossible causes:\n・Audio/video file may be corrupted\n・No audio detected\n\nSolution:\n・Convert to WAV format and try again\n\nOriginal file has been kept in input folder.", outputPath)
 	}
 
 	return nil
