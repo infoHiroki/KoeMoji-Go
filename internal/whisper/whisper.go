@@ -243,14 +243,22 @@ func TranscribeAudio(config *config.Config, log *log.Logger, logBuffer *[]logger
 
 	if err != nil {
 		msg := ui.GetMessages(config)
-		
+
 		// Check for GPU-related errors and provide detailed guidance
 		errorStr := err.Error()
 		if isGPURelatedError(errorStr) {
 			return createGPUErrorMessage(config, err)
 		}
-		
+
 		return fmt.Errorf(msg.TranscribeFail, err)
+	}
+
+	// Verify output file was created and is not empty
+	basename := strings.TrimSuffix(filepath.Base(inputFile), filepath.Ext(inputFile))
+	outputFile := filepath.Join(config.OutputDir, basename+"."+config.OutputFormat)
+
+	if err := validateOutputFile(outputFile, config); err != nil {
+		return err
 	}
 
 	return nil
@@ -395,4 +403,27 @@ func IsGPURelatedErrorForTesting(errorStr string) bool {
 // CreateGPUErrorMessageForTesting exports createGPUErrorMessage for testing
 func CreateGPUErrorMessageForTesting(config *config.Config, originalErr error) error {
 	return createGPUErrorMessage(config, originalErr)
+}
+
+// validateOutputFile checks if the output file exists and has content
+func validateOutputFile(outputPath string, config *config.Config) error {
+	fileInfo, err := os.Stat(outputPath)
+	if os.IsNotExist(err) {
+		if config.UILanguage == "ja" {
+			return fmt.Errorf("出力ファイルが生成されませんでした: %s\n\n考えられる原因:\n・音声ファイルが破損している可能性があります\n・音声認識エンジンが処理できない形式です\n\n対処方法:\n・WAV形式に変換してから再度処理してください", outputPath)
+		}
+		return fmt.Errorf("output file was not created: %s\n\nPossible causes:\n・Audio file may be corrupted\n・Format not supported by recognition engine\n\nSolution:\n・Convert to WAV format and try again", outputPath)
+	}
+	if err != nil {
+		return fmt.Errorf("failed to check output file: %w", err)
+	}
+
+	if fileInfo.Size() == 0 {
+		if config.UILanguage == "ja" {
+			return fmt.Errorf("出力ファイルが空です（0バイト）: %s\n\n考えられる原因:\n・AACファイルが破損している可能性があります（スマートフォン録音で発生しやすい）\n・音声が検出されませんでした\n\n対処方法:\n1. 外部ツールでWAV形式に変換してから再度処理\n2. FFmpegがある場合: ffmpeg -i input.aac -ar 16000 -ac 1 output.wav\n\n元ファイルはinputフォルダに保持されています。", outputPath)
+		}
+		return fmt.Errorf("output file is empty (0 bytes): %s\n\nPossible causes:\n・AAC file may be corrupted (common with smartphone recordings)\n・No audio detected\n\nSolution:\n1. Convert to WAV format using external tool\n2. If FFmpeg is available: ffmpeg -i input.aac -ar 16000 -ac 1 output.wav\n\nOriginal file has been kept in input folder.", outputPath)
+	}
+
+	return nil
 }
