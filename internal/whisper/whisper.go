@@ -134,11 +134,24 @@ func IsFasterWhisperAvailableForTesting() bool {
 }
 
 func installFasterWhisper(log *log.Logger, logBuffer *[]logger.LogEntry, logMutex *sync.RWMutex) error {
-	logger.LogInfo(log, logBuffer, logMutex, "Installing faster-whisper and whisper-ctranslate2...")
-	cmd := createCommand("pip", "install", "faster-whisper", "whisper-ctranslate2")
+	// Step 1: Upgrade pip to ensure proper dependency resolution
+	logger.LogInfo(log, logBuffer, logMutex, "Upgrading pip to latest version...")
+	pipUpgradeCmd := createCommand("python", "-m", "pip", "install", "--upgrade", "pip")
+	if err := pipUpgradeCmd.Run(); err != nil {
+		logger.LogError(log, logBuffer, logMutex, "pip upgrade failed (non-fatal): %v", err)
+		// Continue even if pip upgrade fails
+	}
+
+	// Step 2: Install faster-whisper with explicit dependencies
+	// Include 'requests' explicitly to avoid indirect dependency resolution issues
+	// Background: requests is an indirect dependency of huggingface-hub (used by faster-whisper)
+	// Older pip versions or certain environments may fail to resolve it automatically
+	logger.LogInfo(log, logBuffer, logMutex, "Installing faster-whisper and dependencies...")
+	cmd := createCommand("pip", "install", "requests", "faster-whisper", "whisper-ctranslate2")
 	if err := cmd.Run(); err != nil {
 		return fmt.Errorf("pip install failed: %w", err)
 	}
+
 	logger.LogInfo(log, logBuffer, logMutex, "FasterWhisper installed successfully")
 	return nil
 }
