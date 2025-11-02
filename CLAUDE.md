@@ -365,6 +365,41 @@ dir build\windows\*.dll
 
 ## 最近の重要な変更
 
+### v1.8.2での変更（2025-11-02）
+1. **データ消失防止機能実装**
+   - `validateOutputFile()` 関数追加（`internal/whisper/whisper.go:421-449`）
+   - 0バイト出力ファイルの検出
+   - 破損した音声/動画ファイル処理時に元ファイルを`input/`フォルダに保持
+   - これまで：0バイト出力でも「成功」と判断し、`archive/`に移動してデータ消失
+   - 改善後：0バイト検出でエラー返却、元ファイルは`input/`に保持
+
+2. **faster-whisperインストール改善**（Issue #19 → PR #21）
+   - pipアップグレードを追加して依存関係解決を改善
+   - `requests`モジュールを明示的にインストール
+   - 古いpipバージョンでの間接依存関係エラーを解決
+   - ファイル：`internal/whisper/whisper.go:136-157`
+
+3. **デュアル録音エラーロギング改善**（Issue #20 → PR #22）
+   - デュアル録音エラーがGUI/TUI/ログファイルに記録されるように修正
+   - `fmt.Printf` → `logger.LogError`に変更（5箇所）
+   - DualRecorder構造体にロギングフィールド追加
+   - Windows/macOS両対応
+   - ファイル：`internal/recorder/dual_recorder.go`、`dual_recorder_darwin.go`
+
+4. **エラーメッセージ改善**
+   - ユーザーフレンドリーなエラーメッセージに改善
+   - 技術用語（FFmpeg、コマンドライン例）を削除
+   - 確証のない推測情報を削除
+   - シンプルで分かりやすい表現に統一
+   - 「音声ファイル」→「音声/動画ファイル」に汎用化
+
+5. **Issue解決**
+   - Issue #19: faster-whisper requests不足 → 解決 ✅
+   - Issue #20: デュアル録音エラーログ → 解決 ✅
+   - Issue #15: installFasterWhisper冗長 → 方針転換によりクローズ
+   - Issue #16: Draft issue → プレースホルダーのためクローズ
+   - Issue #17: 設定ファイル読み込み問題 → 無関係のためクローズ
+
 ### v1.8.1での変更（2025-10-29）
 1. **TUI正式版化（Phase 14完了）**
    - Rich TUIを正式版に昇格（`tui_rich.go` → `tui_tview.go`）

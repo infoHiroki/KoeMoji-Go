@@ -1,86 +1,215 @@
 # 開発進捗
 
-## 現在の作業状況 (2025-10-31)
+## 現在の状況 (2025-11-02)
 
-### ✅ 完了したタスク
+### ✅ v1.8.2 リリース完了
 
-#### 1. Issue #19: faster-whisper インストール時の requests 不足
-- **PR**: #21
-- **ブランチ**: `fix/issue-19-requests-module`
-- **ステータス**: PR作成済み、手動テスト待ち
-- **変更内容**:
-  - `internal/whisper/whisper.go:136-157` 修正
+#### リリース済み
+- **macOS版**: `koemoji-go-macos-1.8.2.tar.gz` ✅
+  - リリース日: 2025-11-02
+  - サイズ: 11MB
+  - 対応: GUI/TUI両対応
+- **Windows版**: ビルド待機中 ⏳
+  - 予定成果物: `koemoji-go-1.8.2.zip`
+
+#### v1.8.2の主な変更
+
+##### 1. データ消失防止機能（コア機能）
+- **実装内容**:
+  - `validateOutputFile()` 関数追加 (`internal/whisper/whisper.go:421-449`)
+  - 0バイト出力ファイルの検出
+  - 出力ファイル不在の検出
+- **効果**:
+  - 破損したAACファイル処理時、元ファイルを`input/`に保持
+  - これまで: 0バイト出力でも成功と判断 → `archive/`に移動 → データ消失
+  - 改善後: 0バイト検出 → エラー返却 → `input/`に保持
+
+##### 2. faster-whisper依存関係修正（Issue #19 → PR #21）
+- **問題**: 古いpipバージョンで`requests`モジュールが不足
+- **解決策**:
   - pipアップグレード追加
-  - requestsを明示的にインストール
-- **テスト結果**: 全テスト合格 ✅
+  - `requests`を明示的にインストール
+  - コマンド: `pip install requests faster-whisper whisper-ctranslate2`
+- **ファイル**: `internal/whisper/whisper.go:136-157`
+- **ステータス**: マージ済み ✅ (commit 8b0da43)
 
-#### 2. Issue #20: デュアル録音のエラーログ改善
-- **PR**: #22
-- **ブランチ**: `fix/issue-20-dual-recording-logging`
-- **ステータス**: PR作成済み、手動テスト待ち
+##### 3. デュアル録音エラーロギング（Issue #20 → PR #22）
+- **問題**: デュアル録音エラーがGUI/TUI/ログファイルに表示されない
+- **解決策**:
+  - `fmt.Printf` → `logger.LogError` (5箇所)
+  - DualRecorder構造体にロギングフィールド追加
+  - Windows/macOS両対応
+- **ファイル**:
+  - `internal/recorder/dual_recorder.go` (Windows)
+  - `internal/recorder/dual_recorder_darwin.go` (macOS)
+  - 呼び出し側3ファイル
+- **ステータス**: マージ済み ✅ (commit 707c909)
+- **注意**: 実動作検証は未実施（Issue #23で追跡中）
+
+##### 4. エラーメッセージ改善
 - **変更内容**:
-  - `internal/recorder/dual_recorder.go` (Windows版) 修正
-  - `internal/recorder/dual_recorder_darwin.go` (macOS版) 修正
-  - GUI/CLI呼び出し側修正
-  - fmt.Printf → logger.LogError（5箇所）
-- **テスト結果**: 全テスト合格 ✅
+  - 技術用語（FFmpeg、コマンドライン例）を削除
+  - 確証のない推測情報を削除
+  - シンプルで分かりやすい表現に統一
+  - 「音声ファイル」→「音声/動画ファイル」に汎用化
+- **例**:
+  ```
+  出力ファイルが空です（0バイト）: /path/to/output.txt
 
----
+  考えられる原因:
+  ・音声/動画ファイルが破損している可能性があります
+  ・音声が検出されませんでした
 
-### 🚧 次のステップ
+  対処方法:
+  ・WAV形式に変換してから再度処理してください
 
-#### 1. 手動テスト
-- [ ] PR #21: Windows環境でfaster-whisperインストールテスト
-- [ ] PR #22: デュアル録音エラーログの動作確認
-
-#### 2. PRマージ
-- [ ] PR #21をmainにマージ
-- [ ] PR #22をmainにマージ
-
-#### 3. Windowsビルド
-- [ ] v1.8.2のWindowsビルド作成
-  - 場所: `build/windows/build.bat`
-  - 成果物: `koemoji-go-1.8.2.zip`
-  - 必要環境: MSYS2/MinGW64
-
-#### 4. リリース準備
-- [ ] version.goのバージョン更新（v1.8.1 → v1.8.2）
-- [ ] CHANGELOG更新
-- [ ] GitHub Release作成
-
----
-
-### 📋 関連ドキュメント
-
-- **ビルド手順**: `CLAUDE.md` - ビルドシステムセクション
-- **リリース手順**: `CLAUDE.md` - リリースプロセスセクション
-- **テスト手順**: `test/manual-test-commands.md`
-
----
-
-### 💡 備考
-
-#### Windowsビルドについて
-- Windows環境が必要（MSYS2/MinGW64）
-- macOSからのクロスコンパイルは非対応（CGO依存のため）
-- ビルドコマンド:
-  ```cmd
-  cd build\windows
-  build.bat clean
-  build.bat
+  元ファイルはinputフォルダに保持されています。
   ```
 
-#### 命名規則 (v1.8.1以降)
-- Windows: `koemoji-go-{VERSION}.zip`（"windows"という単語を排除）
-- macOS: `koemoji-go-macos-{VERSION}.tar.gz`
+---
+
+### 📋 完了したIssue
+
+| # | タイトル | PR | 完了日 |
+|---|---------|----|----|
+| #19 | faster-whisper requests不足 | PR #21 | 2025-11-02 |
+| #20 | デュアル録音エラーログ | PR #22 | 2025-11-02 |
+| #15 | installFasterWhisper冗長 | - | 2025-11-02（方針転換によりクローズ）|
+| #16 | Draft issue | - | 2025-11-02（プレースホルダーのためクローズ）|
+| #17 | 設定ファイル読み込み問題 | - | 2025-11-02（無関係のためクローズ）|
 
 ---
 
-### 🐛 既知の問題
+### 🚧 進行中のタスク
 
-- Issue #18: エコーキャンセレーション機能（将来対応）
-  - デバッグ機能改善後に着手推奨
+#### 1. Issue #23: PR #22実動作検証
+**ステータス**: 未実施 ⏳
+
+**検証項目**:
+- [ ] デュアル録音失敗時に`koemoji.log`にエラー記録されるか
+- [ ] GUI/TUIのログエリアにエラー表示されるか
+- [ ] デバッグモード（`--debug`）で詳細情報が記録されるか
+
+**対象環境**:
+- macOS (ScreenCaptureKit)
+- Windows (WASAPI)
+
+**予定**: Windows版ビルド・テスト時に実施
 
 ---
 
-最終更新: 2025-10-31
+#### 2. Windows版v1.8.2ビルド
+**ステータス**: 待機中 ⏳
+
+**手順**:
+1. MSYS2/MinGW64環境でビルド
+   ```cmd
+   cd build\windows
+   build.bat clean
+   build.bat
+   ```
+2. 成果物: `koemoji-go-1.8.2.zip`
+3. テスト実施:
+   - 0バイト検出機能
+   - faster-whisperインストール（PR #21）
+   - デュアル録音エラーロギング（PR #22、Issue #23検証）
+4. GitHub Releaseに追加
+
+**想定工数**: 1-2時間
+
+---
+
+#### 3. ドキュメント整備
+**ステータス**: 進行中 🔄
+
+**完了**:
+- [x] v1.8.2リリースノート作成
+- [x] GitHub Release作成（macOS版）
+- [x] 不要Issueクローズ（#15, #16, #17）
+
+**残タスク**:
+- [ ] CHANGELOG.md作成
+- [ ] 全ドキュメントのバージョン番号統一（1.8.0/1 → 1.8.2）
+- [ ] 0-byte検証機能のユーザー向けドキュメント追加
+- [ ] CLAUDE.md v1.8.2セクション追加
+- [ ] TEST_RESULTS.mdアーカイブ
+
+---
+
+### 📋 オープンIssue
+
+| # | タイトル | 優先度 | 状態 |
+|---|---------|--------|------|
+| #23 | PR #22実動作検証が必要 | 中 | Windows版テスト時に検証予定 |
+| #18 | エコーキャンセレーション機能 | Low | ユーザーフィードバック待ち |
+| #2 | macOSアプリバンドル配布問題 | 保留 | ユーザー要望があれば対応 |
+
+---
+
+### 💡 技術的メモ
+
+#### 命名規則（v1.8.1以降）
+- **Windows**: `koemoji-go-{VERSION}.zip`
+  - 理由: 「windows」という単語がセキュリティフィルタに引っかかる
+  - 変更履歴: v1.8.1で変更
+- **macOS**: `koemoji-go-macos-{VERSION}.tar.gz`
+  - DMG版は廃止（v1.7.2以降）
+
+#### ビルドシステム
+- **Windows**: MSYS2/MinGW64が必須（CGO依存のため）
+- **macOS**: Xcode Command Line Toolsが必須
+- **クロスコンパイル**: 非対応（PortAudio/ScreenCaptureKit依存）
+
+#### リリースプロセス
+1. `version.go`のバージョン更新
+2. ビルド実行（macOS/Windows）
+3. タグ作成・プッシュ
+4. GitHub Release作成
+5. バイナリアップロード
+6. リリースノート記載
+
+詳細: `CLAUDE.md` - リリースプロセスセクション
+
+---
+
+### 🔍 既知の制約
+
+#### v1.8.2
+- **PR #22の実動作検証未実施**: コードレビューは合格済みだが、実際のデュアル録音失敗ケースでの動作確認は未実施（Issue #23）
+- **Windows版未リリース**: ビルド・テスト待ち
+
+#### 全般
+- **TUIモード**: macOS専用（Windowsは非対応）
+  - 理由: tview/tcellのWindows互換性問題
+- **デュアル録音のエコー問題**: スピーカー環境で二重録音発生
+  - 対策: ヘッドホン/イヤホン推奨
+  - 将来対応: Issue #18（優先度Low）
+
+---
+
+### 📚 関連ドキュメント
+
+- **開発ガイド**: `CLAUDE.md`
+- **ビルド手順**:
+  - macOS: `docs/developer/MACOS_BUILD_GUIDE.md`
+  - Windows: `docs/developer/WINDOWS_BUILD_GUIDE.md`
+- **テスト手順**: `test/manual-test-commands.md`
+- **リリースノート**: GitHub Releases
+
+---
+
+### 🎯 次のマイルストーン
+
+#### v1.8.3（未定）
+候補機能:
+- macOSアプリバンドル配布問題の修正（Issue #2）
+  - 条件: ユーザーからの要望がある場合
+
+現時点では新機能追加の予定なし。v1.8.2のWindows版リリースと安定化を優先。
+
+---
+
+**最終更新**: 2025-11-02
+**現在のバージョン**: v1.8.2
+**現在のコミット**: 707c909
+**次のリリース**: v1.8.2 Windows版（ビルド待ち）
