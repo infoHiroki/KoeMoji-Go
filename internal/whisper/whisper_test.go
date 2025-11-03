@@ -395,14 +395,14 @@ func TestTranscribeAudio_DeviceParameter(t *testing.T) {
 			expectDevice: true,
 		},
 		{
-			name:         "float16 should auto-select device",
+			name:         "float16 should use CPU device",
 			computeType:  "float16",
-			expectDevice: false,
+			expectDevice: true,
 		},
 		{
-			name:         "int8_float16 should auto-select device",
+			name:         "int8_float16 should use CPU device",
 			computeType:  "int8_float16",
-			expectDevice: false,
+			expectDevice: true,
 		},
 	}
 	
@@ -412,18 +412,14 @@ func TestTranscribeAudio_DeviceParameter(t *testing.T) {
 			
 			// This will fail due to missing whisper, but we document expected behavior
 			err := TranscribeAudio(config, logger, logBuffer, logMutex, true, audioFile)
-			
-			// The test documents that int8 should force CPU device selection
-			if tt.computeType == "int8" && !tt.expectDevice {
-				t.Error("int8 compute type should trigger CPU device selection")
+
+			// The test documents that all compute types should force CPU device selection (v1.8.3+)
+			if !tt.expectDevice {
+				t.Errorf("%s compute type should trigger CPU device selection", tt.computeType)
 			}
-			
+
 			// Log the expected behavior
-			if tt.expectDevice {
-				t.Logf("Compute type %s should add --device cpu parameter", tt.computeType)
-			} else {
-				t.Logf("Compute type %s should not add device parameter", tt.computeType)
-			}
+			t.Logf("Compute type %s should add --device cpu parameter", tt.computeType)
 			
 			if err != nil {
 				t.Logf("Expected error in test environment: %v", err)

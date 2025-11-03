@@ -201,10 +201,8 @@ func TranscribeAudio(config *config.Config, log *log.Logger, logBuffer *[]logger
 		"--compute_type", config.ComputeType,
 	}
 	
-	// Add device parameter for CPU-specific compute types
-	if config.ComputeType == "int8" {
-		args = append(args, "--device", "cpu")
-	}
+	// Always use CPU to avoid GPU initialization issues (especially on Windows)
+	args = append(args, "--device", "cpu")
 	
 	// Add verbose and input file
 	args = append(args, "--verbose", "True", inputFile)
@@ -273,6 +271,10 @@ func TranscribeAudio(config *config.Config, log *log.Logger, logBuffer *[]logger
 	if err := validateOutputFile(outputFile, config); err != nil {
 		return err
 	}
+
+	// Log processing time for performance analysis
+	duration := time.Since(startTime)
+	logger.LogInfo(log, logBuffer, logMutex, "Transcription completed in %s", duration.Round(time.Second))
 
 	return nil
 }

@@ -365,6 +365,28 @@ dir build\windows\*.dll
 
 ## 最近の重要な変更
 
+### v1.8.3での変更（2025-11-03）
+1. **CPU使用を無条件で強制**
+   - GPU初期化問題を完全回避
+   - 全てのcompute_typeで`--device cpu`を自動追加
+   - Windows環境での文字起こし速度問題を解決
+   - ファイル：`internal/whisper/whisper.go:204-205`
+   - 変更内容：`compute_type`による条件分岐を削除し、無条件でCPU使用
+
+2. **処理時間ログ追加**
+   - 文字起こし完了時に処理時間を記録
+   - パフォーマンス問題の診断が容易に
+   - 例：「Transcription completed in 25m30s」
+
+3. **テスト更新**
+   - `TestTranscribeAudio_DeviceParameter`を更新
+   - 全てのcompute_typeでCPU使用を検証
+
+4. **背景**
+   - ユーザー環境で1時間の音声が5時間かかる問題が報告
+   - GPU使用時の初期化失敗・リトライが原因と推定
+   - CPU専用化により、処理時間を大幅短縮（期待値：5時間→30分）
+
 ### v1.8.2での変更（2025-11-02）
 1. **データ消失防止機能実装**
    - `validateOutputFile()` 関数追加（`internal/whisper/whisper.go:421-449`）
