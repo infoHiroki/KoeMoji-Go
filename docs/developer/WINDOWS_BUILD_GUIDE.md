@@ -73,32 +73,102 @@ build.bat
 - 必要なDLLのコピー
 - 配布用ZIPパッケージの作成
 
-### 手動ビルド
+### 手動ビルド（完璧な12ステップ手順）
 
-必要に応じて手動でビルドする場合:
+アイコン付きリリースパッケージを作成する完全な手順：
+
+#### 前提条件
+- versioninfo.jsonのバージョンを更新済み
+- build/common/assets/icons/icon.icoが存在
+- goversioninfoがインストール済み
+
+#### 手順
+
+```bash
+# プロジェクトルートから実行
+
+# Step 1: クリーンアップ
+rm -rf build/windows/dist build/windows/temp build/releases/koemoji-go-1.8.4.zip
+
+# Step 2: ディレクトリ準備
+mkdir -p build/windows/dist build/windows/temp build/releases
+
+# Step 3: goversioninfoでresource.syso生成
+cd build/common/templates/windows
+goversioninfo -64 -o ../../../windows/temp/resource.syso versioninfo.json
+cd ../../../..
+
+# Step 4: resource.sysoをソースにコピー
+cp build/windows/temp/resource.syso cmd/koemoji-go/
+
+# Step 5: Goビルド（アイコン埋め込み）
+cd cmd/koemoji-go
+go build -ldflags "-s -w -H=windowsgui -X main.version=1.8.4" -o ../../build/windows/dist/koemoji-go.exe .
+cd ../..
+
+# Step 6: resource.syso削除（クリーンアップ）
+rm -f cmd/koemoji-go/resource.syso
+
+# Step 7: DLLコピー（build/windows/ディレクトリに配置済みのDLL）
+cd build/windows
+cp *.dll dist/
+cd ../..
+
+# Step 8: パッケージディレクトリ作成
+cd build/windows/dist
+mkdir -p koemoji-go-1.8.4
+
+# Step 9: ファイルコピー
+cp koemoji-go.exe koemoji-go-1.8.4/
+cp *.dll koemoji-go-1.8.4/
+cp ../診断実行.bat koemoji-go-1.8.4/
+cp ../../common/assets/config.example.json koemoji-go-1.8.4/config.json
+cp ../../common/assets/README_RELEASE.md koemoji-go-1.8.4/README.md
+
+# Step 10: ZIP作成
+powershell -Command "Compress-Archive -Path 'koemoji-go-1.8.4' -DestinationPath 'koemoji-go-1.8.4.zip' -Force"
+
+# Step 11: releasesに移動
+mv koemoji-go-1.8.4.zip ../../releases/
+
+# Step 12: 確認
+cd ../../..
+ls -lh build/releases/koemoji-go-1.8.4.zip
+```
+
+#### 重要なポイント
+
+1. **versioninfo.json更新**: ビルド前に必ずバージョン番号を更新
+   - FileVersion/ProductVersion: `Major.Minor.Patch.Build`
+   - StringFileInfo: バージョン文字列
+
+2. **resource.syso**: アイコン埋め込み用、ビルド後は削除
+
+3. **DLL配置**: 事前に`build/windows/`に3つのDLLを配置
+   - libportaudio.dll
+   - libgcc_s_seh-1.dll
+   - libwinpthread-1.dll
+
+4. **診断実行.bat**: v1.8.4以降、パッケージに含まれる
+
+### 簡易手動ビルド（アイコンなし）
+
+アイコン埋め込みが不要な場合の簡易手順:
 
 ```cmd
 # MSYS2のパスを一時的に追加
 set PATH=C:\msys64\mingw64\bin;%PATH%
 set PKG_CONFIG_PATH=C:\msys64\mingw64\lib\pkgconfig
 
-# GOPATHを設定（未設定の場合）
-for /f "tokens=*" %i in ('go env GOPATH') do set GOPATH=%i
-
-# リソースファイルを生成
-cd build\templates\windows
-%GOPATH%\bin\goversioninfo.exe -o ..\..\temp\resource.syso versioninfo.json
-cd ..\..\..
-
 # ビルド実行
 cd cmd\koemoji-go
-go build -ldflags="-s -w -H=windowsgui" -o ..\..\build\dist\koemoji-go.exe .
+go build -ldflags="-s -w -H=windowsgui -X main.version=1.8.4" -o ..\..\build\windows\dist\koemoji-go.exe .
 cd ..\..
 
 # 必要なDLLをコピー
-copy C:\msys64\mingw64\bin\libportaudio.dll build\dist\
-copy C:\msys64\mingw64\bin\libgcc_s_seh-1.dll build\dist\
-copy C:\msys64\mingw64\bin\libwinpthread-1.dll build\dist\
+copy C:\msys64\mingw64\bin\libportaudio.dll build\windows\dist\
+copy C:\msys64\mingw64\bin\libgcc_s_seh-1.dll build\windows\dist\
+copy C:\msys64\mingw64\bin\libwinpthread-1.dll build\windows\dist\
 ```
 
 ## 必要なDLLファイル
