@@ -37,15 +37,16 @@ Pythonがない場合は [Python公式ダウンロード](https://www.python.org
 
 #### 🪟 Windows
 
-1. **ダウンロード**: `koemoji-go-1.8.3.zip`
+1. **ダウンロード**: `koemoji-go-1.8.4.zip`
 2. **展開後の構成**:
    ```
-   📁 koemoji-go-1.8.3
+   📁 koemoji-go-1.8.4
    ├── koemoji-go.exe          # 実行ファイル（アイコン付き）
    ├── libportaudio.dll        # 録音機能用ライブラリ
    ├── libgcc_s_seh-1.dll      # GCCランタイム
    ├── libwinpthread-1.dll     # スレッドサポート
    ├── config.json             # 設定ファイル
+   ├── 診断実行.bat            # 環境診断ツール
    └── README.md               # 説明書
    ```
 3. **実行**:
@@ -60,13 +61,14 @@ Pythonがない場合は [Python公式ダウンロード](https://www.python.org
 #### 🍎 macOS
 
 1. **ダウンロード**:
-   - **Apple Silicon (M1/M2/M3)**: `koemoji-go-macos-1.8.3.tar.gz`
+   - **Apple Silicon (M1/M2/M3)**: `koemoji-go-macos-1.8.4.tar.gz`
 
 2. **展開後の構成**:
    ```
-   📁 koemoji-go-1.8.3
+   📁 koemoji-go-1.8.4
    ├── koemoji-go         # 実行ファイル（GUI/TUI両対応）
    ├── config.json        # 設定ファイル
+   ├── 診断実行.command   # 環境診断ツール
    └── README.md          # 説明書
    ```
 
@@ -119,6 +121,34 @@ Pythonがない場合は [Python公式ダウンロード](https://www.python.org
 1. [OpenAI Platform](https://platform.openai.com/)でAPIキー取得
 2. 設定画面（`c`）でAPIキーを入力
 3. 文字起こし後に自動で要約が生成されます
+
+#### 6. 環境診断ツール（v1.8.4～）
+
+録音機能やデュアル録音が正しく動作しない場合、環境診断ツールで問題を特定できます：
+
+**🪟 Windows**:
+```cmd
+診断実行.bat をダブルクリック
+```
+
+**🍎 macOS**:
+```bash
+./診断実行.command をダブルクリック
+```
+
+診断結果は `診断結果.txt` に保存されます。問題が解決しない場合は、このファイルをサポートに送付してください。
+
+**診断内容**:
+- システム情報（OS、バージョン）
+- オーディオデバイス一覧（56デバイス検出）
+- 仮想デバイス検出（VoiceMeeter、Virtual Cable等）
+- デュアル録音対応チェック（Windows WASAPI/macOS ScreenCaptureKit）
+- config.json検証
+
+**CLI版**（開発者向け）:
+```bash
+./koemoji-go --doctor
+```
 
 ## 📚 詳細情報
 

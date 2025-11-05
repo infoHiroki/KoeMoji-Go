@@ -292,6 +292,36 @@ test_packaging_only.bat  # パッケージングのみ
 
 ## デバッグとトラブルシューティング
 
+### 診断ツール（v1.8.4～）
+
+クライアント環境のトラブルシューティング用診断機能：
+
+```bash
+# CLI版
+./koemoji-go --doctor
+
+# バッチファイル版（クライアント向け）
+# Windows: 診断実行.bat をダブルクリック
+# macOS: 診断実行.command をダブルクリック
+```
+
+**診断内容**:
+- システム情報（OS、バージョン、実行パス）
+- PortAudioデバイス列挙（全デバイス、デフォルトデバイス検出）
+- 仮想デバイス検出（VoiceMeeter、Virtual Cable、Stereo Mix等）
+- デュアル録音対応確認（Windows WASAPI/COM、macOS ScreenCaptureKit）
+- config.json検証（デバイス名存在確認）
+- サマリーレポート（チェック合否、警告、エラー）
+
+**出力**:
+- 標準出力（CLI版）
+- `診断結果.txt`（バッチファイル版）
+
+**実装**:
+- `internal/diagnostics/` パッケージ（7ファイル）
+- プラットフォーム固有チェック（`audio_windows.go`、`audio_darwin.go`）
+- バージョン情報の動的取得（`main.version`から）
+
 ### ログレベル
 ```bash
 # 通常ログ
@@ -364,6 +394,39 @@ dir build\windows\*.dll
 包括的なテスト手順については`test/manual-test-commands.md`を参照してください。
 
 ## 最近の重要な変更
+
+### v1.8.4での変更（2025-11-05）
+1. **診断機能実装**（`--doctor`）
+   - クライアント環境のトラブルシューティング用診断ツール追加
+   - `internal/diagnostics/` パッケージ新規作成（7ファイル、553行追加）
+   - システム情報、オーディオデバイス列挙、仮想デバイス検出、デュアル録音対応チェック
+   - Windows: COM/WASAPI初期化確認
+   - macOS: ScreenCaptureKit対応確認、audio-captureバイナリ検出
+   - config.json検証（デバイス名存在確認）
+
+2. **ダブルクリック実行可能な診断バッチファイル**
+   - Windows: `診断実行.bat`
+   - macOS: `診断実行.command`（実行権限付き）
+   - 診断結果を`診断結果.txt`に自動保存
+   - クライアントが簡単にサポートに送付可能
+
+3. **バージョン情報の動的取得**
+   - `internal/diagnostics/system.go`でバージョンをハードコーディングしていた問題を修正
+   - `main.version`から動的に取得するように変更
+   - `diagnostics.SetVersion(version)`で設定
+
+4. **ビルドスクリプト更新**
+   - `build/windows/build.bat`: 診断実行.batをパッケージに追加（184行目）
+   - `build/macos/build.sh`: 診断実行.commandをパッケージに追加（219-220行目）
+
+5. **ファイル構成**
+   - `internal/diagnostics/diagnostics.go` - エントリーポイント
+   - `internal/diagnostics/system.go` - システム情報収集
+   - `internal/diagnostics/audio.go` - デバイス列挙
+   - `internal/diagnostics/audio_windows.go` - Windows固有チェック
+   - `internal/diagnostics/audio_darwin.go` - macOS固有チェック
+   - `internal/diagnostics/config.go` - 設定検証
+   - `internal/diagnostics/output.go` - サマリー生成
 
 ### v1.8.3での変更（2025-11-03）
 1. **CPU使用を無条件で強制**

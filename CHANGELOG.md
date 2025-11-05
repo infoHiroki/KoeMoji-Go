@@ -5,6 +5,68 @@ All notable changes to KoeMoji-Go will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.8.4] - 2025-11-05
+
+### Added
+- **診断機能実装**（`--doctor`）
+  - クライアント環境のトラブルシューティング用診断ツール
+  - `internal/diagnostics/` パッケージ新規作成（7ファイル、553行追加）
+  - システム情報収集（OS、バージョン、実行パス）
+  - オーディオデバイス列挙（PortAudio経由、全デバイス検出）
+  - 仮想デバイス検出（VoiceMeeter、Virtual Cable、Stereo Mix等）
+  - デュアル録音対応チェック（Windows WASAPI/COM、macOS ScreenCaptureKit）
+  - config.json検証（デバイス名存在確認）
+  - サマリーレポート生成（チェック合否、警告、エラー）
+- **ダブルクリック実行可能な診断バッチファイル**
+  - Windows: `診断実行.bat`
+  - macOS: `診断実行.command`（実行権限付き）
+  - 診断結果を`診断結果.txt`に自動保存
+  - クライアントが簡単にサポートに送付可能
+
+### Changed
+- **バージョン情報の動的取得**
+  - `internal/diagnostics/system.go`でバージョンがハードコーディングされていた問題を修正
+  - `main.version`から動的に取得するように変更
+  - `diagnostics.SetVersion(version)`で設定
+- **ビルドスクリプト更新**
+  - `build/windows/build.bat`: 診断実行.batをパッケージに追加（184行目）
+  - `build/macos/build.sh`: 診断実行.commandをパッケージに追加（219-220行目）
+
+### Files
+- `internal/diagnostics/diagnostics.go` - エントリーポイント
+- `internal/diagnostics/system.go` - システム情報収集
+- `internal/diagnostics/audio.go` - デバイス列挙
+- `internal/diagnostics/audio_windows.go` - Windows固有チェック（COM/WASAPI）
+- `internal/diagnostics/audio_darwin.go` - macOS固有チェック（ScreenCaptureKit）
+- `internal/diagnostics/config.go` - 設定検証
+- `internal/diagnostics/output.go` - サマリー生成
+
+## [1.8.3] - 2025-11-03
+
+### Changed
+- **CPU使用を無条件で強制**
+  - GPU初期化問題を完全回避
+  - 全てのcompute_typeで`--device cpu`を自動追加
+  - Windows環境での文字起こし速度問題を解決
+  - ファイル：`internal/whisper/whisper.go:204-205`
+  - 変更内容：`compute_type`による条件分岐を削除し、無条件でCPU使用
+
+### Added
+- **処理時間ログ追加**
+  - 文字起こし完了時に処理時間を記録
+  - パフォーマンス問題の診断が容易に
+  - 例：「Transcription completed in 25m30s」
+
+### Fixed
+- **テスト更新**
+  - `TestTranscribeAudio_DeviceParameter`を更新
+  - 全てのcompute_typeでCPU使用を検証
+
+### Background
+- ユーザー環境で1時間の音声が5時間かかる問題が報告
+- GPU使用時の初期化失敗・リトライが原因と推定
+- CPU専用化により、処理時間を大幅短縮（期待値：5時間→30分）
+
 ## [1.8.2] - 2025-11-02
 
 ### Added
