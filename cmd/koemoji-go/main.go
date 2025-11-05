@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/infoHiroki/KoeMoji-Go/internal/config"
+	"github.com/infoHiroki/KoeMoji-Go/internal/diagnostics"
 	"github.com/infoHiroki/KoeMoji-Go/internal/gui"
 	"github.com/infoHiroki/KoeMoji-Go/internal/logger"
 	"github.com/infoHiroki/KoeMoji-Go/internal/processor"
@@ -63,7 +64,7 @@ type App struct {
 }
 
 func main() {
-	configPath, debugMode, showVersion, showHelp, configMode, tuiMode := parseFlags()
+	configPath, debugMode, showVersion, showHelp, configMode, tuiMode, doctorMode := parseFlags()
 
 	if showVersion {
 		fmt.Printf("KoeMoji-Go v%s\n", version)
@@ -72,6 +73,13 @@ func main() {
 
 	if showHelp {
 		showHelpText()
+		return
+	}
+
+	// Handle doctor mode
+	if doctorMode {
+		diagnostics.SetVersion(version)
+		diagnostics.Run()
 		return
 	}
 
@@ -133,15 +141,16 @@ func runTUIMode(configPath string, debugMode bool, configMode bool) {
 	app.runTUI()
 }
 
-func parseFlags() (string, bool, bool, bool, bool, bool) {
+func parseFlags() (string, bool, bool, bool, bool, bool, bool) {
 	configPath := flag.String("config", config.GetConfigFilePath(), "Path to config file")
 	debugMode := flag.Bool("debug", false, "Enable debug mode")
 	showVersion := flag.Bool("version", false, "Show version")
 	showHelp := flag.Bool("help", false, "Show help")
 	configMode := flag.Bool("configure", false, "Enter configuration mode")
 	tuiMode := flag.Bool("tui", false, "Run in Terminal UI (TUI) mode")
+	doctorMode := flag.Bool("doctor", false, "Run diagnostics and check system configuration")
 	flag.Parse()
-	return *configPath, *debugMode, *showVersion, *showHelp, *configMode, *tuiMode
+	return *configPath, *debugMode, *showVersion, *showHelp, *configMode, *tuiMode, *doctorMode
 }
 
 func showHelpText() {

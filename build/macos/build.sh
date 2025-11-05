@@ -215,6 +215,10 @@ build_cli() {
     # Copy release README
     cp "$COMMON_DIR/assets/README_RELEASE.md" "$package_name/README.md"
 
+    # Copy diagnostic script
+    cp "$SCRIPT_DIR/診断実行.command" "$package_name/診断実行.command"
+    chmod +x "$package_name/診断実行.command"
+
     # Create tar.gz
     tar -czf "../releases/${release_name}.tar.gz" "$package_name"
 

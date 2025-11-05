@@ -181,6 +181,7 @@ cd /d "%~dp0%DIST_DIR%"
 if not exist "koemoji-go-%VERSION%" mkdir "koemoji-go-%VERSION%"
 copy "%APP_NAME%.exe" "koemoji-go-%VERSION%\" >nul
 copy "*.dll" "koemoji-go-%VERSION%\" >nul
+copy "%~dp0診断実行.bat" "koemoji-go-%VERSION%\" >nul
 copy "%~dp0..\common\assets\config.example.json" "koemoji-go-%VERSION%\config.json" >nul
 copy "%~dp0..\common\assets\README_RELEASE.md" "koemoji-go-%VERSION%\README.md" >nul
 
