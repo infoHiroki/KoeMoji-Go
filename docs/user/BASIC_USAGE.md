@@ -41,12 +41,18 @@ KoeMoji-Goの基本的な操作方法について説明します。
 
 ### 起動オプション
 ```bash
-./koemoji-go -version     # バージョン表示
-./koemoji-go -help        # ヘルプ表示
-./koemoji-go -configure   # 設定モード
-./koemoji-go -debug       # デバッグモード
+./koemoji-go --version    # バージョン表示
+./koemoji-go --help       # ヘルプ表示
+./koemoji-go --configure  # 設定モード
+./koemoji-go --debug      # デバッグモード
 ./koemoji-go --tui        # TUIモード（ターミナル）
+./koemoji-go --doctor     # 環境診断（v1.8.4+）
 ```
+
+**環境診断（--doctor）について**:
+- 問題が発生した場合、まず診断を実行してください
+- システム情報、オーディオデバイス、デュアル録音対応状況を確認
+- 詳細は[トラブルシューティング](TROUBLESHOOTING.md#診断機能v184)を参照
 
 ### 実行中コマンド（TUIモード）
 - `c` - 設定変更

@@ -76,6 +76,23 @@ cd build/macos
 KoeMoji-Go v1.7.0
 ```
 
+#### 診断機能確認（v1.8.4+）
+
+```bash
+# 診断機能の動作確認
+./koemoji-go --doctor
+
+# 診断バッチファイルの確認（Windows）
+# - 診断実行.bat が build/releases/koemoji-go-{VERSION}/ に含まれているか
+# - ダブルクリックで正常に動作するか
+# - 診断結果.txt が生成されるか
+
+# 診断Shellスクリプトの確認（macOS）
+# - 診断実行.command が tar.gz に含まれているか
+# - ダブルクリックで正常に動作するか（実行権限付き）
+# - 診断結果.txt が生成されるか
+```
+
 #### テスト実行
 
 ```bash
@@ -180,6 +197,10 @@ git push origin v1.7.0
 - [ ] Windows版ZIPをダウンロード・解凍・実行
 - [ ] macOS版tar.gzをダウンロード・解凍・実行
 - [ ] バージョン番号が正しく表示されるか確認
+- [ ] 診断機能の動作確認（v1.8.4+）
+  - [ ] Windows: 診断実行.bat をダブルクリックして正常動作
+  - [ ] macOS: 診断実行.command をダブルクリックして正常動作
+  - [ ] 診断結果.txt が生成されることを確認
 
 #### ドキュメント確認
 
@@ -268,6 +289,9 @@ MAJOR.MINOR.PATCH
 □ CLAUDE.md を更新
 □ ローカルビルド成功
 □ バージョン表示確認
+□ 診断機能確認（v1.8.4+）
+  □ --doctor コマンド動作確認
+  □ 診断バッチファイル同梱確認（Windows/macOS）
 □ テスト実行成功
 □ git commit
 □ git tag 作成
@@ -275,6 +299,7 @@ MAJOR.MINOR.PATCH
 □ GitHub Release 作成
 □ アセットアップロード
 □ ダウンロードテスト
+□ 診断バッチファイル動作確認（v1.8.4+）
 ```
 
 ---
