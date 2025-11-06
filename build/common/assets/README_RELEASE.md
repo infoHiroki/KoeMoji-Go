@@ -23,8 +23,16 @@ koemoji-go.exe
 ```
 
 **macOS**:
+
+方法1: ターミナルから実行（推奨）
 ```bash
-./koemoji-go
+./koemoji-go          # GUI版（デフォルト）
+./koemoji-go --tui    # TUI版
+```
+
+方法2: TUIモードをダブルクリックで起動
+```
+KoeMoji-Go-TUI.command をダブルクリック
 ```
 
 初回実行時、FasterWhisperが自動インストールされます（数分かかります）。
