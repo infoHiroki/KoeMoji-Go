@@ -219,6 +219,10 @@ build_cli() {
     cp "$SCRIPT_DIR/診断実行.command" "$package_name/診断実行.command"
     chmod +x "$package_name/診断実行.command"
 
+    # Copy TUI launch script
+    cp "$SCRIPT_DIR/KoeMoji-Go-TUI.command" "$package_name/KoeMoji-Go-TUI.command"
+    chmod +x "$package_name/KoeMoji-Go-TUI.command"
+
     # Create tar.gz
     tar -czf "../releases/${release_name}.tar.gz" "$package_name"
 

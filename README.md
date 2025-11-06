@@ -65,17 +65,25 @@ Pythonがない場合は [Python公式ダウンロード](https://www.python.org
 
 2. **展開後の構成**:
    ```
-   📁 koemoji-go-1.8.4
-   ├── koemoji-go         # 実行ファイル（GUI/TUI両対応）
-   ├── config.json        # 設定ファイル
-   ├── 診断実行.command   # 環境診断ツール
-   └── README.md          # 説明書
+   📁 koemoji-go-1.8.5
+   ├── koemoji-go             # 実行ファイル（GUI/TUI両対応）
+   ├── config.json            # 設定ファイル
+   ├── KoeMoji-Go-TUI.command # TUIモード起動（ダブルクリック）
+   ├── 診断実行.command       # 環境診断ツール
+   └── README.md              # 説明書
    ```
 
 3. **実行**:
+
+   **方法1: ターミナルから実行（推奨）**
    ```bash
    ./koemoji-go          # GUI版（デフォルト）
    ./koemoji-go --tui    # TUI版
+   ```
+
+   **方法2: TUIモードをダブルクリックで起動**
+   ```
+   KoeMoji-Go-TUI.command をダブルクリック
    ```
 
 > **初回実行時**: FasterWhisperが自動インストールされます（数分かかります）
