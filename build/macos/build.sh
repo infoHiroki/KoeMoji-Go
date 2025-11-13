@@ -219,9 +219,18 @@ build_cli() {
     cp "$SCRIPT_DIR/診断実行.command" "$package_name/診断実行.command"
     chmod +x "$package_name/診断実行.command"
 
+    # Copy main launch script (removes quarantine attributes on first run)
+    cp "$SCRIPT_DIR/KoeMoji-Go.command" "$package_name/KoeMoji-Go.command"
+    chmod +x "$package_name/KoeMoji-Go.command"
+
     # Copy TUI launch script
     cp "$SCRIPT_DIR/KoeMoji-Go-TUI.command" "$package_name/KoeMoji-Go-TUI.command"
     chmod +x "$package_name/KoeMoji-Go-TUI.command"
+
+    # Remove quarantine attributes from all files in the package before archiving
+    # This prevents the attributes from being inherited when the archive is extracted
+    echo "🔓 Removing quarantine attributes from package files..."
+    xattr -cr "$package_name" 2>/dev/null || true
 
     # Create tar.gz
     tar -czf "../releases/${release_name}.tar.gz" "$package_name"
